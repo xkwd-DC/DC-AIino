@@ -1,0 +1,22 @@
+# Python 3.10 / Ubuntu 22.04 / 2vCPU 4GB (CPU-only inference)
+# 注意：tensorflow 用 tensorflow-cpu，体积 ~300MB 而非 ~600MB+，避免拖入 CUDA 依赖
+# 4GB 内存对 TF 推理足够；如后续上 GPU 部署再换回 tensorflow
+
+# --- Web 框架 ---
+flask~=3.0.3
+flask-cors~=5.0.0
+gunicorn~=23.0.0
+
+# --- 配置 ---
+python-dotenv~=1.0.1
+
+# --- 数据处理 ---
+# numpy 暂封顶 2.1：SHAP 0.46 与 xgboost 2.1 在 numpy 2.x 上偶发兼容问题
+numpy>=1.26,<2.1
+pandas~=2.2.2
+
+# --- 机器学习 ---
+scikit-learn~=1.5.1
+xgboost~=2.1.1
+tensorflow-cpu~=2.17.0
+shap~=0.46.0
