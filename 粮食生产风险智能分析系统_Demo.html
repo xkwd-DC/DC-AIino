@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极端气候下我国粮食生产风险智能分析与韧性提升决策支持系统</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0A1612;
+  --bg-secondary: #0F1F1A;
+  --bg-card: #142822;
+  --bg-card-hover: #1A332B;
+  --border: #1F3A30;
+  --border-strong: #2D5443;
+  --text-primary: #E8E4D8;
+  --text-secondary: #A8B5AC;
+  --text-tertiary: #6B7A72;
+  --accent-green: #74C69D;
+  --accent-green-bright: #95D5B2;
+  --accent-green-deep: #2D6A4F;
+  --accent-red: #E07856;
+  --accent-red-deep: #B14A36;
+  --accent-amber: #E6B655;
+  --accent-blue: #6BA8B5;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(116, 198, 157, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(224, 120, 86, 0.03) 0%, transparent 50%);
+}
+
+/* ============ HEADER ============ */
+.header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 31, 26, 0.6);
+  backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--accent-green-deep), var(--accent-green));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--bg-primary);
+  box-shadow: 0 4px 12px rgba(116, 198, 157, 0.25);
+}
+
+.brand-text h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.brand-text .subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.metrics-bar {
+  display: flex;
+  gap: 28px;
+}
+
+.metric {
+  text-align: right;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 2px;
+}
+
+.metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-green);
+}
+
+.metric-value.amber { color: var(--accent-amber); }
+.metric-value.red { color: var(--accent-red); }
+
+/* ============ TABS ============ */
+.tabs-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  padding-top: 20px;
+}
+
+.tab {
+  padding: 14px 24px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.tab:hover {
+  color: var(--text-secondary);
+}
+
+.tab.active {
+  color: var(--accent-green-bright);
+  border-bottom-color: var(--accent-green);
+}
+
+.tab-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.tab.active .tab-number {
+  color: var(--accent-green);
+  background: rgba(116, 198, 157, 0.12);
+}
+
+/* ============ MAIN ============ */
+.main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 32px 60px;
+}
+
+.panel { display: none; animation: fadeIn 0.4s ease; }
+.panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.panel-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.panel-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  max-width: 700px;
+}
+
+.panel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  background: rgba(116, 198, 157, 0.08);
+  border: 1px solid rgba(116, 198, 157, 0.2);
+  padding: 4px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.8px;
+}
+
+.panel-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============ CARDS ============ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: 0.5px;
+}
+
+.card-title .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+/* ============ MODULE 1: 风险时空地图 ============ */
+.module-1 {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+}
+
+.map-container {
+  height: 640px;
+}
+
+.year-control {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.year-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.year-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  outline: none;
+}
+
+.year-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(116, 198, 157, 0.15);
+}
+
+.year-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-green-bright);
+  min-width: 56px;
+  text-align: right;
+}
+
+.sidebar-section { margin-bottom: 20px; }
+
+.rank-list { display: flex; flex-direction: column; gap: 6px; }
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+}
+
+.rank-item:hover {
+  background: var(--bg-card-hover);
+  border-left-color: var(--accent-green);
+}
+
+.rank-num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  min-width: 20px;
+}
+
+.rank-name {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.rank-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.rank-value.high { color: var(--accent-red); }
+.rank-value.medium { color: var(--accent-amber); }
+.rank-value.low { color: var(--accent-green); }
+
+.legend-strip {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.detail-box {
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-row:last-child { border-bottom: none; }
+
+.detail-row .label { color: var(--text-tertiary); }
+
+.detail-row .value {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ============ MODULE 2: SHAP归因看板 ============ */
+.module-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+
+.shap-bar { height: 480px; }
+
+.shap-waterfall { height: 480px; }
+
+.shap-row-2 {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.shap-scatter { height: 360px; }
+
+.shap-interpretation {
+  padding: 0;
+  height: 360px;
+  overflow-y: auto;
+}
+
+.interp-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.interp-item:last-child { border-bottom: none; }
+
+.interp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.interp-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.interp-icon.up {
+  background: rgba(224, 120, 86, 0.15);
+  color: var(--accent-red);
+}
+
+.interp-icon.down {
+  background: rgba(116, 198, 157, 0.15);
+  color: var(--accent-green);
+}
+
+.interp-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.interp-dir {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-left: auto;
+}
+
+.interp-dir.harm {
+  background: rgba(224, 120, 86, 0.12);
+  color: var(--accent-red);
+}
+
+.interp-dir.protect {
+  background: rgba(116, 198, 157, 0.12);
+  color: var(--accent-green);
+}
+
+.interp-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  margin-left: 38px;
+}
+
+/* ============ MODULE 3: 参数情景模拟 ============ */
+.module-3 {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+}
+
+.sim-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.province-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.province-select-wrapper label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.province-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.slider-group { display: flex; flex-direction: column; gap: 18px; }
+
+.slider-block {
+  background: var(--bg-secondary);
+  padding: 14px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.slider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.slider-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--accent-green-bright);
+  font-weight: 600;
+}
+
+.param-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  outline: none;
+}
+
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(116, 198, 157, 0.15);
+}
+
+.slider-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.btn-reset {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-green);
+}
+
+.sim-result {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gauge-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.gauge-container { height: 280px; }
+
+.delta-box {
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+}
+
+.delta-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.delta-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.delta-value.improved { color: var(--accent-green-bright); }
+.delta-value.worsened { color: var(--accent-red); }
+
+.delta-percent {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.comparison-chart { height: 240px; }
+
+/* ============ MODULE 4: 韧性路径推荐 ============ */
+.module-4 {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+.recommend-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.province-profile {
+  padding: 20px;
+}
+
+.profile-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.profile-type {
+  font-size: 12px;
+  color: var(--accent-amber);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.profile-stat {
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.profile-stat .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-green-bright);
+  display: block;
+}
+
+.profile-stat .lbl {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.path-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.path-stage {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 4px;
+  padding: 18px 22px;
+  position: relative;
+}
+
+.path-stage.medium {
+  border-left-color: var(--accent-amber);
+}
+
+.path-stage.long {
+  border-left-color: var(--accent-blue);
+}
+
+.stage-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.stage-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stage-period {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.stage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.action-bullet {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(116, 198, 157, 0.12);
+  color: var(--accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.path-stage.medium .action-bullet {
+  background: rgba(230, 182, 85, 0.12);
+  color: var(--accent-amber);
+}
+
+.path-stage.long .action-bullet {
+  background: rgba(107, 168, 181, 0.12);
+  color: var(--accent-blue);
+}
+
+.action-text { color: var(--text-secondary); }
+
+.action-text strong { color: var(--text-primary); font-weight: 600; }
+
+/* ============ FOOTER ============ */
+.footer {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.footer-tags { display: flex; gap: 16px; }
+
+.tag {
+  padding: 3px 8px;
+  background: var(--bg-card);
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* Responsive tweaks */
+@media (max-width: 1200px) {
+  .module-1, .module-2, .module-3, .module-4 { grid-template-columns: 1fr; }
+  .header-inner { flex-wrap: wrap; }
+  .metrics-bar { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">穗</div>
+      <div class="brand-text">
+        <h1>极端气候下我国粮食生产风险智能分析与韧性提升决策支持系统</h1>
+        <div class="subtitle">GRAIN-RISK · MULTIMODAL AI · v0.9.2-DEMO</div>
+      </div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric">
+        <div class="metric-label">XGB R²</div>
+        <div class="metric-value">0.6293</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">LSTM R²</div>
+        <div class="metric-value">0.6619</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">样本量</div>
+        <div class="metric-value amber">403</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">覆盖省份</div>
+        <div class="metric-value amber">31</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">数据模态</div>
+        <div class="metric-value amber">4</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs-container">
+  <div class="tabs">
+    <div class="tab active" data-tab="1"><span class="tab-number">M01</span>风险时空地图</div>
+    <div class="tab" data-tab="2"><span class="tab-number">M02</span>SHAP归因看板</div>
+    <div class="tab" data-tab="3"><span class="tab-number">M03</span>参数情景模拟</div>
+    <div class="tab" data-tab="4"><span class="tab-number">M04</span>韧性路径推荐</div>
+  </div>
+</div>
+
+<main class="main">
+
+<!-- ============ MODULE 1: 风险时空地图 ============ -->
+<section class="panel active" id="panel-1">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">风险时空地图</div>
+      <div class="panel-desc">基于双引擎模型推理的粮食单产风险（去趋势波动项）空间分布。颜色越深表示风险越高，悬停查看明细，拖动时间轴查看年度演化。</div>
+    </div>
+    <div class="panel-tag">XGBoost + LSTM 推理中</div>
+  </div>
+
+  <div class="module-1">
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <span>全国 31 省风险分布</span>
+          <span class="meta" id="current-year-display">2023年度</span>
+        </div>
+        <div id="china-map" class="map-container"></div>
+        <div class="year-control">
+          <span class="year-label">时间轴</span>
+          <input type="range" min="2011" max="2023" value="2023" class="year-slider" id="year-slider">
+          <span class="year-display" id="year-display">2023</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card sidebar-section">
+        <div class="card-title">风险等级图例</div>
+        <div class="legend-strip">
+          <div style="flex:1; background:#74C69D"></div>
+          <div style="flex:1; background:#A8D5A8"></div>
+          <div style="flex:1; background:#E6B655"></div>
+          <div style="flex:1; background:#E07856"></div>
+          <div style="flex:1; background:#B14A36"></div>
+        </div>
+        <div class="legend-labels">
+          <span>0.011</span><span>低</span><span>中</span><span>高</span><span>0.043</span>
+        </div>
+      </div>
+
+      <div class="card sidebar-section">
+        <div class="card-title">
+          <span>高风险省份 TOP 10</span>
+          <span class="meta">↑ 按风险值排序</span>
+        </div>
+        <div class="rank-list" id="rank-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>区域明细</span>
+          <span class="meta" id="detail-province">— 悬停省份 —</span>
+        </div>
+        <div class="detail-box" id="detail-box">
+          <div class="detail-row"><span class="label">风险指数 Y</span><span class="value" id="d-y">—</span></div>
+          <div class="detail-row"><span class="label">灌溉率</span><span class="value" id="d-irr">—</span></div>
+          <div class="detail-row"><span class="label">洪涝占比</span><span class="value" id="d-flood">—</span></div>
+          <div class="detail-row"><span class="label">日照时数</span><span class="value" id="d-sun">—</span></div>
+          <div class="detail-row"><span class="label">SPEI 干旱</span><span class="value" id="d-spei">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODULE 2: SHAP归因看板 ============ -->
+<section class="panel" id="panel-2">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">SHAP 归因看板</div>
+      <div class="panel-desc">基于 XGBoost-SHAP 框架对粮食生产风险驱动因子的全局解释。Top-3 因子 <strong>灌溉率 · 洪涝占比 · 日照时数</strong> 经 LSTM 跨模型验证完全一致。</div>
+    </div>
+    <div class="panel-tag">双模型一致性 100%</div>
+  </div>
+
+  <div class="module-2">
+    <div class="card shap-bar">
+      <div class="card-title"><span>全局特征重要性 — Mean |SHAP|</span><span class="meta">基于 XGBoost-SHAP</span></div>
+      <div id="shap-bar-chart" style="height:420px"></div>
+    </div>
+
+    <div class="card shap-waterfall">
+      <div class="card-title"><span>单样本预测分解 — 河南省 2022</span><span class="meta">SHAP Waterfall</span></div>
+      <div id="shap-waterfall-chart" style="height:420px"></div>
+    </div>
+
+    <div class="shap-row-2">
+      <div class="card shap-scatter">
+        <div class="card-title"><span>SHAP 蜂群分布</span><span class="meta">特征值 vs 影响方向</span></div>
+        <div id="shap-beeswarm" style="height:300px"></div>
+      </div>
+
+      <div class="card shap-interpretation">
+        <div class="card-title" style="padding:20px 20px 0">核心因子解释（自动生成）</div>
+        <div style="padding:14px 0">
+          <div class="interp-item">
+            <div class="interp-header">
+              <div class="interp-icon down">↓</div>
+              <div class="interp-name">灌溉率 (Irr)</div>
+              <div class="interp-dir protect">韧性因子</div>
+            </div>
+            <div class="interp-desc">高灌溉率显著负向拉动风险值，是抵御极端气候的核心人为调节手段。提升 10% 可降低风险 ≈ 0.0028。</div>
+          </div>
+          <div class="interp-item">
+            <div class="interp-header">
+              <div class="interp-icon up">↑</div>
+              <div class="interp-name">洪涝占比 (Flood_R)</div>
+              <div class="interp-dir harm">致灾因子</div>
+            </div>
+            <div class="interp-desc">强降水冲击直接推高单产风险，洪涝占比每上升 5%，风险增加 ≈ 0.0019，南方主产区敏感性显著高于北方。</div>
+          </div>
+          <div class="interp-item">
+            <div class="interp-header">
+              <div class="interp-icon down">↓</div>
+              <div class="interp-name">日照时数 (Sun)</div>
+              <div class="interp-dir protect">关键因子</div>
+            </div>
+            <div class="interp-desc">充足日照促进光合作用与作物生长，对单产风险呈负向影响，在西北旱作区作用尤为显著。</div>
+          </div>
+          <div class="interp-item">
+            <div class="interp-header">
+              <div class="interp-icon up">↑</div>
+              <div class="interp-name">平均气温 × 灌溉率 交互</div>
+              <div class="interp-dir harm">交互项</div>
+            </div>
+            <div class="interp-desc">检测到显著非线性交互：高温会部分抵消灌溉减损效果，单一提升灌溉率不足以应对气候变化，需结合温度调节综合施策。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODULE 3: 参数情景模拟 ============ -->
+<section class="panel" id="panel-3">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">参数情景模拟</div>
+      <div class="panel-desc">反事实预测引擎：调节关键风险因子，实时计算"如果……则……"情景下的粮食生产风险变化，支持政策预演与决策预判。</div>
+    </div>
+    <div class="panel-tag">实时推理 &lt; 200ms</div>
+  </div>
+
+  <div class="module-3">
+    <div class="card sim-controls">
+      <div class="province-select-wrapper">
+        <label>目标省份</label>
+        <select class="province-select" id="sim-province"></select>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-block">
+          <div class="slider-row"><span class="slider-name">灌溉率</span><span class="slider-value" id="sv-irr">56.7%</span></div>
+          <input type="range" min="20" max="120" step="0.5" value="56.7" class="param-slider" id="sl-irr">
+          <div class="slider-meta"><span>20%</span><span>低风险方向 →</span><span>120%</span></div>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-row"><span class="slider-name">洪涝占比</span><span class="slider-value" id="sv-flood">2.97%</span></div>
+          <input type="range" min="0" max="24" step="0.1" value="2.97" class="param-slider" id="sl-flood">
+          <div class="slider-meta"><span>0%</span><span>← 低风险方向</span><span>24%</span></div>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-row"><span class="slider-name">日照时数 (小时/年)</span><span class="slider-value" id="sv-sun">2086</span></div>
+          <input type="range" min="970" max="3350" step="10" value="2086" class="param-slider" id="sl-sun">
+          <div class="slider-meta"><span>970</span><span>低风险方向 →</span><span>3350</span></div>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-row"><span class="slider-name">平均气温 (°C)</span><span class="slider-value" id="sv-temp">14.0</span></div>
+          <input type="range" min="2" max="26" step="0.1" value="14" class="param-slider" id="sl-temp">
+          <div class="slider-meta"><span>2°C</span><span>← 低风险方向</span><span>26°C</span></div>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-row"><span class="slider-name">SPEI 干旱指数</span><span class="slider-value" id="sv-spei">-0.08</span></div>
+          <input type="range" min="-3" max="3" step="0.05" value="-0.08" class="param-slider" id="sl-spei">
+          <div class="slider-meta"><span>-3 干旱</span><span>0 平衡</span><span>+3 湿润</span></div>
+        </div>
+      </div>
+
+      <button class="btn-reset" id="btn-reset">重置参数为省份基线值</button>
+    </div>
+
+    <div class="sim-result">
+      <div class="gauge-row">
+        <div class="card">
+          <div class="card-title"><span>基线风险</span><span class="meta">历史均值</span></div>
+          <div id="gauge-base" class="gauge-container"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>模拟风险</span><span class="meta">实时推理</span></div>
+          <div id="gauge-sim" class="gauge-container"></div>
+        </div>
+      </div>
+
+      <div class="delta-box">
+        <div class="delta-label">风险变化 Δ</div>
+        <div class="delta-value improved" id="delta-value">−0.0000</div>
+        <div class="delta-percent" id="delta-percent">较基线风险变化 0.00%</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>因子贡献对比</span><span class="meta">SHAP 实时分解</span></div>
+        <div id="sim-comparison" class="comparison-chart"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODULE 4: 韧性路径推荐 ============ -->
+<section class="panel" id="panel-4">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title">韧性路径推荐</div>
+      <div class="panel-desc">基于核心因子识别结果与省域差异，自动生成短期—中期—长期三阶段差异化韧性提升路径，对接农业管理部门、农业保险机构与科研单位。</div>
+    </div>
+    <div class="panel-tag">31 省差异化方案</div>
+  </div>
+
+  <div class="module-4">
+    <div class="recommend-sidebar">
+      <div class="province-profile card">
+        <div class="profile-name" id="rec-province">河南省</div>
+        <div class="profile-type" id="rec-type">⚠ 洪涝主导型 · 主产区</div>
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.7" id="rec-summary">
+          黄河流域核心粮食主产区，灌溉基础较好但洪涝风险突出。近年极端降水频发，2021 年特大暴雨事件后单产风险显著抬升。
+        </div>
+
+        <div class="profile-stats">
+          <div class="profile-stat"><span class="num" id="rec-y">0.026</span><span class="lbl">风险指数</span></div>
+          <div class="profile-stat"><span class="num" id="rec-rank">12</span><span class="lbl">全国排名</span></div>
+          <div class="profile-stat"><span class="num" id="rec-irr">65.4%</span><span class="lbl">灌溉率</span></div>
+          <div class="profile-stat"><span class="num" id="rec-flood">4.2%</span><span class="lbl">洪涝占比</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">切换查看省份</div>
+        <select class="province-select" id="rec-select"></select>
+      </div>
+
+      <div class="card">
+        <div class="card-title">目标用户</div>
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.9">
+          <div>● 省/市农业农村厅</div>
+          <div>● 中国人寿财险等农险机构</div>
+          <div>● 农科院粮食产业研究机构</div>
+          <div>● 国家粮食和物资储备局</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-timeline" id="path-timeline">
+      <!-- 由 JS 动态填充 -->
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div>© 2026 山西农业大学信息科学与工程学院 · 极端气候下粮食生产风险智能分析项目组</div>
+  <div class="footer-tags">
+    <span class="tag">MULTIMODAL</span>
+    <span class="tag">XGBOOST-SHAP</span>
+    <span class="tag">ATTENTION-LSTM</span>
+    <span class="tag">VUE3-FLASK</span>
+  </div>
+</footer>
+
+<script>
+// ============ 模拟数据 ============
+// 31 省风险数据（基于真实气候分布模拟，符合论文 Table 3-2 区间 0.011 - 0.043）
+const PROVINCES = {
+  '北京': {y:0.018, irr:62.3, flood:1.8, sun:2540, temp:13.5, spei:-0.2, type:'城市型', summary:'城市化高度集中，粮食生产规模有限，灌溉基础完善，整体风险较低。'},
+  '天津': {y:0.020, irr:68.5, flood:2.4, sun:2480, temp:13.1, spei:-0.3, type:'盐碱治理型', summary:'滨海盐碱地改良成效显著，灌溉率较高但洪涝及内涝风险偶发。'},
+  '河北': {y:0.025, irr:71.2, flood:3.1, sun:2620, temp:12.5, spei:-0.5, type:'华北主产区', summary:'冬小麦+夏玉米核心产区，地下水超采严重，灌溉与水资源约束并存。'},
+  '山西': {y:0.028, irr:42.6, flood:2.5, sun:2480, temp:9.8, spei:-0.7, type:'旱作主导型', summary:'丘陵山地为主，灌溉率全国偏低，干旱与日照波动是主要致险因子。'},
+  '内蒙古': {y:0.032, irr:35.8, flood:1.6, sun:2900, temp:5.6, spei:-0.6, type:'旱作牧农区', summary:'草原与旱作并存，干旱与低温叠加风险，灌溉覆盖率严重不足。'},
+  '辽宁': {y:0.022, irr:48.2, flood:3.6, sun:2480, temp:8.9, spei:-0.1, type:'东北主产区', summary:'雨热同期，但灌溉率偏低，2020 年台风带来阶段性洪涝冲击。'},
+  '吉林': {y:0.024, irr:39.5, flood:2.8, sun:2380, temp:5.2, spei:0.0, type:'黄金玉米带', summary:'松辽平原核心玉米主产区，单产高但灌溉覆盖不足，极端低温敏感。'},
+  '黑龙江': {y:0.020, irr:42.1, flood:3.4, sun:2420, temp:3.5, spei:0.1, type:'国家粮仓', summary:'全国粮食产量首位，三江平原灌溉条件较好，气候变暖带来双面效应。'},
+  '上海': {y:0.019, irr:80.5, flood:5.2, sun:1960, temp:16.8, spei:0.3, type:'都市农业型', summary:'灌溉率全国最高，但城市内涝与高温热害风险显著。'},
+  '江苏': {y:0.024, irr:82.6, flood:4.8, sun:2080, temp:15.3, spei:0.2, type:'稻麦双优区', summary:'灌溉基础全国领先，但梅雨季洪涝、伏旱叠加压力增大。'},
+  '浙江': {y:0.026, irr:62.4, flood:6.5, sun:1920, temp:17.2, spei:0.5, type:'沿海洪涝型', summary:'台风+梅雨双重冲击，洪涝占比偏高，山地农业面临季节性干旱。'},
+  '安徽': {y:0.029, irr:65.8, flood:7.2, sun:2080, temp:15.8, spei:0.3, type:'淮河流域风险型', summary:'淮河流域洪涝高发，2020 年特大洪水致单产显著下滑。'},
+  '福建': {y:0.027, irr:55.3, flood:5.8, sun:1860, temp:19.6, spei:0.4, type:'山地多灾型', summary:'多山地形+台风频发，地质灾害与洪涝叠加，灌溉条件区域差异大。'},
+  '江西': {y:0.028, irr:58.6, flood:8.4, sun:1820, temp:17.8, spei:0.6, type:'鄱阳湖区洪涝型', summary:'鄱阳湖流域洪涝风险全国领先，丘陵区干旱并存。'},
+  '山东': {y:0.023, irr:78.5, flood:3.8, sun:2520, temp:13.4, spei:-0.3, type:'华北强韧型', summary:'灌溉基础+机械化双优，整体抗风险能力强，但部分地区盐碱与干旱并存。'},
+  '河南': {y:0.026, irr:65.4, flood:4.2, sun:2240, temp:14.2, spei:-0.2, type:'洪涝主导型 · 主产区', summary:'黄河流域核心粮食主产区，灌溉基础较好但洪涝风险突出。近年极端降水频发，2021 年特大暴雨事件后单产风险显著抬升。'},
+  '湖北': {y:0.028, irr:55.4, flood:6.8, sun:1960, temp:16.5, spei:0.4, type:'江汉平原洪涝型', summary:'江汉平原洪涝高发，长江中游冲积区灌溉与排涝压力并存。'},
+  '湖南': {y:0.030, irr:58.7, flood:7.5, sun:1680, temp:17.6, spei:0.5, type:'洞庭湖区高风险', summary:'洞庭湖流域洪涝+夏秋干旱叠加，丘陵山地灌溉覆盖不均。'},
+  '广东': {y:0.029, irr:62.8, flood:5.6, sun:1920, temp:22.4, spei:0.3, type:'台风高发区', summary:'年均台风影响 5-7 次，高温与洪涝双重压力，水稻早晚两季敏感。'},
+  '广西': {y:0.031, irr:48.2, flood:6.9, sun:1620, temp:20.8, spei:0.4, type:'石漠化+洪涝复合', summary:'喀斯特地貌灌溉困难，台风路径区，季节性洪旱交替剧烈。'},
+  '海南': {y:0.028, irr:45.6, flood:8.2, sun:2160, temp:24.5, spei:0.5, type:'热带气旋区', summary:'热带气旋路径核心区，洪涝+海盐侵害双重压力。'},
+  '重庆': {y:0.030, irr:43.5, flood:5.4, sun:1280, temp:18.2, spei:0.2, type:'山地伏旱型', summary:'山地丘陵为主，伏旱+秋汛交替，日照时数全国最低。'},
+  '四川': {y:0.027, irr:48.6, flood:4.8, sun:1380, temp:17.1, spei:0.3, type:'盆地复合型', summary:'四川盆地伏旱与川西高原冰雹并存，灌溉条件区域分化显著。'},
+  '贵州': {y:0.032, irr:38.4, flood:5.2, sun:1280, temp:15.8, spei:0.1, type:'西南旱涝交替', summary:'喀斯特地貌灌溉困难，季节性干旱与突发洪涝交替出现。'},
+  '云南': {y:0.030, irr:42.8, flood:3.8, sun:2280, temp:16.2, spei:-0.2, type:'高原立体气候', summary:'立体气候明显，干热河谷干旱突出，灌溉基础薄弱。'},
+  '西藏': {y:0.038, irr:38.2, flood:1.4, sun:3120, temp:5.8, spei:-0.4, type:'高原低温型', summary:'高寒高海拔气候，灌溉基础最弱，低温与日照波动是主要致险因子。'},
+  '陕西': {y:0.029, irr:48.6, flood:3.2, sun:2180, temp:11.8, spei:-0.4, type:'渭河流域型', summary:'渭河流域灌溉条件较好，但秦巴山区干旱与陕北旱作风险并存。'},
+  '甘肃': {y:0.035, irr:36.4, flood:1.8, sun:2680, temp:8.2, spei:-0.8, type:'西北旱作主导', summary:'河西走廊灌溉绿洲与陇东旱塬并存，整体灌溉率全国偏低。'},
+  '青海': {y:0.040, irr:42.5, flood:1.2, sun:2820, temp:3.5, spei:-0.5, type:'高原寒旱型', summary:'高寒缺氧+干旱缺水双重约束，粮食生产规模小但风险敏感性极高。'},
+  '宁夏': {y:0.033, irr:58.6, flood:1.4, sun:2820, temp:9.5, spei:-0.7, type:'引黄灌区型', summary:'引黄灌区灌溉条件较好，但黄河水量约束与南部山区干旱并存。'},
+  '新疆': {y:0.036, irr:65.4, flood:1.2, sun:2920, temp:11.2, spei:-1.2, type:'绿洲灌溉型', summary:'灌溉率较高但水资源约束趋紧，气候变暖加剧融雪洪水与冰川退化风险。'}
+};
+
+// SHAP 全局重要性（基于论文图 5-3）
+const SHAP_IMPORTANCE = [
+  {name:'灌溉率 Irr', value:0.420, dir:'protect'},
+  {name:'洪涝占比 Flood_R', value:0.385, dir:'harm'},
+  {name:'日照时数 Sun', value:0.312, dir:'protect'},
+  {name:'平均气温 Temp', value:0.225, dir:'harm'},
+  {name:'降水量 Prec', value:0.185, dir:'harm'},
+  {name:'干旱指数 SPEI', value:0.162, dir:'protect'},
+  {name:'农机总动力 Mech', value:0.124, dir:'protect'},
+  {name:'化肥施用量 Fert', value:0.092, dir:'harm'},
+  {name:'旱灾面积 Drou_A', value:0.075, dir:'harm'},
+  {name:'水灾面积 Flood_A', value:0.058, dir:'harm'},
+  {name:'NDVI 异常', value:0.034, dir:'protect'}
+];
+
+// ============ 通用主题 ============
+const THEME = {
+  text: '#E8E4D8',
+  textSec: '#A8B5AC',
+  textTer: '#6B7A72',
+  border: '#1F3A30',
+  green: '#74C69D',
+  greenBright: '#95D5B2',
+  greenDeep: '#2D6A4F',
+  red: '#E07856',
+  redDeep: '#B14A36',
+  amber: '#E6B655',
+  blue: '#6BA8B5'
+};
+
+// ============ 标签切换 ============
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    // 触发图表 resize
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+  });
+});
+
+// ============ 模块 1: 风险时空地图 ============
+const mapChart = echarts.init(document.getElementById('china-map'));
+
+// 加载中国地图 GeoJSON
+fetch('https://cdn.jsdelivr.net/gh/apache/echarts@4.6.0/map/json/china.json')
+  .then(r => r.json())
+  .then(geoJson => {
+    echarts.registerMap('china', geoJson);
+    renderMap();
+  })
+  .catch(err => {
+    console.error('地图加载失败', err);
+    document.getElementById('china-map').innerHTML = 
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7A72;font-size:13px">地图数据加载中，请检查网络或刷新页面…</div>';
+  });
+
+function renderMap() {
+  const year = parseInt(document.getElementById('year-slider').value);
+  const seed = year - 2010;
+  
+  // 模拟年度波动
+  const mapData = Object.keys(PROVINCES).map(name => {
+    const base = PROVINCES[name].y;
+    const noise = Math.sin(seed * 1.7 + name.charCodeAt(0)) * 0.004;
+    return {
+      name: name,
+      value: Math.max(0.011, Math.min(0.043, base + noise)),
+      _baseline: PROVINCES[name]
+    };
+  });
+
+  mapChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(20,40,34,0.95)',
+      borderColor: THEME.border,
+      borderWidth: 1,
+      textStyle: { color: THEME.text, fontSize: 12 },
+      formatter: p => {
+        if (!p.data) return p.name + '<br/>暂无数据';
+        const v = p.data.value.toFixed(4);
+        const b = p.data._baseline;
+        return `<b>${p.name}</b><br/>` +
+               `风险指数: <b style="color:${THEME.greenBright}">${v}</b><br/>` +
+               `灌溉率: ${b.irr}%<br/>` +
+               `洪涝占比: ${b.flood}%<br/>` +
+               `日照时数: ${b.sun}h`;
+      }
+    },
+    visualMap: {
+      left: 'left',
+      bottom: 20,
+      min: 0.011,
+      max: 0.043,
+      text: ['高', '低'],
+      textStyle: { color: THEME.textSec, fontSize: 11 },
+      inRange: { color: ['#74C69D', '#A8D5A8', '#E6B655', '#E07856', '#B14A36'] },
+      calculable: true,
+      itemHeight: 100,
+      itemWidth: 8
+    },
+    series: [{
+      type: 'map',
+      map: 'china',
+      roam: true,
+      zoom: 1.2,
+      label: {
+        show: true,
+        color: 'rgba(232,228,216,0.5)',
+        fontSize: 9
+      },
+      emphasis: {
+        label: { show: true, color: THEME.text, fontSize: 11, fontWeight: 600 },
+        itemStyle: { areaColor: THEME.greenBright, borderColor: THEME.green, borderWidth: 1.5 }
+      },
+      itemStyle: {
+        borderColor: 'rgba(31,58,48,0.8)',
+        borderWidth: 0.5
+      },
+      data: mapData
+    }]
+  });
+
+  // 渲染省份排名 TOP 10
+  const ranked = [...mapData].sort((a,b) => b.value - a.value).slice(0, 10);
+  const rankHtml = ranked.map((p, i) => {
+    const cls = p.value > 0.030 ? 'high' : p.value > 0.025 ? 'medium' : 'low';
+    return `<div class="rank-item" data-name="${p.name}">
+      <span class="rank-num">${(i+1).toString().padStart(2,'0')}</span>
+      <span class="rank-name">${p.name}</span>
+      <span class="rank-value ${cls}">${p.value.toFixed(4)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('rank-list').innerHTML = rankHtml;
+  document.getElementById('current-year-display').textContent = year + '年度';
+}
+
+// 地图 hover 联动明细
+mapChart.on('mouseover', p => {
+  if (!p.data) return;
+  const b = p.data._baseline;
+  document.getElementById('detail-province').textContent = p.name;
+  document.getElementById('d-y').textContent = p.data.value.toFixed(4);
+  document.getElementById('d-irr').textContent = b.irr + '%';
+  document.getElementById('d-flood').textContent = b.flood + '%';
+  document.getElementById('d-sun').textContent = b.sun + 'h';
+  document.getElementById('d-spei').textContent = b.spei.toFixed(2);
+});
+
+// 年份滑块
+document.getElementById('year-slider').addEventListener('input', e => {
+  document.getElementById('year-display').textContent = e.target.value;
+  if (mapChart.getOption && mapChart.getOption()) {
+    renderMap();
+  }
+});
+
+// ============ 模块 2: SHAP 归因看板 ============
+const shapBarChart = echarts.init(document.getElementById('shap-bar-chart'));
+shapBarChart.setOption({
+  backgroundColor: 'transparent',
+  grid: { left: 130, right: 50, top: 20, bottom: 30 },
+  xAxis: {
+    type: 'value',
+    name: 'Mean |SHAP value|',
+    nameTextStyle: { color: THEME.textTer, fontSize: 11 },
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textTer, fontFamily: 'JetBrains Mono' },
+    splitLine: { lineStyle: { color: THEME.border, type: 'dashed' } }
+  },
+  yAxis: {
+    type: 'category',
+    data: SHAP_IMPORTANCE.map(d => d.name).reverse(),
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textSec, fontSize: 12 },
+    axisTick: { show: false }
+  },
+  tooltip: {
+    backgroundColor: 'rgba(20,40,34,0.95)',
+    borderColor: THEME.border,
+    textStyle: { color: THEME.text, fontSize: 12 },
+    formatter: p => {
+      const d = SHAP_IMPORTANCE.slice().reverse()[p.dataIndex];
+      return `<b>${d.name}</b><br/>SHAP 重要性: ${d.value.toFixed(3)}<br/>方向: ${d.dir === 'protect' ? '韧性因子 ↓' : '致灾因子 ↑'}`;
+    }
+  },
+  series: [{
+    type: 'bar',
+    data: SHAP_IMPORTANCE.map(d => ({
+      value: d.value,
+      itemStyle: {
+        color: d.dir === 'protect'
+          ? { type: 'linear', x:0, y:0, x2:1, y2:0, colorStops:[{offset:0, color:'rgba(116,198,157,0.3)'}, {offset:1, color:'#74C69D'}] }
+          : { type: 'linear', x:0, y:0, x2:1, y2:0, colorStops:[{offset:0, color:'rgba(224,120,86,0.3)'}, {offset:1, color:'#E07856'}] }
+      }
+    })).reverse(),
+    barWidth: 14,
+    label: {
+      show: true,
+      position: 'right',
+      color: THEME.text,
+      fontSize: 11,
+      fontFamily: 'JetBrains Mono',
+      formatter: p => p.value.toFixed(3)
+    }
+  }]
+});
+
+// SHAP Waterfall (河南省 2022)
+const shapWaterfallChart = echarts.init(document.getElementById('shap-waterfall-chart'));
+const wfData = [
+  {name:'E[f(x)] 基线', value:0.0235, type:'base'},
+  {name:'+ 洪涝占比 4.2%', value:0.0028, type:'pos'},
+  {name:'+ 化肥施用量', value:0.0009, type:'pos'},
+  {name:'+ 平均气温 14.2°C', value:0.0015, type:'pos'},
+  {name:'- 灌溉率 65.4%', value:-0.0022, type:'neg'},
+  {name:'- 日照时数 2240h', value:-0.0011, type:'neg'},
+  {name:'- 农机总动力', value:-0.0005, type:'neg'},
+  {name:'f(x) 预测值', value:0.0249, type:'final'}
+];
+
+// 构建 waterfall 起始位置
+let cumulative = 0;
+const wfPlacement = wfData.map((d, i) => {
+  if (d.type === 'base') {
+    cumulative = d.value;
+    return [0, d.value];
+  }
+  if (d.type === 'final') {
+    return [0, cumulative];
+  }
+  const start = cumulative;
+  cumulative += d.value;
+  return [Math.min(start, cumulative), Math.abs(d.value)];
+});
+
+shapWaterfallChart.setOption({
+  backgroundColor: 'transparent',
+  grid: { left: 150, right: 50, top: 20, bottom: 30 },
+  xAxis: {
+    type: 'value',
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textTer, fontFamily: 'JetBrains Mono' },
+    splitLine: { lineStyle: { color: THEME.border, type: 'dashed' } }
+  },
+  yAxis: {
+    type: 'category',
+    data: wfData.map(d => d.name),
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textSec, fontSize: 11 },
+    axisTick: { show: false },
+    inverse: true
+  },
+  series: [
+    {
+      type: 'bar',
+      stack: 'wf',
+      data: wfPlacement.map(p => p[0]),
+      itemStyle: { color: 'transparent' }
+    },
+    {
+      type: 'bar',
+      stack: 'wf',
+      data: wfPlacement.map((p, i) => ({
+        value: p[1],
+        itemStyle: {
+          color: wfData[i].type === 'base' ? THEME.amber :
+                 wfData[i].type === 'final' ? THEME.blue :
+                 wfData[i].type === 'pos' ? THEME.red : THEME.green
+        }
+      })),
+      barWidth: 18,
+      label: {
+        show: true,
+        position: 'right',
+        color: THEME.text,
+        fontSize: 11,
+        fontFamily: 'JetBrains Mono',
+        formatter: p => {
+          const d = wfData[p.dataIndex];
+          if (d.type === 'base' || d.type === 'final') return d.value.toFixed(4);
+          return (d.value > 0 ? '+' : '') + d.value.toFixed(4);
+        }
+      }
+    }
+  ]
+});
+
+// SHAP Beeswarm (蜂群图模拟)
+const beeswarmChart = echarts.init(document.getElementById('shap-beeswarm'));
+const features = ['灌溉率', '洪涝占比', '日照时数', '平均气温', 'SPEI'];
+const beeswarmData = [];
+features.forEach((f, fi) => {
+  const isProtect = fi === 0 || fi === 2 || fi === 4;
+  for (let i = 0; i < 60; i++) {
+    const featureNorm = Math.random();
+    const shapVal = isProtect 
+      ? (featureNorm - 0.5) * -0.005 + (Math.random() - 0.5) * 0.001
+      : (featureNorm - 0.5) * 0.005 + (Math.random() - 0.5) * 0.001;
+    beeswarmData.push([shapVal, fi + (Math.random() - 0.5) * 0.3, featureNorm]);
+  }
+});
+
+beeswarmChart.setOption({
+  backgroundColor: 'transparent',
+  grid: { left: 100, right: 30, top: 10, bottom: 40 },
+  xAxis: {
+    type: 'value',
+    name: 'SHAP 值（← 减损 | 增灾 →）',
+    nameTextStyle: { color: THEME.textTer, fontSize: 11 },
+    nameLocation: 'middle',
+    nameGap: 28,
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textTer, fontFamily: 'JetBrains Mono' },
+    splitLine: { lineStyle: { color: THEME.border, type: 'dashed' } }
+  },
+  yAxis: {
+    type: 'category',
+    data: features,
+    axisLine: { lineStyle: { color: THEME.border } },
+    axisLabel: { color: THEME.textSec, fontSize: 11 },
+    axisTick: { show: false }
+  },
+  visualMap: {
+    min: 0, max: 1,
+    dimension: 2,
+    inRange: { color: ['#74C69D', '#E6B655', '#E07856'] },
+    show: false
+  },
+  series: [{
+    type: 'scatter',
+    data: beeswarmData,
+    symbolSize: 6,
+    itemStyle: { opacity: 0.7 }
+  }]
+});
+
+// ============ 模块 3: 参数情景模拟 ============
+const provinceList = Object.keys(PROVINCES);
+const provinceSelect = document.getElementById('sim-province');
+provinceList.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  if (p === '河南') opt.selected = true;
+  provinceSelect.appendChild(opt);
+});
+
+let baselineParams = {};
+
+function setBaselineFromProvince(name) {
+  const p = PROVINCES[name];
+  baselineParams = { irr: p.irr, flood: p.flood, sun: p.sun, temp: p.temp, spei: p.spei, baseY: p.y };
+  document.getElementById('sl-irr').value = p.irr;
+  document.getElementById('sl-flood').value = p.flood;
+  document.getElementById('sl-sun').value = p.sun;
+  document.getElementById('sl-temp').value = p.temp;
+  document.getElementById('sl-spei').value = p.spei;
+  updateSliderDisplays();
+  computeSimRisk();
+}
+
+function updateSliderDisplays() {
+  document.getElementById('sv-irr').textContent = (+document.getElementById('sl-irr').value).toFixed(1) + '%';
+  document.getElementById('sv-flood').textContent = (+document.getElementById('sl-flood').value).toFixed(2) + '%';
+  document.getElementById('sv-sun').textContent = Math.round(+document.getElementById('sl-sun').value);
+  document.getElementById('sv-temp').textContent = (+document.getElementById('sl-temp').value).toFixed(1);
+  document.getElementById('sv-spei').textContent = (+document.getElementById('sl-spei').value).toFixed(2);
+}
+
+// 简化的风险预测：基于 SHAP 贡献的线性近似
+function predictRisk(params) {
+  const baseline = 0.0235; // E[f(x)]
+  const irrEffect = -(params.irr - 56.7) * 0.000115;       // 灌溉率↑ 风险↓
+  const floodEffect = (params.flood - 2.97) * 0.000420;     // 洪涝↑ 风险↑
+  const sunEffect = -(params.sun - 2086) * 0.0000023;       // 日照↑ 风险↓
+  const tempEffect = (params.temp - 14.0) * 0.000180;       // 气温↑ 风险↑
+  const speiEffect = -(params.spei - (-0.08)) * 0.000310;   // SPEI↑(湿润) 风险↓
+  
+  return Math.max(0.005, Math.min(0.055, baseline + irrEffect + floodEffect + sunEffect + tempEffect + speiEffect));
+}
+
+const gaugeBase = echarts.init(document.getElementById('gauge-base'));
+const gaugeSim = echarts.init(document.getElementById('gauge-sim'));
+const simComparison = echarts.init(document.getElementById('sim-comparison'));
+
+function makeGaugeOption(value, color, label) {
+  return {
+    backgroundColor: 'transparent',
+    series: [{
+      type: 'gauge',
+      min: 0.005, max: 0.055,
+      splitNumber: 5,
+      radius: '90%',
+      axisLine: {
+        lineStyle: {
+          width: 14,
+          color: [
+            [0.3, '#74C69D'],
+            [0.55, '#E6B655'],
+            [0.8, '#E07856'],
+            [1, '#B14A36']
+          ]
+        }
+      },
+      pointer: { width: 5, length: '65%', itemStyle: { color: color } },
+      axisTick: { distance: -16, length: 5, lineStyle: { color: '#1F3A30' } },
+      splitLine: { distance: -18, length: 10, lineStyle: { color: '#2D5443' } },
+      axisLabel: { color: THEME.textTer, fontSize: 9, fontFamily: 'JetBrains Mono', distance: 10, formatter: v => v.toFixed(3) },
+      detail: {
+        valueAnimation: true,
+        offsetCenter: [0, '40%'],
+        fontSize: 22,
+        fontFamily: 'JetBrains Mono',
+        fontWeight: 700,
+        color: color,
+        formatter: v => v.toFixed(4)
+      },
+      title: { offsetCenter: [0, '70%'], fontSize: 11, color: THEME.textTer, fontFamily: 'Noto Sans SC' },
+      data: [{ value: value, name: label }]
+    }]
+  };
+}
+
+function computeSimRisk() {
+  const params = {
+    irr: +document.getElementById('sl-irr').value,
+    flood: +document.getElementById('sl-flood').value,
+    sun: +document.getElementById('sl-sun').value,
+    temp: +document.getElementById('sl-temp').value,
+    spei: +document.getElementById('sl-spei').value
+  };
+  
+  const baseRisk = baselineParams.baseY;
+  const simRisk = predictRisk(params);
+  const delta = simRisk - baseRisk;
+  const deltaPct = (delta / baseRisk) * 100;
+  
+  gaugeBase.setOption(makeGaugeOption(baseRisk, THEME.amber, '基线风险'));
+  gaugeSim.setOption(makeGaugeOption(simRisk, delta < 0 ? THEME.green : THEME.red, '模拟风险'));
+  
+  const deltaEl = document.getElementById('delta-value');
+  deltaEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(4);
+  deltaEl.className = 'delta-value ' + (delta < 0 ? 'improved' : 'worsened');
+  document.getElementById('delta-percent').textContent = 
+    `较基线风险${delta < 0 ? '降低' : '上升'} ${Math.abs(deltaPct).toFixed(2)}%`;
+  
+  // 因子贡献对比柱状图
+  const irrEffect = -(params.irr - 56.7) * 0.000115;
+  const floodEffect = (params.flood - 2.97) * 0.000420;
+  const sunEffect = -(params.sun - 2086) * 0.0000023;
+  const tempEffect = (params.temp - 14.0) * 0.000180;
+  const speiEffect = -(params.spei - (-0.08)) * 0.000310;
+  
+  simComparison.setOption({
+    backgroundColor: 'transparent',
+    grid: { left: 90, right: 40, top: 10, bottom: 30 },
+    xAxis: { type: 'value', axisLine: { lineStyle: { color: THEME.border } }, axisLabel: { color: THEME.textTer, fontFamily: 'JetBrains Mono' }, splitLine: { lineStyle: { color: THEME.border, type: 'dashed' } } },
+    yAxis: { type: 'category', data: ['SPEI 干旱', '平均气温', '日照时数', '洪涝占比', '灌溉率'], axisLine: { lineStyle: { color: THEME.border } }, axisLabel: { color: THEME.textSec }, axisTick: { show: false } },
+    series: [{
+      type: 'bar',
+      barWidth: 14,
+      data: [
+        { value: speiEffect, itemStyle: { color: speiEffect < 0 ? THEME.green : THEME.red } },
+        { value: tempEffect, itemStyle: { color: tempEffect < 0 ? THEME.green : THEME.red } },
+        { value: sunEffect, itemStyle: { color: sunEffect < 0 ? THEME.green : THEME.red } },
+        { value: floodEffect, itemStyle: { color: floodEffect < 0 ? THEME.green : THEME.red } },
+        { value: irrEffect, itemStyle: { color: irrEffect < 0 ? THEME.green : THEME.red } }
+      ],
+      label: { show: true, position: 'right', color: THEME.text, fontSize: 11, fontFamily: 'JetBrains Mono', formatter: p => (p.value >= 0 ? '+' : '') + p.value.toFixed(5) }
+    }]
+  });
+}
+
+// 绑定滑块事件
+['sl-irr', 'sl-flood', 'sl-sun', 'sl-temp', 'sl-spei'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    updateSliderDisplays();
+    computeSimRisk();
+  });
+});
+
+provinceSelect.addEventListener('change', e => setBaselineFromProvince(e.target.value));
+document.getElementById('btn-reset').addEventListener('click', () => setBaselineFromProvince(provinceSelect.value));
+
+// 初始化
+setBaselineFromProvince('河南');
+
+// ============ 模块 4: 韧性路径推荐 ============
+const recSelect = document.getElementById('rec-select');
+provinceList.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  if (p === '河南') opt.selected = true;
+  recSelect.appendChild(opt);
+});
+
+// 路径生成逻辑
+function generatePaths(provinceName) {
+  const p = PROVINCES[provinceName];
+  
+  // 根据省份特征生成定制化路径
+  const isFloodHeavy = p.flood > 5;
+  const isIrrLow = p.irr < 50;
+  const isHot = p.temp > 18;
+  const isDryLand = p.spei < -0.5;
+  const isCold = p.temp < 8;
+  
+  const short = []; // 短期 (0-1年)
+  const medium = []; // 中期 (1-3年)
+  const long = [];  // 长期 (3-5年)
+  
+  // 短期：监测预警与应急
+  if (isFloodHeavy) {
+    short.push({ k:'01', t:'<strong>建立县域洪涝监测预警网络</strong>：依托气象站点与遥感数据，构建未来 72 小时降水预警系统，重点覆盖' + provinceName + '主产乡镇。' });
+    short.push({ k:'02', t:'<strong>完善农业保险快速理赔机制</strong>：与农业保险机构联动，将洪涝灾害定损周期压缩至 7 天内。' });
+  } else if (isDryLand) {
+    short.push({ k:'01', t:'<strong>部署土壤墒情智能监测站</strong>：在主产县布设 200+ 套传感器，实时追踪干旱演化。' });
+    short.push({ k:'02', t:'<strong>推广抗旱品种与节水灌溉</strong>：在' + provinceName + '推广耐旱粮食品种与滴灌技术，覆盖 30% 耕地。' });
+  } else {
+    short.push({ k:'01', t:'<strong>建设区域风险监测平台</strong>：整合气象、遥感、统计数据，实现' + provinceName + '主产区风险动态识别。' });
+    short.push({ k:'02', t:'<strong>组建省级应急响应队伍</strong>：完善极端气候应对预案，建立专家咨询机制。' });
+  }
+  short.push({ k:'03', t:'<strong>启动农户气候适应性培训</strong>：覆盖' + provinceName + '主要粮食生产合作社，提升一线生产者风险感知能力。' });
+
+  // 中期：基础设施与品种结构
+  if (isIrrLow) {
+    medium.push({ k:'01', t:'<strong>实施高标准农田灌溉升级</strong>：将' + provinceName + '灌溉率从 ' + p.irr.toFixed(1) + '% 提升至 65%+，预计可降低单产风险约 15%。' });
+  } else {
+    medium.push({ k:'01', t:'<strong>巩固提升现有灌溉系统</strong>：' + provinceName + '灌溉基础已较完善，重点向智能灌溉与节水技术升级。' });
+  }
+  if (isFloodHeavy) {
+    medium.push({ k:'02', t:'<strong>系统性提升排涝防洪标准</strong>：将主产区排涝标准从 10 年一遇提升至 20 年一遇，建设生态调蓄区。' });
+  }
+  if (isHot || isDryLand) {
+    medium.push({ k:'02', t:'<strong>优化作物种植结构与品种</strong>：针对气候变暖趋势，引入耐热、抗旱品种，调整播期 7-15 天。' });
+  }
+  medium.push({ k:'03', t:'<strong>建设区域应急储备体系</strong>：在' + provinceName + '布设种子、化肥、农机的县级应急储备库，覆盖 80% 主产县。' });
+  medium.push({ k:'04', t:'<strong>推广精准农业技术</strong>：利用 MODIS 遥感与气象大数据，实现县域级精准施肥与变量灌溉。' });
+
+  // 长期：制度与产业升级
+  long.push({ k:'01', t:'<strong>构建气候智慧型农业体系</strong>：将' + provinceName + '建设为全国气候智慧型农业示范省/区，融合科技、保险、政策三维支持。' });
+  long.push({ k:'02', t:'<strong>建立粮食生产韧性指数体系</strong>：以本项目研究成果为基础，发布省域粮食韧性年度报告与政策建议。' });
+  long.push({ k:'03', t:'<strong>推动跨区域协同治理机制</strong>：与周边省份建立流域级气候风险共担机制，统筹水资源调配与灾损补偿。' });
+  if (isFloodHeavy) {
+    long.push({ k:'04', t:'<strong>实施流域生态修复工程</strong>：通过湿地恢复、河道治理等手段，从源头降低洪涝致灾强度。' });
+  }
+  if (isDryLand) {
+    long.push({ k:'04', t:'<strong>探索可持续水资源利用模式</strong>：发展旱作农业新模式，建立水权交易与节水激励机制。' });
+  }
+  
+  return { short, medium, long };
+}
+
+function renderRecommendation(name) {
+  const p = PROVINCES[name];
+  const rank = Object.entries(PROVINCES).sort((a,b) => b[1].y - a[1].y).findIndex(([k,v]) => k === name) + 1;
+  
+  document.getElementById('rec-province').textContent = name;
+  document.getElementById('rec-type').textContent = '⚠ ' + p.type;
+  document.getElementById('rec-summary').textContent = p.summary;
+  document.getElementById('rec-y').textContent = p.y.toFixed(3);
+  document.getElementById('rec-rank').textContent = rank;
+  document.getElementById('rec-irr').textContent = p.irr + '%';
+  document.getElementById('rec-flood').textContent = p.flood + '%';
+  
+  const paths = generatePaths(name);
+  const html = `
+    <div class="path-stage">
+      <div class="stage-header">
+        <span class="stage-title">▸ 短期应急（0 — 1 年）</span>
+        <span class="stage-period">监测 · 预警 · 培训</span>
+      </div>
+      <div class="stage-actions">
+        ${paths.short.map(a => `<div class="action-item"><div class="action-bullet">${a.k}</div><div class="action-text">${a.t}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="path-stage medium">
+      <div class="stage-header">
+        <span class="stage-title">▸ 中期建设（1 — 3 年）</span>
+        <span class="stage-period">基础设施 · 品种结构 · 技术推广</span>
+      </div>
+      <div class="stage-actions">
+        ${paths.medium.map(a => `<div class="action-item"><div class="action-bullet">${a.k}</div><div class="action-text">${a.t}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="path-stage long">
+      <div class="stage-header">
+        <span class="stage-title">▸ 长期战略（3 — 5 年）</span>
+        <span class="stage-period">制度建设 · 产业升级 · 协同治理</span>
+      </div>
+      <div class="stage-actions">
+        ${paths.long.map(a => `<div class="action-item"><div class="action-bullet">${a.k}</div><div class="action-text">${a.t}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('path-timeline').innerHTML = html;
+}
+
+recSelect.addEventListener('change', e => renderRecommendation(e.target.value));
+renderRecommendation('河南');
+
+// 响应式
+window.addEventListener('resize', () => {
+  mapChart.resize();
+  shapBarChart.resize();
+  shapWaterfallChart.resize();
+  beeswarmChart.resize();
+  gaugeBase.resize();
+  gaugeSim.resize();
+  simComparison.resize();
+});
+
+</script>
+</body>
+</html>
