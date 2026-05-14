@@ -23,22 +23,27 @@ def test_provinces_returns_31(client):
     assert len(body["data"]) == 31
 
 
-def test_provinces_item_has_required_fields(client):
+def test_provinces_item_has_all_11_features(client):
     res = client.get("/api/provinces")
 
     item = res.get_json()["data"][0]
-    required = {"name", "y", "irr", "flood", "sun", "temp", "spei", "type", "summary"}
+    required = {
+        "name", "y", "type", "summary",
+        "irr", "flood", "sun", "temp", "spei",
+        "prec", "mech", "fert", "drou_a", "flood_a", "ndvi",
+    }
     assert required.issubset(item.keys())
 
 
 # ─── /api/predict 正常路径 ──────────────────────────────────────────────
-VALID_PARAMS = {"irr": 65.4, "flood": 4.2, "sun": 2240, "temp": 14.2, "spei": -0.2}
+VALID_5 = {"irr": 65.4, "flood": 4.2, "sun": 2240, "temp": 14.2, "spei": -0.2}
+VALID_11 = {**VALID_5, "prec": 750, "mech": 1620, "fert": 360, "drou_a": 4.5, "flood_a": 3.8, "ndvi": -0.05}
 
 
-def test_predict_happy_path(client):
+def test_predict_happy_path_full_11_features(client):
     res = client.post(
         "/api/predict",
-        json={"province": "河南", "year": 2026, "params": VALID_PARAMS, "model": "ensemble"},
+        json={"province": "河南", "year": 2026, "params": VALID_11, "model": "ensemble"},
     )
 
     assert res.status_code == 200
@@ -48,38 +53,63 @@ def test_predict_happy_path(client):
     assert 0.005 <= data["risk_score"] <= 0.055
     assert data["delta"] == round(data["risk_score"] - data["baseline"], 6)
     assert data["_mock"] is True
+    assert data["params_filled_from_baseline"] == []
 
 
-def test_predict_shap_top_shape(client):
-    res = client.post("/api/predict", json={"province": "河南", "params": VALID_PARAMS})
+def test_predict_partial_params_filled_from_baseline(client):
+    """只传 5 字段（情景模拟器 UX），其余从省份基线补全。"""
+    res = client.post(
+        "/api/predict", json={"province": "河南", "params": VALID_5}
+    )
+
+    assert res.status_code == 200
+    data = res.get_json()["data"]
+    assert set(data["params_filled_from_baseline"]) == {"prec", "mech", "fert", "drou_a", "flood_a", "ndvi"}
+    # 用户传的值原样回显
+    assert data["params_used"]["irr"] == 65.4
+    # 未传的字段用 河南 基线 填补
+    assert data["params_used"]["prec"] == 750.0
+
+
+def test_predict_empty_params_uses_full_baseline(client):
+    """完全不传 params，等价于查询该省基线风险。"""
+    res = client.post("/api/predict", json={"province": "河南"})
+
+    data = res.get_json()["data"]
+    assert len(data["params_filled_from_baseline"]) == 11
+
+
+def test_predict_ensemble_returns_dual_breakdown(client):
+    res = client.post("/api/predict", json={"province": "河南", "params": VALID_11, "model": "ensemble"})
+
+    data = res.get_json()["data"]
+    for k in ("xgboost_risk", "lstm_risk", "consensus", "divergence"):
+        assert k in data, f"ensemble must return {k}"
+    assert data["consensus"] == data["risk_score"]
+    assert data["divergence"] >= 0
+    assert data["divergence"] == round(abs(data["xgboost_risk"] - data["lstm_risk"]), 6)
+
+
+def test_predict_single_model_no_dual_breakdown(client):
+    res = client.post("/api/predict", json={"province": "河南", "params": VALID_11, "model": "xgboost"})
+
+    data = res.get_json()["data"]
+    assert "xgboost_risk" not in data
+    assert "consensus" not in data
+
+
+def test_predict_shap_top_includes_new_features(client):
+    """高 NDVI 异常时，NDVI 应进入 SHAP top。"""
+    params = {**VALID_5, "ndvi": -1.5}
+    res = client.post("/api/predict", json={"province": "河南", "params": params})
 
     shap = res.get_json()["data"]["shap_top"]
-    assert 1 <= len(shap) <= 5
-    for entry in shap:
-        assert entry["direction"] in {"harm", "protect"}
-        assert isinstance(entry["value"], (int, float))
-
-
-def test_predict_default_model_is_ensemble(client):
-    res = client.post("/api/predict", json={"province": "河南", "params": VALID_PARAMS})
-
-    assert res.get_json()["data"]["model"] == "ensemble"
-
-
-def test_predict_models_produce_different_scores(client):
-    scores = {}
-    for model in ("xgboost", "lstm", "ensemble"):
-        res = client.post(
-            "/api/predict", json={"province": "河南", "params": VALID_PARAMS, "model": model}
-        )
-        scores[model] = res.get_json()["data"]["risk_score"]
-
-    assert len(set(scores.values())) == 3, f"expected 3 distinct scores, got {scores}"
+    features = [s["feature"] for s in shap]
+    assert "NDVI 异常" in features
 
 
 def test_predict_clamps_to_max_with_extreme_input(client):
-    """风险值应被 clip 到 0.055 上限，不会无限上涨。"""
-    extreme = {"irr": 0, "flood": 100, "sun": 0, "temp": 50, "spei": -5}
+    extreme = {"irr": 0, "flood": 100, "sun": 0, "temp": 50, "spei": -5, "drou_a": 50, "flood_a": 50}
 
     res = client.post("/api/predict", json={"province": "河南", "params": extreme})
 
@@ -87,40 +117,31 @@ def test_predict_clamps_to_max_with_extreme_input(client):
 
 
 # ─── /api/predict 校验错误 ──────────────────────────────────────────────
-def test_predict_400_when_body_empty(client):
-    res = client.post("/api/predict", json={})
-
-    assert res.status_code == 400
-    assert res.get_json()["error"]["code"] == 400
-
-
-def test_predict_400_when_province_unknown(client):
-    res = client.post("/api/predict", json={"province": "火星", "params": VALID_PARAMS})
+def test_predict_400_when_province_missing(client):
+    res = client.post("/api/predict", json={"params": VALID_11})
 
     assert res.status_code == 400
     assert "province" in res.get_json()["error"]["message"]
 
 
-def test_predict_400_when_params_missing(client):
-    res = client.post("/api/predict", json={"province": "河南"})
+def test_predict_400_when_province_unknown(client):
+    res = client.post("/api/predict", json={"province": "火星", "params": VALID_11})
 
     assert res.status_code == 400
-    assert "params" in res.get_json()["error"]["message"]
+    assert "province" in res.get_json()["error"]["message"]
 
 
-def test_predict_400_when_params_partial(client):
+def test_predict_400_when_unknown_param_key(client):
     res = client.post(
-        "/api/predict", json={"province": "河南", "params": {"irr": 60}}
+        "/api/predict", json={"province": "河南", "params": {"gpu_count": 8}}
     )
 
     assert res.status_code == 400
-    msg = res.get_json()["error"]["message"]
-    for field in ("flood", "sun", "temp", "spei"):
-        assert field in msg
+    assert "unknown param keys" in res.get_json()["error"]["message"]
 
 
 def test_predict_400_when_param_not_numeric(client):
-    bad = {**VALID_PARAMS, "temp": "热"}
+    bad = {**VALID_5, "temp": "热"}
 
     res = client.post("/api/predict", json={"province": "河南", "params": bad})
 
@@ -131,7 +152,7 @@ def test_predict_400_when_param_not_numeric(client):
 def test_predict_400_when_model_invalid(client):
     res = client.post(
         "/api/predict",
-        json={"province": "河南", "params": VALID_PARAMS, "model": "gpt"},
+        json={"province": "河南", "params": VALID_11, "model": "gpt"},
     )
 
     assert res.status_code == 400

@@ -52,6 +52,22 @@ pip install -r requirements.txt
 
 统一响应壳：`{"success": bool, "data": ..., "error": null | {"code", "message"}}`
 
+### 11 个核心特征字段
+
+| 字段 | 单位 | 训练列名 | 方向 | 说明 |
+|---|---|---|---|---|
+| `irr`     | %        | `Irr`     | 韧性 | 灌溉率 |
+| `flood`   | %        | `Flood_R` | 致灾 | 洪涝占比 |
+| `sun`     | 小时/年   | `Sun`     | 韧性 | 日照时数 |
+| `temp`    | °C        | `Temp`    | 致灾 | 平均气温 |
+| `spei`    | —         | `SPEI`    | 韧性 | SPEI 干旱指数 |
+| `prec`    | mm/年     | `Prec`    | 致灾 | 降水量 |
+| `mech`    | 万 kW     | `Mech`    | 韧性 | 农机总动力 |
+| `fert`    | 万吨      | `Fert`    | 致灾 | 化肥施用量 |
+| `drou_a`  | %         | `Drou_A`  | 致灾 | 旱灾面积比例 |
+| `flood_a` | %         | `Flood_A` | 致灾 | 水灾面积比例 |
+| `ndvi`    | z-score   | （UI 新增） | 韧性 | NDVI 异常 |
+
 ### `POST /api/predict` 契约
 
 **请求体**：
@@ -61,17 +77,20 @@ pip install -r requirements.txt
   "province": "河南",
   "year": 2026,
   "params": {
-    "irr":   65.4,   // 灌溉率 %
-    "flood":  4.2,   // 洪涝占比 %
-    "sun":  2240,    // 日照时数 h
-    "temp":  14.2,   // 平均气温 °C
-    "spei":  -0.2    // SPEI 干旱指数
+    "irr":   65.4,    "flood":   4.2, "sun":  2240,
+    "temp":  14.2,    "spei":   -0.2, "prec":  750,
+    "mech": 1620,     "fert":    360, "drou_a": 4.5,
+    "flood_a": 3.8,   "ndvi":  -0.05
   },
-  "model": "ensemble"  // "xgboost" | "lstm" | "ensemble"，可选，默认 ensemble
+  "model": "ensemble"
 }
 ```
 
-**响应体（成功）**：
+- `params` **任意字段可省略**：缺失项自动用 `province` 的基线值补全。
+- 5 字段调用（情景模拟器场景，只拖 5 个滑块）仍兼容。
+- `model` 默认 `ensemble`；可选 `xgboost` | `lstm`。
+
+**响应体（`model=ensemble`）**：
 
 ```json
 {
@@ -81,24 +100,35 @@ pip install -r requirements.txt
     "year": 2026,
     "model": "ensemble",
     "risk_score": 0.024696,
-    "baseline": 0.026,
-    "delta": -0.001304,
-    "confidence": 0.78,
+    "xgboost_risk": 0.024316,
+    "lstm_risk":    0.025076,
+    "consensus":    0.024696,
+    "divergence":   0.000760,
+    "baseline":     0.026,
+    "delta":       -0.001304,
+    "confidence":   0.78,
     "shap_top": [
-      {"feature": "洪涝占比", "value": 0.002113, "direction": "harm"},
+      {"feature": "洪涝占比", "value":  0.002113, "direction": "harm"},
       {"feature": "灌溉率",   "value": -0.001001, "direction": "protect"}
     ],
     "recommendations": [
-      {"action": "...", "factor": "洪涝占比", "expected_delta": -0.002113, "priority": "high"}
+      {"action": "提升排涝标准至 20 年一遇 + 建设生态调蓄区",
+       "factor": "洪涝占比", "expected_delta": -0.002113, "priority": "high"}
     ],
+    "params_used": { "irr": 65.4, "flood": 4.2, /* ... 11 字段 */ },
+    "params_filled_from_baseline": ["prec", "mech", "fert", "drou_a", "flood_a", "ndvi"],
     "_mock": true
   },
   "error": null
 }
 ```
 
-**错误（HTTP 400）**：`province` 未知 / `params` 缺字段 / 字段非数值 / `model` 不在白名单。
-`_mock: true` 字段会在 M2 节点接入真模型后移除。
+- `model=xgboost` / `lstm` 时只返回单一 `risk_score`，不含 `xgboost_risk / lstm_risk / consensus / divergence`。
+- `params_filled_from_baseline` 告知前端哪些字段是用基线值补的，方便 UI 提示用户。
+- `shap_top` 默认前 5（按 |SHAP| 绝对值降序）。
+- `_mock: true` 会在 M2 接入真模型后移除。
+
+**错误（HTTP 400）**：`province` 未知或缺失 / `params` 含未知键 / 字段非数值 / `model` 不在白名单。
 
 ## 测试
 
