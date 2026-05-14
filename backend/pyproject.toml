@@ -1,0 +1,8 @@
+# 项目暂未发布为包，pyproject.toml 仅承载 pytest 配置。
+# 在 backend/ 下执行 `pytest` 即可发现并运行 tests/。
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers"

@@ -1,0 +1,7 @@
+# 仅开发/CI 使用，不进入生产镜像。
+# 安装：uv pip install --python .venv/bin/python -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest~=9.0.0
+pytest-cov~=7.1.0

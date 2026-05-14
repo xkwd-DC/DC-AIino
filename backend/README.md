@@ -100,6 +100,18 @@ pip install -r requirements.txt
 **错误（HTTP 400）**：`province` 未知 / `params` 缺字段 / 字段非数值 / `model` 不在白名单。
 `_mock: true` 字段会在 M2 节点接入真模型后移除。
 
+## 测试
+
+```bash
+# 装开发依赖（仅一次）
+uv pip install --python .venv/bin/python -r requirements-dev.txt
+
+# 跑全部测试 + 覆盖率
+.venv/bin/pytest -v --cov=. --cov-report=term-missing
+```
+
+当前 15 个测试，覆盖率 99%（唯一未覆盖：`app.run()` 入口块，按设计不走测试）。
+
 ## 配置
 
 复制 `.env.example` 为 `.env`：
