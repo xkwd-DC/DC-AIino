@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code 指挥手册 · 潘妙齐</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0A1612;
+  --bg-2: #0F1F1A;
+  --bg-card: #142822;
+  --bg-elev: #1A332B;
+  --border: #1F3A30;
+  --border-strong: #2D5443;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #74C69D;
+  --green-bright: #95D5B2;
+  --green-deep: #2D6A4F;
+  --red: #E07856;
+  --red-deep: #B14A36;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.75;
+  background-image:
+    radial-gradient(circle at 20% 5%, rgba(107, 168, 181, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 95%, rgba(116, 198, 157, 0.03) 0%, transparent 40%);
+}
+
+/* ============ Header ============ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 22, 18, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--green-deep), var(--blue));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--bg);
+}
+
+.brand-text h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.role-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(107, 168, 181, 0.08);
+  border: 1px solid rgba(107, 168, 181, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--blue);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.8px;
+}
+
+.role-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--blue);
+  border-radius: 50%;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: var(--bg-card);
+  color: var(--green);
+  border-color: var(--green-deep);
+}
+
+/* ============ Layout ============ */
+.layout {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 56px;
+  padding: 32px;
+}
+
+/* ============ Sidebar ============ */
+.sidebar {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.sidebar-title {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toc {
+  list-style: none;
+  font-size: 12.5px;
+}
+
+.toc-item {
+  margin-bottom: 2px;
+}
+
+.toc-item a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  color: var(--text-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+  border-radius: 0 4px 4px 0;
+}
+
+.toc-item a:hover {
+  color: var(--text);
+  background: var(--bg-card);
+  border-left-color: var(--blue);
+}
+
+.toc-item a.active {
+  color: var(--green-bright);
+  background: var(--bg-card);
+  border-left-color: var(--green);
+  font-weight: 500;
+}
+
+.toc-phase {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.toc-item a.active .toc-phase {
+  color: var(--green);
+  background: rgba(116, 198, 157, 0.1);
+}
+
+/* ============ Main ============ */
+.main {
+  min-width: 0;
+  max-width: 880px;
+}
+
+/* ============ Hero ============ */
+.hero {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-2));
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 40px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(107, 168, 181, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero::after {
+  content: '$';
+  position: absolute;
+  bottom: -20px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 200px;
+  color: rgba(255, 255, 255, 0.015);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hero h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.hero-sub {
+  color: var(--text-2);
+  font-size: 14px;
+  margin-bottom: 28px;
+  max-width: 620px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-stat {
+  padding: 14px 16px;
+  background: rgba(20, 40, 34, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.hero-stat .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hero-stat .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--green-bright);
+}
+
+/* ============ Manifesto Card ============ */
+.manifesto {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0 40px;
+}
+
+.manifesto-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  text-align: center;
+  border-top: 3px solid var(--green-deep);
+}
+
+.manifesto-card.amber { border-top-color: var(--amber); }
+.manifesto-card.red { border-top-color: var(--red); }
+
+.manifesto-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.manifesto-card.amber .manifesto-num { color: var(--amber); }
+.manifesto-card.red .manifesto-num { color: var(--red); }
+
+.manifesto-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.manifesto-desc {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* ============ Sections ============ */
+.section {
+  margin-bottom: 56px;
+  scroll-margin-top: 100px;
+}
+
+.section-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-header-left {
+  flex: 1;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+
+.section h2 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+
+.section h3 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 30px 0 12px;
+  letter-spacing: 0.3px;
+  scroll-margin-top: 100px;
+}
+
+.section h4 {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  color: var(--text);
+}
+
+.section p {
+  margin-bottom: 12px;
+  color: var(--text-2);
+}
+
+.section p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.section ul, .section ol {
+  margin-bottom: 14px;
+  padding-left: 24px;
+  color: var(--text-2);
+}
+
+.section li {
+  margin-bottom: 5px;
+}
+
+.section li::marker {
+  color: var(--text-3);
+}
+
+/* ============ Phase Badge ============ */
+.phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: rgba(107, 168, 181, 0.1);
+  border: 1px solid rgba(107, 168, 181, 0.25);
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 1px;
+}
+
+.phase-badge.active {
+  background: rgba(116, 198, 157, 0.12);
+  border-color: rgba(116, 198, 157, 0.3);
+  color: var(--green);
+}
+
+/* ============ Callouts ============ */
+.callout {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 13.5px;
+}
+
+.callout-info { border-left-color: var(--blue); }
+.callout-warn { border-left-color: var(--amber); }
+.callout-danger { border-left-color: var(--red); }
+
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callout-info .callout-title { color: var(--blue); }
+.callout-warn .callout-title { color: var(--amber); }
+.callout-danger .callout-title { color: var(--red); }
+.callout .callout-title { color: var(--green); }
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout code {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: var(--border-strong);
+}
+
+/* ============ Code Blocks ============ */
+.code-block {
+  position: relative;
+  margin: 16px 0;
+  background: #060F0C;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+
+.code-lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-lang::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--blue);
+  border-radius: 50%;
+}
+
+.code-lang.bash::before { background: var(--green); }
+.code-lang.python::before { background: var(--amber); }
+.code-lang.prompt::before { background: var(--purple); }
+
+.copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: var(--bg-card);
+  color: var(--green);
+  border-color: var(--green-deep);
+}
+
+.copy-btn.copied {
+  color: var(--green-bright);
+  border-color: var(--green);
+  background: rgba(116, 198, 157, 0.08);
+}
+
+pre {
+  padding: 14px 18px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--green-bright);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* ============ Prompt Card ============ */
+.prompt-card {
+  background: linear-gradient(135deg, rgba(180, 157, 216, 0.04), rgba(107, 168, 181, 0.04));
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.prompt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.prompt-card-title {
+  font-size: 13px;
+  color: var(--purple);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Noto Serif SC', serif;
+  letter-spacing: 0.3px;
+}
+
+.prompt-card-title::before {
+  content: '⌘';
+  font-family: 'JetBrains Mono', monospace;
+  width: 22px;
+  height: 22px;
+  background: rgba(180, 157, 216, 0.12);
+  color: var(--purple);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.prompt-card pre {
+  background: #060F0C;
+  margin: 0;
+  border-radius: 0;
+  padding: 16px 20px;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ============ Tables ============ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--bg-2);
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+td code {
+  font-size: 0.95em;
+}
+
+tr:last-child td { border-bottom: 0; }
+
+tr:hover td { background: var(--bg-elev); }
+
+/* ============ Checklist ============ */
+.checklist {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 22px;
+  margin: 18px 0;
+  list-style: none !important;
+  padding-left: 22px;
+}
+
+.checklist-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checklist-title::before {
+  content: '✓';
+  width: 20px;
+  height: 20px;
+  background: rgba(116, 198, 157, 0.15);
+  color: var(--green);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.checklist li {
+  padding: 6px 0 6px 26px;
+  position: relative;
+  color: var(--text-2);
+  font-size: 13px;
+  list-style: none;
+}
+
+.checklist li::before {
+  content: '☐';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.checklist li code {
+  font-size: 0.9em;
+}
+
+/* ============ Phase Section ============ */
+.phase-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px;
+  margin: 28px 0;
+  position: relative;
+}
+
+.phase-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+  border-radius: 8px 8px 0 0;
+}
+
+.phase-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phase-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg-2);
+  color: var(--blue);
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+  letter-spacing: 1px;
+}
+
+.phase-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.phase-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+
+.phase-meta-item strong {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.phase-meta-item .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+/* ============ Misc ============ */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+  margin: 40px 0;
+}
+
+a { color: var(--green-bright); text-decoration: none; }
+a:hover { color: var(--green); text-decoration: underline; }
+
+blockquote {
+  border-left: 3px solid var(--blue);
+  padding: 8px 16px;
+  margin: 14px 0;
+  color: var(--text-2);
+  background: var(--bg-card);
+  font-size: 13.5px;
+}
+
+blockquote p { margin: 0; }
+
+/* ============ Scrollbar ============ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green-deep); }
+
+/* ============ Mobile ============ */
+@media (max-width: 1024px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  .sidebar { display: none; }
+  .hero-grid { grid-template-columns: repeat(2, 1fr); }
+  .manifesto { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 24px; }
+}
+
+/* ============ Footer ============ */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">{/}</div>
+      <div class="brand-text">
+        <h1>Claude Code 指挥手册</h1>
+        <div class="sub">GRAIN-RISK · ENGINEERING PLAYBOOK · v1.0</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a class="btn-outline" href="#part-2">▸ 开始 Phase 1</a>
+      <div class="role-badge">潘妙齐 · 队长 / 后端架构</div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ Sidebar TOC ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-title">目录导航</div>
+    <ul class="toc">
+      <li class="toc-item"><a href="#part-0" class="active"><span class="toc-phase">P0</span>核心理念</a></li>
+      <li class="toc-item"><a href="#part-1"><span class="toc-phase">P1</span>准备工作</a></li>
+      <li class="toc-item"><a href="#part-2"><span class="toc-phase">P2</span>工程骨架</a></li>
+      <li class="toc-item"><a href="#part-3"><span class="toc-phase">P3</span>模型集成</a></li>
+      <li class="toc-item"><a href="#part-4"><span class="toc-phase">P4</span>前端模块开发</a></li>
+      <li class="toc-item"><a href="#part-5"><span class="toc-phase">P5</span>数据库持久化</a></li>
+      <li class="toc-item"><a href="#part-6"><span class="toc-phase">P6</span>部署上线</a></li>
+      <li class="toc-item"><a href="#part-7"><span class="toc-phase">P7</span>监控与日志</a></li>
+      <li class="toc-item"><a href="#part-8"><span class="toc-phase">P8</span>答辩准备</a></li>
+      <li class="toc-item"><a href="#part-9"><span class="toc-phase">●</span>团队对接</a></li>
+      <li class="toc-item"><a href="#part-10"><span class="toc-phase">●</span>使用技巧</a></li>
+      <li class="toc-item"><a href="#part-11"><span class="toc-phase">●</span>故障排查</a></li>
+      <li class="toc-item"><a href="#part-12"><span class="toc-phase">●</span>时间表</a></li>
+    </ul>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">ENGINEERING PLAYBOOK · BACKEND + DEPLOY</div>
+      <h1>从 0 到上线，3 周交付一个完整系统</h1>
+      <p class="hero-sub">基于多模态的极端气候下我国粮食生产风险核心因子识别与韧性提升可视化系统。Claude Code 是你的实习生，你是指挥官。</p>
+      <div class="hero-grid">
+        <div class="hero-stat"><div class="label">总周期</div><div class="value">3 周</div></div>
+        <div class="hero-stat"><div class="label">阶段</div><div class="value">8 phases</div></div>
+        <div class="hero-stat"><div class="label">技术栈</div><div class="value">Flask+Vue</div></div>
+        <div class="hero-stat"><div class="label">部署</div><div class="value">GCS+HTTPS</div></div>
+      </div>
+    </div>
+
+    <!-- Manifesto -->
+    <div class="manifesto">
+      <div class="manifesto-card">
+        <div class="manifesto-num">01</div>
+        <div class="manifesto-title">YAGNI</div>
+        <div class="manifesto-desc">能简单就别复杂。能不加就别加。Demo 阶段拒绝过度工程。</div>
+      </div>
+      <div class="manifesto-card amber">
+        <div class="manifesto-num">02</div>
+        <div class="manifesto-title">可回滚</div>
+        <div class="manifesto-desc">任何动作都要能撤销。所有 Claude Code 改动都在分支上做。</div>
+      </div>
+      <div class="manifesto-card red">
+        <div class="manifesto-num">03</div>
+        <div class="manifesto-title">早上线</div>
+        <div class="manifesto-desc">宁可丑也要先有公网 URL，再迭代美化。第 14 天必须上线。</div>
+      </div>
+    </div>
+
+    <!-- ============ PART 0 ============ -->
+    <section class="section" id="part-0">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 00</div>
+          <h2>核心理念</h2>
+        </div>
+      </div>
+
+      <h3>Claude Code 不是 IDE，是"会编程的实习生"</h3>
+      <p>你的角色变了——以前你是写代码的，现在你是<strong>指挥别人写代码的</strong>。这意味着：</p>
+      <ul>
+        <li>✓ <strong>你的核心技能</strong>变成"会拆任务、会写需求、会审代码、会兜底"</li>
+        <li>✓ <strong>不要事事都让 AI 写</strong>，你心里要有总体架构图</li>
+        <li>✓ <strong>每个 prompt 之前</strong>问自己：我清楚我要它做什么吗？</li>
+        <li>✗ <strong>不要让它一次性建全站</strong>，分阶段、分模块、可验证</li>
+      </ul>
+
+      <h3>一条铁律：每个改动必须可回滚</h3>
+      <p>Claude Code 偶尔会做出灾难性改动（删错文件、改坏依赖）。所以：</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · 分支管理铁律</div>
+          <button class="copy-btn" data-target="code-0">复制</button>
+        </div>
+        <pre id="code-0"># 每个阶段开始前
+git checkout -b feature/phase-X
+git add -A && git commit -m "checkpoint before phase X"
+
+# 阶段结束确认 OK
+git checkout main
+git merge feature/phase-X
+
+# 改坏了就丢
+git checkout main
+git branch -D feature/phase-X</pre>
+      </div>
+
+      <div class="callout callout-danger">
+        <div class="callout-title">⚠ 不容妥协</div>
+        所有 Claude Code 的改动都在分支上做，主分支只接受验证过的代码。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 1 ============ -->
+    <section class="section" id="part-1">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 01</div>
+          <h2>准备工作（半天）</h2>
+        </div>
+        <span class="phase-badge active">PHASE 0</span>
+      </div>
+
+      <h3>1.1 Claude Code 安装</h3>
+      <p>在你的开发机器（不是服务器）上：</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · 本地安装</div>
+          <button class="copy-btn" data-target="code-1a">复制</button>
+        </div>
+        <pre id="code-1a"># 需要 Node.js 18+
+node --version
+
+# 安装 Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# 验证
+claude --version
+
+# 登录
+claude
+# 跟着提示完成 OAuth 登录</pre>
+      </div>
+
+      <h3>1.2 Google Cloud Server 准备</h3>
+      <p><strong>推荐配置</strong>（足够 demo 阶段使用）：</p>
+
+      <table>
+        <thead><tr><th>项</th><th>推荐</th></tr></thead>
+        <tbody>
+          <tr><td>实例</td><td><code>e2-medium</code> (2vCPU, 4GB RAM)</td></tr>
+          <tr><td>操作系统</td><td>Ubuntu 22.04 LTS</td></tr>
+          <tr><td>区域</td><td>asia-east1（台湾，国内访问较快）</td></tr>
+          <tr><td>磁盘</td><td>30GB SSD</td></tr>
+          <tr><td>防火墙</td><td>开放 22 (SSH)、80 (HTTP)、443 (HTTPS)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · 服务器初始化</div>
+          <button class="copy-btn" data-target="code-1b">复制</button>
+        </div>
+        <pre id="code-1b"># 在服务器上跑
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3.10 python3.10-venv python3-pip \
+  nodejs npm nginx git build-essential
+
+# 升级 Node 到 20.x
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 安装 PM2（进程管理）
+sudo npm install -g pm2</pre>
+      </div>
+
+      <h3>1.3 服务器上也装 Claude Code</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · 服务器端安装</div>
+          <button class="copy-btn" data-target="code-1c">复制</button>
+        </div>
+        <pre id="code-1c">sudo npm install -g @anthropic-ai/claude-code
+claude  # 登录</pre>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 为什么服务器也要装？</div>
+        后期部署、改配置、查日志，直接在服务器上让 Claude Code 操作比 SSH 来回敲快多了。
+      </div>
+
+      <h3>1.4 仓库初始化</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · Git 仓库初始化</div>
+          <button class="copy-btn" data-target="code-1d">复制</button>
+        </div>
+        <pre id="code-1d">mkdir grain-risk-system && cd grain-risk-system
+git init
+echo "# 极端气候下粮食生产风险智能分析系统" > README.md
+echo "node_modules/" >> .gitignore
+echo "venv/" >> .gitignore
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo ".env" >> .gitignore
+echo "*.log" >> .gitignore
+git add -A && git commit -m "initial commit"
+
+# 在 GitHub 建私有仓库 grain-risk-system，然后：
+git remote add origin git@github.com:你的用户名/grain-risk-system.git
+git push -u origin main</pre>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 2 ============ -->
+    <section class="section" id="part-2">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 02</div>
+          <h2>阶段 1 — 工程骨架（Day 1）</h2>
+        </div>
+        <span class="phase-badge">PHASE 1 · 1d</span>
+      </div>
+
+      <div class="phase-section">
+        <div class="phase-title"><span class="phase-num">GOAL</span>阶段目标</div>
+        <ul>
+          <li>建立完整的项目目录结构</li>
+          <li>后端 Flask + 健康检查 API 能跑通</li>
+          <li>前端 Vue 工程能 <code>npm run dev</code></li>
+          <li>前后端联调（最简单的 hello world）</li>
+        </ul>
+      </div>
+
+      <h3>Prompt 1.1：让 Claude Code 看现场</h3>
+      <p>在仓库根目录下执行 <code>claude</code>，然后输入：</p>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 项目现状评估</div>
+          <button class="copy-btn" data-target="p1-1">复制</button>
+        </div>
+        <pre id="p1-1">我在做一个粮食生产风险智能分析 Web 系统的项目，技术栈：
+- 后端：Python 3.10 + Flask + Gunicorn
+- 前端：Vue 3 + Vite + TypeScript + ECharts 5 + Pinia + Leaflet
+- 模型：XGBoost + Keras LSTM + SHAP
+- 数据库：SQLite（开发）→ PostgreSQL（生产）
+- 部署：Google Cloud Server, Ubuntu 22.04
+
+请先做两件事：
+1. 用 ls 看一下当前目录有什么
+2. 告诉我你打算怎么帮我搭建这个项目，给我一个总体计划
+
+不要马上动手写代码，等我确认计划。</pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠ 审计它的计划</div>
+        <ul style="margin:6px 0">
+          <li>✓ 是否包含前后端目录分离？</li>
+          <li>✓ 是否有合理的子模块拆分（api/services/models/utils）？</li>
+          <li>✓ 是否考虑了配置管理（.env、config.py）？</li>
+          <li>✗ 是否过度设计（一上来就建 microservices、k8s）？</li>
+        </ul>
+        如果过度设计，回复"简化掉 XX，我们是 demo 阶段，YAGNI 原则"。
+      </div>
+
+      <h3>Prompt 1.2：建后端骨架</h3>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 后端骨架</div>
+          <button class="copy-btn" data-target="p1-2">复制</button>
+        </div>
+        <pre id="p1-2">开始搭建后端。目标目录结构：
+
+backend/
+├── app.py                # Flask 入口
+├── config.py             # 配置管理
+├── api/                  # 路由层
+│   ├── __init__.py
+│   └── health.py         # 健康检查
+├── services/             # 业务逻辑层
+│   └── __init__.py
+├── models/               # 训练好的模型文件存放
+│   └── README.md
+├── data/                 # 数据集
+│   └── README.md
+├── utils/                # 工具函数
+│   └── __init__.py
+├── tests/
+│   └── test_health.py
+├── requirements.txt
+├── .env.example
+└── README.md
+
+要求：
+1. app.py 用 application factory 模式（create_app 函数）
+2. 配置走 config.py，从 .env 读取，dev/prod 两套
+3. 启用 CORS（允许 http://localhost:5173 和 https://*.你的域名）
+4. /api/health 返回 {status: "ok", version: "0.1.0", timestamp: ISO 时间}
+5. 加上 Werkzeug 的 ProxyFix（后续 Nginx 反代要用）
+6. logging 配置好（INFO 级别，输出到 stdout）
+7. requirements.txt 包含：flask, flask-cors, gunicorn, python-dotenv
+
+每写完一个文件停一下，让我审。</pre>
+      </div>
+
+      <h3>Prompt 1.3：验证后端</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 启动验证</div>
+          <button class="copy-btn" data-target="p1-3">复制</button>
+        </div>
+        <pre id="p1-3">现在用 venv 安装依赖、启动后端，验证 /api/health 能访问。
+告诉我具体步骤和命令，我会跟着做。</pre>
+      </div>
+
+      <p>预期输出：</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang">JSON · 期望响应</div></div>
+        <pre>{"status":"ok","version":"0.1.0","timestamp":"2026-05-14T08:00:00Z"}</pre>
+      </div>
+
+      <h3>Prompt 1.4：建前端骨架</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 前端骨架</div>
+          <button class="copy-btn" data-target="p1-4">复制</button>
+        </div>
+        <pre id="p1-4">现在搭前端。在项目根目录 frontend/ 下建立 Vue 3 工程：
+
+要求：
+1. 用 Vite 创建（npm create vite@latest frontend -- --template vue-ts）
+2. 安装核心依赖：
+   - vue-router@4, pinia
+   - echarts@5, leaflet, @types/leaflet
+   - axios
+   - 不要 element-plus 或 ant-design-vue，UI 我们自己写
+3. 配置 vite.config.ts 的 server.proxy，把 /api 反代到
+   http://localhost:5000
+4. 建立基础目录：
+   src/
+   ├── api/         # axios 封装
+   ├── components/  # 组件
+   ├── views/       # 页面
+   │   ├── RiskMap.vue          (M01)
+   │   ├── ShapDashboard.vue    (M02)
+   │   ├── ScenarioSim.vue      (M03)
+   │   └── ResiliencePath.vue   (M04)
+   ├── router/
+   ├── stores/      # Pinia
+   ├── utils/
+   ├── App.vue
+   └── main.ts
+5. App.vue 只放一个简单的 Tab 导航 + router-view
+6. 4 个 view 文件先放占位文字，能切换路由就行
+
+写完启动 `npm run dev` 看一下，确认 4 个 tab 能切换。</pre>
+      </div>
+
+      <h3>Prompt 1.5：前后端联调</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 前后端联调</div>
+          <button class="copy-btn" data-target="p1-5">复制</button>
+        </div>
+        <pre id="p1-5">现在做前后端联调。要求：
+
+1. 在 src/api/ 下建 http.ts，封装 axios 实例，baseURL 用 '/api'
+2. 建 health.ts，封装 fetchHealth() 函数
+3. 在 App.vue 顶部加一个状态指示灯：
+   - 页面挂载时调用 fetchHealth()
+   - 成功：右上角小绿点 + "Backend OK" 文字
+   - 失败：小红点 + "Backend Offline"
+4. 启动前后端，验证联调成功
+
+如果跨域出问题，告诉我具体报错。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">阶段 1 验收清单</div>
+        <li><code>cd backend && python app.py</code> 能正常启动，访问 /api/health 返回 ok</li>
+        <li><code>cd frontend && npm run dev</code> 能正常启动，4 个 tab 能切换</li>
+        <li>前端右上角状态灯显示绿色 "Backend OK"</li>
+        <li>整个项目 git push 到远程仓库</li>
+        <li>README.md 写好 "如何启动开发环境" 部分</li>
+      </ul>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang bash">提交</div></div>
+        <pre>git add -A
+git commit -m "phase 1: project skeleton with backend + frontend + health check"
+git push</pre>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 3 ============ -->
+    <section class="section" id="part-3">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 03</div>
+          <h2>阶段 2 — 模型集成（Day 2-3）</h2>
+        </div>
+        <span class="phase-badge">PHASE 2 · 2d</span>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">前置条件</div>
+        石灵子已经把训练好的模型文件给你了，应该包括：<code>xgb_model.pkl</code> / <code>lstm_model.h5</code> / <code>scaler.pkl</code> / <code>feature_columns.json</code> / <code>inference.py</code>
+      </div>
+
+      <div class="phase-section">
+        <div class="phase-title"><span class="phase-num">GOAL</span>阶段目标</div>
+        <ul>
+          <li>模型文件就位</li>
+          <li>Python 端能加载并跑推理</li>
+          <li>暴露成 RESTful API</li>
+        </ul>
+      </div>
+
+      <h3>Prompt 2.1：放置模型并验证</h3>
+      <p>把石灵子给的模型文件放到 <code>backend/models/</code>，然后让 Claude Code：</p>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 模型集成</div>
+          <button class="copy-btn" data-target="p2-1">复制</button>
+        </div>
+        <pre id="p2-1">我把训练好的模型文件放到了 backend/models/ 下。请你：
+
+1. 写一个 backend/services/inference.py，包含：
+   - load_models() 函数，启动时加载所有模型到内存
+   - predict_xgboost(features: dict) -> dict 返回 {risk, shap_values}
+   - predict_lstm(features: dict) -> float 返回 risk
+   - 输入特征字典必须包含这些键（顺序参照 feature_columns.json）：
+     Temp, SPEI, Flood_R, Irr, Mech, Prec, Sun, Fert, Drou_A, Flood_A
+   - 内部自动做 StandardScaler 标准化
+
+2. 添加依赖到 requirements.txt：
+   xgboost==2.0.3
+   tensorflow==2.15.0
+   shap==0.44.0
+   joblib
+   scikit-learn==1.3.2
+   numpy
+   pandas
+
+3. 写一个 backend/tests/test_inference.py，
+   用河南省 2022 年的真实数据测试两个函数，
+   断言 R² 区间合理（输出在 0.005-0.055 之间）
+
+4. 跑测试，告诉我结果
+
+如果 TensorFlow 安装出问题，改用 tensorflow-cpu。</pre>
+      </div>
+
+      <h3>Prompt 2.2：把推理接到 API</h3>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 推理 API</div>
+          <button class="copy-btn" data-target="p2-2">复制</button>
+        </div>
+        <pre id="p2-2">现在把推理服务接到 Flask API。
+
+新建 backend/api/predict.py，包含三个路由：
+
+1. POST /api/predict/xgboost
+   body: {features: {Temp:14.0, SPEI:-0.08, ...所有10个特征}}
+   response: {risk: 0.0249, shap_values: {Temp: 0.0015, ...}}
+
+2. POST /api/predict/lstm
+   body: 同上
+   response: {risk: 0.0241}
+
+3. POST /api/predict/dual  # 双模型协同验证
+   body: 同上
+   response: {
+     xgboost_risk: 0.0249,
+     lstm_risk: 0.0241,
+     consensus: 0.0245,
+     divergence: 0.0008,
+     shap_values: {...}
+   }
+
+要求：
+1. 用 pydantic 校验请求 body 的格式
+2. 异常处理：缺失特征返回 400 + 具体哪个特征缺
+3. 推理时间记录在 X-Inference-Time 响应头里
+4. 用 LRU cache 缓存相同输入的推理结果（maxsize=128）
+
+写完后启动服务，用 curl 测一下：
+curl -X POST http://localhost:5000/api/predict/dual \
+  -H "Content-Type: application/json" \
+  -d '{"features":{"Temp":14.2,"SPEI":-0.2,"Flood_R":4.2,...}}'</pre>
+      </div>
+
+      <h3>Prompt 2.3：省份基线数据 API</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 省份数据 API</div>
+          <button class="copy-btn" data-target="p2-3">复制</button>
+        </div>
+        <pre id="p2-3">建立省份基线数据端点。
+
+1. 在 backend/data/ 下放一个 provinces.csv，包含 31 省 2011-2023
+   的真实/mock 数据，列：
+   province, year, Y, Temp, SPEI, Flood_R, Irr, Mech, Prec, 
+   Sun, Fert, Drou_A, Flood_A, NDVI
+
+   （如果没有真实数据就用 mock，比例符合论文 Table 3-2）
+
+2. 写 backend/api/province.py：
+   - GET /api/provinces  返回所有 31 省的最新年（2023）基线
+   - GET /api/provinces/<name>  返回某省 2011-2023 所有年的数据
+   - GET /api/provinces/<name>/<year>  返回某省某年具体数据
+
+3. 数据加载在服务启动时一次性读到内存（DataFrame），
+   不要每次请求都读 CSV
+
+测一下：
+curl http://localhost:5000/api/provinces
+curl http://localhost:5000/api/provinces/河南/2022</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">阶段 2 验收清单</div>
+        <li><code>pytest tests/</code> 全部通过</li>
+        <li>curl 测试三个 predict 端点都返回合理数值</li>
+        <li>推理延迟单次 &lt; 200ms（除首次启动加载）</li>
+        <li>省份数据端点返回完整 31 省</li>
+        <li>Postman 或 Apifox 建一个 collection 保存所有 API 测试用例</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 4 ============ -->
+    <section class="section" id="part-4">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 04</div>
+          <h2>阶段 3 — 前端模块开发（Week 2）</h2>
+        </div>
+        <span class="phase-badge">PHASE 3 · 7d</span>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">前置条件</div>
+        周煜楠已经给你 5 份 HTML 设计稿（设计系统 + 4 个模块）
+      </div>
+
+      <div class="phase-section">
+        <div class="phase-title"><span class="phase-num">GOAL</span>阶段目标</div>
+        <p>把 4 个 HTML 设计稿迁移到 Vue 工程，每个模块都对接真实 API。</p>
+      </div>
+
+      <h3>策略：一次一个模块</h3>
+      <p>不要一次把 4 个模块全做了。每个模块都走"迁移 → 接 API → 验收"流程。</p>
+
+      <h3>Prompt 3.1：建立全局设计系统</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 设计系统迁移</div>
+          <button class="copy-btn" data-target="p3-1">复制</button>
+        </div>
+        <pre id="p3-1">我把 UI 设计师给的设计系统 HTML 放到了 frontend/docs/。请你：
+
+1. 阅读 frontend/docs/design-system.html
+2. 把里面的 CSS variables 提取到 frontend/src/styles/tokens.css
+3. 建立通用样式 frontend/src/styles/global.css，包含：
+   - body 全局样式（深色背景、字体）
+   - 字体导入（Google Fonts）
+   - 滚动条美化
+4. 在 main.ts 中引入这两个 CSS
+5. 把设计系统里的常用组件抽成 Vue 组件：
+   frontend/src/components/ui/
+   ├── Card.vue
+   ├── Badge.vue
+   ├── Slider.vue
+   ├── Button.vue
+   ├── Metric.vue       (指标数字卡)
+   └── Tag.vue
+6. 每个组件用 TypeScript 定义 props
+
+做完跑一下 dev，告诉我有没有 console 报错。</pre>
+      </div>
+
+      <h3>Prompt 3.2：迁移模块 1（风险时空地图）</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 风险地图 Vue 化</div>
+          <button class="copy-btn" data-target="p3-2">复制</button>
+        </div>
+        <pre id="p3-2">把 frontend/docs/01-risk-map.html 的设计迁移到 
+frontend/src/views/RiskMap.vue。
+
+要求：
+
+1. 严格按照 HTML 的视觉效果（颜色、布局、间距、字体都一样）
+2. 用 Composition API + <script setup lang="ts">
+3. ECharts 用按需引入，不要全量
+4. 中国地图 JSON 不要从 CDN 拉，下载下来放到 
+   frontend/public/maps/china.json（避免现场断网）
+5. 数据来源：
+   - GET /api/provinces 拿到 31 省最新数据，渲染地图
+   - 年份滑块变化时 GET /api/provinces?year=2022 拿该年数据
+6. hover 省份时调用 hover handler，更新右侧明细卡
+7. 数据加载时显示 skeleton loading 占位
+8. 错误处理：API 失败时显示错误状态 + 重试按钮
+
+把 axios 调用封装到 frontend/src/api/province.ts。
+
+完成后让我打开浏览器验证。</pre>
+      </div>
+
+      <h3>Prompt 3.3：迁移模块 2（SHAP 归因看板）</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · SHAP 看板 Vue 化</div>
+          <button class="copy-btn" data-target="p3-3">复制</button>
+        </div>
+        <pre id="p3-3">把 frontend/docs/02-shap-dashboard.html 迁移到 
+frontend/src/views/ShapDashboard.vue。
+
+后端配合：
+1. 新增 GET /api/shap/global - 返回 11 个特征的全局重要性
+2. 新增 GET /api/shap/sample?province=河南&year=2022 - 
+   返回该样本的 SHAP 瀑布分解
+3. 新增 GET /api/shap/beeswarm?features=Irr,Flood_R,Sun,Temp,SPEI
+   - 返回蜂群图所需的所有样本点数据
+
+前端：
+1. 4 个图表并排（2×2 grid）
+2. 上方 segmented control 切换"全部/北方/南方/主产区"，触发
+   重新拉取数据
+3. 点击柱状图某个特征，下方 waterfall 切换到该特征的局部解释
+4. 所有 ECharts 实例统一管理（避免重复初始化）
+
+写之前先帮我设计一下 SHAP API 的 JSON schema。</pre>
+      </div>
+
+      <h3>Prompt 3.4：迁移模块 3（参数情景模拟）</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 情景模拟 Vue 化</div>
+          <button class="copy-btn" data-target="p3-4">复制</button>
+        </div>
+        <pre id="p3-4">把 frontend/docs/03-scenario-simulator.html 迁移到 
+frontend/src/views/ScenarioSim.vue。
+
+核心：滑块拖动时实时调用 POST /api/predict/dual。
+
+要求：
+1. 滑块用 lodash.debounce 做 200ms 防抖（避免每像素都调 API）
+2. 用 Pinia store 管理：当前省份、参数值、推理结果、历史记录
+3. 仪表盘用 ECharts gauge，指针过渡 300ms
+4. "风险变化 Δ" 大数字用 anime.js 或 vue-countup 做 count-up
+5. 加一个"对比模式"开关：
+   - off：单参数模拟
+   - on：同时展示 XGBoost 和 LSTM 两个模型的结果，看一致性
+6. 右上角"另存为情景"按钮：保存到 localStorage，最多保留 10 条
+
+后端配合：
+- 推理 API 已经有了，不用改
+- 但要确保 SHAP 解释也返回，前端展示因子贡献对比柱状图
+
+把推理调用封装到 frontend/src/api/predict.ts。</pre>
+      </div>
+
+      <h3>Prompt 3.5：迁移模块 4（韧性路径推荐）</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 路径推荐 Vue 化</div>
+          <button class="copy-btn" data-target="p3-5">复制</button>
+        </div>
+        <pre id="p3-5">把 frontend/docs/04-resilience-paths.html 迁移到 
+frontend/src/views/ResiliencePath.vue。
+
+后端新增：
+GET /api/recommendation/<province>
+返回该省份的三阶段路径推荐 JSON：
+{
+  "province": "河南",
+  "type": "洪涝主导型 · 主产区",
+  "summary": "...",
+  "metrics": {"y": 0.026, "rank": 12, "irr": 65.4, "flood": 4.2},
+  "paths": {
+    "short": [{"id": "01", "title": "...", "desc": "..."}, ...],
+    "medium": [...],
+    "long": [...]
+  }
+}
+
+后端逻辑用 services/recommendation.py 实现：
+- 根据省份的 flood/irr/temp/spei 数值，按规则生成不同路径
+- 规则参考 UI 设计稿里的 generatePaths() 函数逻辑
+
+前端：
+1. 切换省份时拉新数据，3 张卡片做 stagger 入场动画
+2. "导出 PDF" 按钮用 jsPDF + html2canvas，生成 A4 报告 PDF
+   - PDF 顶部加项目 logo 和省份名
+   - 中间是三阶段路径
+   - 底部加生成时间和数据来源说明</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">每个模块的通用验收清单</div>
+        <li>视觉效果和周给的 HTML 设计稿基本一致</li>
+        <li>所有数据从真实 API 拿，不写死</li>
+        <li>加载状态、错误状态、空状态都做了</li>
+        <li>浏览器 console 没有红色报错</li>
+        <li>在 Chrome 和 Edge 上都正常</li>
+        <li>关掉网络断开重连，能恢复</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 5 ============ -->
+    <section class="section" id="part-5">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 05</div>
+          <h2>阶段 4 — 数据库与持久化（Day 11-12）</h2>
+        </div>
+        <span class="phase-badge">PHASE 4 · 2d</span>
+      </div>
+
+      <div class="phase-section">
+        <div class="phase-title"><span class="phase-num">GOAL</span>阶段目标</div>
+        <ul>
+          <li>用户的模拟历史能持久化</li>
+          <li>添加简单的访问日志</li>
+          <li>为后续扩展（用户系统、批注、收藏）打基础</li>
+        </ul>
+      </div>
+
+      <h3>Prompt 4.1：SQLite 集成</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 数据库集成</div>
+          <button class="copy-btn" data-target="p4-1">复制</button>
+        </div>
+        <pre id="p4-1">给后端加 SQLite + SQLAlchemy + Alembic。
+
+需要的表：
+
+1. inference_logs - 所有推理请求的日志
+   columns: id, timestamp, endpoint, input_features (JSON), 
+            output (JSON), inference_time_ms, user_session (UUID)
+
+2. saved_scenarios - 用户保存的情景模拟
+   columns: id, session_id, name, province, params (JSON), 
+            result (JSON), created_at
+
+3. province_data_cache - 缓存层（可选）
+   columns: province, year, data (JSON), updated_at
+
+要求：
+1. 用 Flask-SQLAlchemy
+2. 用 Flask-Migrate（Alembic）做迁移
+3. 数据库文件存在 backend/instance/app.db
+4. 启动时自动 db.create_all()
+5. 加 API：
+   - POST /api/scenarios - 保存情景
+   - GET /api/scenarios?session_id=xxx - 列出该 session 的情景
+   - DELETE /api/scenarios/<id> - 删除
+6. 推理 API 自动写 inference_logs（异步，不阻塞响应）
+
+前端：
+- 在 axios 拦截器里生成并维护 session_id（存 localStorage）
+- 每个请求带上 X-Session-Id header
+- ScenarioSim 的"已保存情景"列表从 GET /api/scenarios 拿</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收清单</div>
+        <li><code>flask db init && flask db migrate && flask db upgrade</code> 能跑</li>
+        <li>推理几次后 SQLite 里有日志记录</li>
+        <li>保存情景能正常 CRUD</li>
+        <li>浏览器换个 session_id 看不到其他人的情景</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 6 ============ -->
+    <section class="section" id="part-6">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 06</div>
+          <h2>阶段 5 — 部署上线（Day 13-14）</h2>
+        </div>
+        <span class="phase-badge">PHASE 5 · 2d</span>
+      </div>
+
+      <div class="phase-section">
+        <div class="phase-title"><span class="phase-num">GOAL</span>阶段目标</div>
+        <ul>
+          <li>系统部署到 Google Cloud Server</li>
+          <li>公网可访问</li>
+          <li>配 HTTPS（让 URL 看起来专业）</li>
+          <li>进程崩了能自动重启</li>
+        </ul>
+      </div>
+
+      <h3>Prompt 5.1：构建生产配置</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 生产环境配置</div>
+          <button class="copy-btn" data-target="p5-1">复制</button>
+        </div>
+        <pre id="p5-1">准备生产环境配置。
+
+1. 前端构建：
+   - 调整 vite.config.ts，build.outDir 设为 '../backend/static'
+   - npm run build 后产物会直接在后端 static 目录
+   - 后端加路由，所有非 /api 请求都返回 static/index.html（SPA fallback）
+
+2. 后端生产配置：
+   - 新建 backend/wsgi.py 作为 Gunicorn 入口
+   - DEBUG=False
+   - 日志输出到 /var/log/grain-risk/app.log
+   - 添加 health 端点的 readiness 检查（检查模型是否加载）
+
+3. 环境变量：
+   - .env.production 模板
+   - 包括 SECRET_KEY、DATABASE_URL、CORS_ORIGINS、LOG_LEVEL
+
+4. 写 deploy/ 目录下的部署脚本：
+   - deploy.sh - 一键部署脚本（拉代码、装依赖、构建前端、重启）
+   - gunicorn.service - systemd 服务文件
+   - nginx.conf - Nginx 反代配置（80 → Gunicorn 5000）
+
+给我每个文件的完整内容。</pre>
+      </div>
+
+      <h3>5.2 服务器手动部署</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · 服务器部署</div>
+          <button class="copy-btn" data-target="code-5b">复制</button>
+        </div>
+        <pre id="code-5b"># 在服务器上
+sudo mkdir -p /opt/grain-risk
+sudo chown $USER /opt/grain-risk
+cd /opt/grain-risk
+
+# 拉代码
+git clone https://github.com/你/grain-risk-system.git .
+
+# 后端
+cd backend
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.production .env
+
+# 数据库
+flask db upgrade
+
+# 前端构建
+cd ../frontend
+npm ci
+npm run build  # 产物自动到 ../backend/static
+
+# 配 systemd
+sudo cp /opt/grain-risk/deploy/gunicorn.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable grain-risk
+sudo systemctl start grain-risk
+sudo systemctl status grain-risk
+
+# 配 Nginx
+sudo cp /opt/grain-risk/deploy/nginx.conf /etc/nginx/sites-available/grain-risk
+sudo ln -s /etc/nginx/sites-available/grain-risk /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx</pre>
+      </div>
+
+      <h3>5.3 配 HTTPS</h3>
+      <p>如果你有域名（推荐花 50 块买一个 <code>.top</code> 或 <code>.xyz</code> 域名）：</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">bash · Let's Encrypt</div>
+          <button class="copy-btn" data-target="code-5c">复制</button>
+        </div>
+        <pre id="code-5c">sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d 你的域名.com</pre>
+      </div>
+
+      <p>没域名也行，直接用 GCS 的公网 IP，但显示"不安全"会影响演示效果。</p>
+
+      <h3>Prompt 5.4：让 Claude Code 验证部署</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 线上验证</div>
+          <button class="copy-btn" data-target="p5-4">复制</button>
+        </div>
+        <pre id="p5-4">帮我做线上验证：
+
+1. curl -i https://我的域名.com/api/health 检查后端
+2. 用 ab 或 wrk 压测：100 个并发，跑 1000 个请求，看 P99 延迟
+3. tail /var/log/grain-risk/app.log 看有没有报错
+4. 检查 systemd service 状态
+5. 模拟一次推理：调用 /api/predict/dual 看响应时间
+6. 检查 SQLite 文件权限
+
+给我一份完整的部署验证报告。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">阶段 5 验收清单</div>
+        <li>公网 URL（https://...）能打开首页</li>
+        <li>4 个模块都能正常使用，API 都跑通</li>
+        <li>推理延迟 &lt; 500ms（P95）</li>
+        <li>杀掉 Gunicorn 进程后 systemd 自动拉起</li>
+        <li>服务器重启后所有服务自动恢复</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 7 ============ -->
+    <section class="section" id="part-7">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 07</div>
+          <h2>阶段 6 — 监控与日志（Day 15）</h2>
+        </div>
+        <span class="phase-badge">PHASE 6 · 1d</span>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 监控配置</div>
+          <button class="copy-btn" data-target="p6-1">复制</button>
+        </div>
+        <pre id="p6-1">给生产环境加监控：
+
+1. 用 prometheus-flask-exporter 暴露 /metrics 端点
+2. 在服务器装 Prometheus + Grafana（或者用云端免费的 Grafana Cloud）
+3. 设几个关键指标：
+   - 总请求数 / RPS
+   - 各端点的响应时间分布
+   - 推理 API 的 P50/P95/P99
+   - 错误率（4xx/5xx）
+4. 配置告警：
+   - 5xx 率超过 1%
+   - P95 延迟超过 1s
+   - SQLite 文件大小超过 100MB
+
+如果嫌复杂，简化版：
+- 只用 Python logging + logrotate
+- 写一个 daily_report.py，每天跑一次，邮件发送昨日数据
+
+我倾向简化版，给我步骤。</pre>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 备份策略</div>
+          <button class="copy-btn" data-target="p6-2">复制</button>
+        </div>
+        <pre id="p6-2">给我加上自动备份：
+
+1. SQLite 每日备份到 /var/backups/grain-risk/db-YYYY-MM-DD.db
+2. 保留最近 7 天
+3. 用 cron 跑（crontab -e）
+4. 备份失败发邮件提醒（或者写日志，让你下次登录就能看到）</pre>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 8 ============ -->
+    <section class="section" id="part-8">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 08</div>
+          <h2>阶段 7 — 答辩准备（Final Week）</h2>
+        </div>
+        <span class="phase-badge">PHASE 7 · 5d</span>
+      </div>
+
+      <h3>Prompt 7.1：演示模式</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · Demo 模式</div>
+          <button class="copy-btn" data-target="p7-1">复制</button>
+        </div>
+        <pre id="p7-1">答辩演示时不希望评委看到加载动画或者 loading。请你做一个"演示模式":
+
+1. 加一个 .env 变量 DEMO_MODE=true
+2. demo 模式下：
+   - 所有 API 缓存预加载（启动时就跑一遍所有 31 省的推理）
+   - hover 省份时不重新调 API，直接用缓存
+   - 滑块拖动用本地公式计算，不调远端 API
+3. 加一个 URL 参数 ?demo=true 才进 demo 模式（避免误开）
+
+这样答辩时点哪儿哪儿响应飞快。</pre>
+      </div>
+
+      <h3>Prompt 7.2：生成介绍页</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 项目介绍页</div>
+          <button class="copy-btn" data-target="p7-2">复制</button>
+        </div>
+        <pre id="p7-2">在前端首页加一个项目介绍页（在所有 module 之前）：
+
+- 大标题：项目名
+- 一句话简介
+- 4 个数字 highlight：R²=0.6293/0.6619、403 样本、31 省、4 模态
+- 4 个模块的入口卡片，点击进入对应模块
+- 底部团队信息
+
+要做得像 GitHub Project Page 或 Notion Cover Page 那种气场。</pre>
+      </div>
+
+      <h3>Prompt 7.3：自动化测试与录屏</h3>
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 演示自动化</div>
+          <button class="copy-btn" data-target="p7-3">复制</button>
+        </div>
+        <pre id="p7-3">帮我写一个 Playwright 自动化脚本，模拟评委的操作路径：
+
+1. 打开首页
+2. 等待 1 秒
+3. 点击"风险时空地图"
+4. 等待地图加载
+5. 拖动年份滑块从 2023 到 2018
+6. hover 河南省，等明细卡显示
+7. 切换到"SHAP归因看板"
+8. 点击柱状图的"灌溉率"特征
+9. 切换到"参数情景模拟"
+10. 选河南，拖灌溉率滑块从 65 到 85
+11. 等仪表盘更新
+12. 切换到"韧性路径推荐"
+13. 切换到湖南
+14. 等三阶段路径渲染
+
+把这个脚本和一个 record-demo.sh 脚本配在一起，
+可以自动生成 1 分钟的演示视频。</pre>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 9 ============ -->
+    <section class="section" id="part-9">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 09</div>
+          <h2>和团队成员的对接</h2>
+        </div>
+      </div>
+
+      <h3>跟石灵子（模型）的接口</h3>
+      <p><strong>你给她的需求</strong>（贴给她）：</p>
+
+      <blockquote>
+        <p>我需要你把模型固化成可被 Web 服务调用的格式：</p>
+        <p>1. <code>xgb_model.pkl</code>（joblib 保存）<br>
+        2. <code>lstm_model.h5</code>（Keras 保存）<br>
+        3. <code>scaler.pkl</code>（StandardScaler）<br>
+        4. <code>feature_columns.json</code>（特征顺序）<br>
+        5. <code>inference.py</code>（封装好两个函数：predict_xgboost 和 predict_lstm）<br>
+        6. 单元测试 <code>test_inference.py</code></p>
+      </blockquote>
+
+      <p><strong>她交付给你时你要验证</strong>：</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang python">python · 验证脚本</div>
+          <button class="copy-btn" data-target="code-9a">复制</button>
+        </div>
+        <pre id="code-9a">cd backend
+python -c "
+from services.inference import load_models, predict_xgboost, predict_lstm
+load_models()
+test_features = {
+    'Temp': 14.2, 'SPEI': -0.2, 'Flood_R': 4.2, 'Irr': 65.4,
+    'Mech': 0.85, 'Prec': 720, 'Sun': 2240, 'Fert': 380,
+    'Drou_A': 250, 'Flood_A': 180
+}
+print('XGB:', predict_xgboost(test_features))
+print('LSTM:', predict_lstm(test_features))
+"</pre>
+      </div>
+
+      <h3>跟周煜楠（前端 UI）的接口</h3>
+      <p><strong>她给你的设计稿格式</strong>：</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang bash">交付目录</div></div>
+        <pre>ui-designs/
+├── 00-design-system.html
+├── 01-risk-map.html
+├── 02-shap-dashboard.html
+├── 03-scenario-simulator.html
+└── 04-resilience-paths.html</pre>
+      </div>
+
+      <p><strong>你验收时</strong>：</p>
+      <ul>
+        <li>视觉效果在 1920×1080 浏览器是否完美</li>
+        <li>CSS 是否走 variables（方便迁移）</li>
+        <li>是否有用到不支持的依赖（exotic font、付费图标）</li>
+        <li>交互是否能用纯 CSS + 少量 JS 实现</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 10 ============ -->
+    <section class="section" id="part-10">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 10</div>
+          <h2>Claude Code 使用技巧</h2>
+        </div>
+      </div>
+
+      <h4>1. 让它先读再写</h4>
+      <p>每次开始新阶段都说："先看一下当前目录结构，理解现状再动手"。避免它一上来就乱改。</p>
+
+      <h4>2. 用 <code>/clear</code> 控制上下文</h4>
+      <p>每个大阶段开始时用 <code>/clear</code> 清空对话历史，避免它被旧上下文带偏。</p>
+
+      <h4>3. 拒绝过度工程</h4>
+      <p>Claude Code 默认很爱加抽象层（base class、abstract factory、依赖注入）。Demo 阶段直接说：</p>
+      <blockquote>"YAGNI 原则，越简单越好。不要加抽象层，不要加 base class，能用一个 function 解决就不要建 service。"</blockquote>
+
+      <h4>4. 关键决策让它问你</h4>
+      <blockquote>"遇到任何架构决策、依赖选型、命名规范的问题，先问我，不要自作主张。"</blockquote>
+
+      <h4>5. 限制改动范围</h4>
+      <blockquote>"你这次任务只能改 backend/api/predict.py 和 backend/services/inference.py 两个文件，其他都不要动。"</blockquote>
+
+      <h4>6. 学会用 <code>--continue</code> 和 <code>--resume</code></h4>
+      <p>如果对话被切断，下次进入用 <code>claude --continue</code> 接上上次。</p>
+
+      <h4>7. 危险操作的安全词</h4>
+      <blockquote>"在执行任何 rm、git push --force、drop table 等不可逆操作前，必须先告诉我并等我确认。"</blockquote>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 11 ============ -->
+    <section class="section" id="part-11">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 11</div>
+          <h2>故障排查清单</h2>
+        </div>
+      </div>
+
+      <h3>后端启动失败</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang bash">bash</div></div>
+        <pre># 看日志
+sudo journalctl -u grain-risk -n 50 --no-pager
+
+# 常见原因：
+# 1. 模型文件路径不对 → 检查 backend/models/
+# 2. Python 版本不对 → 必须 3.10
+# 3. TensorFlow 内存不够 → 服务器升级到 8GB
+# 4. 端口被占 → sudo lsof -i :5000</pre>
+      </div>
+
+      <h3>前端白屏</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang bash">bash</div></div>
+        <pre># 看浏览器 console
+# 常见原因：
+# 1. /api 路径不对 → 检查 nginx.conf 的 location /api
+# 2. CORS 报错 → 检查 backend/app.py 的 CORS 配置
+# 3. JS 资源 404 → vite build 路径配错</pre>
+      </div>
+
+      <h3>推理特别慢</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang bash">bash</div></div>
+        <pre># 检查是否每次都重新加载模型
+grep "load_models" backend/services/inference.py
+# 应该只在启动时调用一次
+
+# 启用 LRU cache 重新部署</pre>
+      </div>
+
+      <h3>Git 冲突</h3>
+      <p>让 Claude 帮你解：</p>
+      <blockquote>"git 出现冲突，文件 backend/app.py，请帮我看一下两边都改了什么，建议合并方案"</blockquote>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ PART 12 ============ -->
+    <section class="section" id="part-12">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-num">PART · 12</div>
+          <h2>三周时间表</h2>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>周</th><th>天</th><th>阶段</th><th>关键产出</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>1</td><td>阶段 0 + 1</td><td>环境就绪、工程骨架、健康检查</td></tr>
+          <tr><td>1</td><td>2-3</td><td>阶段 2</td><td>模型集成、API 跑通</td></tr>
+          <tr><td>1</td><td>4</td><td>缓冲</td><td>修 bug、补测试、写文档</td></tr>
+          <tr><td>1</td><td>5-7</td><td>阶段 3.1-3.2</td><td>设计系统迁移、模块 1 完成</td></tr>
+          <tr><td>2</td><td>8-10</td><td>阶段 3.3-3.4</td><td>模块 2、模块 3 完成</td></tr>
+          <tr><td>2</td><td>11</td><td>阶段 3.5</td><td>模块 4 完成</td></tr>
+          <tr><td>2</td><td>12</td><td>阶段 4</td><td>数据库与持久化</td></tr>
+          <tr><td>2</td><td>13-14</td><td>阶段 5</td><td>部署上线</td></tr>
+          <tr><td>3</td><td>15</td><td>阶段 6</td><td>监控、备份</td></tr>
+          <tr><td>3</td><td>16-17</td><td>阶段 7</td><td>答辩准备、演示模式</td></tr>
+          <tr><td>3</td><td>18-21</td><td>缓冲</td><td>修 bug、优化、录视频</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-danger">
+        <div class="callout-title">⚠ 关键里程碑</div>
+        第 14 天必须上线公网 URL，留够 7 天做答辩准备。
+      </div>
+
+      <h3>队长记账本</h3>
+      <p>强烈推荐你建一个 <code>docs/CHANGELOG.md</code>，每天写一段：</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-lang">markdown · 开发日志样例</div></div>
+        <pre>## 2026-05-15
+- Phase 1 完成，骨架跑通
+- 遇到问题：Vite 代理跨域报错，已修
+- 明天计划：开始 phase 2，等石灵子的模型文件
+
+## 2026-05-16
+- 石灵子的 xgb_model.pkl 加载报错（sklearn 版本不一致）
+- 让她重新导出，已解决
+- predict API 完成，单次 180ms
+...</pre>
+      </div>
+
+      <p>答辩时这玩意儿叫"开发日志"，是项目过程性材料的重要佐证。</p>
+
+      <div class="callout">
+        <div class="callout-title">最后一句</div>
+        <p>记住三件事：<strong>YAGNI、可回滚、早上线</strong>。每次 Claude Code 想搞复杂，你就拿这三条怼回去。</p>
+        <p>我们的目标是答辩日能让评委扫码就进系统，看到一个能用的、有数据的、有响应的工具。<strong>不是写一个完美的工程。</strong></p>
+      </div>
+
+      <p style="margin-top:32px; text-align:center; font-family:'Noto Serif SC',serif; font-size:18px; color:var(--green-bright)">加油，队长。</p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  © 2026 山西农业大学信息科学与工程学院 · 极端气候下粮食生产风险智能分析项目组
+</footer>
+
+<script>
+// 复制按钮
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    navigator.clipboard.writeText(target.textContent).then(() => {
+      btn.textContent = '✓ 已复制';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '复制';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+});
+
+// TOC 滚动高亮
+const sections = document.querySelectorAll('.section');
+const tocLinks = document.querySelectorAll('.toc a');
+
+function updateActiveTOC() {
+  let current = '';
+  sections.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= 150) current = sec.id;
+  });
+  tocLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateActiveTOC, { passive: true });
+updateActiveTOC();
+</script>
+</body>
+</html>
