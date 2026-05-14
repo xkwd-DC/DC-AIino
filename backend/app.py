@@ -9,8 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
+
+from api import envelope
+from api.predict import predict_bp
 
 load_dotenv()
 
@@ -22,16 +25,14 @@ with (DATA_DIR / "provinces_baseline.json").open(encoding="utf-8") as f:
     PROVINCES_BASELINE = json.load(f)
 
 app = Flask(__name__)
+app.json.ensure_ascii = False  # 直接输出中文，便于 curl 调试；浏览器/前端两种都能解析
 
 # CORS：demo 阶段默认 *，部署时用 .env 的 CORS_ORIGINS 收窄到具体域名（逗号分隔）。
 cors_env = os.getenv("CORS_ORIGINS", "*")
 cors_origins = "*" if cors_env.strip() == "*" else [o.strip() for o in cors_env.split(",") if o.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
-
-def envelope(data=None, error=None):
-    """统一响应壳：{success, data, error}。"""
-    return jsonify(success=error is None, data=data, error=error)
+app.register_blueprint(predict_bp)
 
 
 @app.get("/api/health")
@@ -53,7 +54,7 @@ def list_provinces():
 
 @app.errorhandler(404)
 def not_found(_):
-    return envelope(error={"code": 404, "message": "endpoint not found"}), 404
+    return envelope(error={"code": 404, "message": "endpoint not found"}, status=404)
 
 
 if __name__ == "__main__":

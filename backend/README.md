@@ -46,10 +46,59 @@ pip install -r requirements.txt
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/health` | 健康检查 |
-| GET | `/api/provinces` | 31 省基线数据（当前为 mock） |
+| GET  | `/api/health`    | 健康检查 |
+| GET  | `/api/provinces` | 31 省基线数据（mock） |
+| POST | `/api/predict`   | 风险预测（mock；M2 节点后接真模型） |
 
 统一响应壳：`{"success": bool, "data": ..., "error": null | {"code", "message"}}`
+
+### `POST /api/predict` 契约
+
+**请求体**：
+
+```json
+{
+  "province": "河南",
+  "year": 2026,
+  "params": {
+    "irr":   65.4,   // 灌溉率 %
+    "flood":  4.2,   // 洪涝占比 %
+    "sun":  2240,    // 日照时数 h
+    "temp":  14.2,   // 平均气温 °C
+    "spei":  -0.2    // SPEI 干旱指数
+  },
+  "model": "ensemble"  // "xgboost" | "lstm" | "ensemble"，可选，默认 ensemble
+}
+```
+
+**响应体（成功）**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "province": "河南",
+    "year": 2026,
+    "model": "ensemble",
+    "risk_score": 0.024696,
+    "baseline": 0.026,
+    "delta": -0.001304,
+    "confidence": 0.78,
+    "shap_top": [
+      {"feature": "洪涝占比", "value": 0.002113, "direction": "harm"},
+      {"feature": "灌溉率",   "value": -0.001001, "direction": "protect"}
+    ],
+    "recommendations": [
+      {"action": "...", "factor": "洪涝占比", "expected_delta": -0.002113, "priority": "high"}
+    ],
+    "_mock": true
+  },
+  "error": null
+}
+```
+
+**错误（HTTP 400）**：`province` 未知 / `params` 缺字段 / 字段非数值 / `model` 不在白名单。
+`_mock: true` 字段会在 M2 节点接入真模型后移除。
 
 ## 配置
 
