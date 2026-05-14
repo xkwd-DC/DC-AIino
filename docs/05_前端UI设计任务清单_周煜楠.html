@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI 设计任务清单 · 周煜楠</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0A1612;
+  --bg-2: #0F1F1A;
+  --bg-card: #142822;
+  --bg-elev: #1A332B;
+  --border: #1F3A30;
+  --border-strong: #2D5443;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #74C69D;
+  --green-bright: #95D5B2;
+  --green-deep: #2D6A4F;
+  --red: #E07856;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.75;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(116, 198, 157, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(230, 182, 85, 0.025) 0%, transparent 40%);
+}
+
+/* ============ Header ============ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 22, 18, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--bg);
+}
+
+.brand-text h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.role-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(116, 198, 157, 0.08);
+  border: 1px solid rgba(116, 198, 157, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--green-bright);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.8px;
+}
+
+.role-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+/* ============ Layout ============ */
+.layout {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 48px;
+  padding: 32px;
+}
+
+/* ============ Sidebar ============ */
+.sidebar {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.sidebar-title {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toc {
+  list-style: none;
+  font-size: 13px;
+}
+
+.toc-item {
+  margin-bottom: 2px;
+}
+
+.toc-item a {
+  display: block;
+  padding: 6px 12px;
+  color: var(--text-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+  border-radius: 0 4px 4px 0;
+}
+
+.toc-item a:hover {
+  color: var(--text);
+  background: var(--bg-card);
+  border-left-color: var(--green);
+}
+
+.toc-item a.active {
+  color: var(--green-bright);
+  background: var(--bg-card);
+  border-left-color: var(--green);
+  font-weight: 500;
+}
+
+.toc-item-sub a {
+  padding-left: 24px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ============ Main ============ */
+.main {
+  min-width: 0;
+  max-width: 820px;
+}
+
+/* ============ Hero ============ */
+.hero {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-2));
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 40px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(116, 198, 157, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hero h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.hero-sub {
+  color: var(--text-2);
+  font-size: 14px;
+  margin-bottom: 28px;
+  max-width: 600px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.hero-stat {
+  padding: 14px 16px;
+  background: rgba(20, 40, 34, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.hero-stat .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hero-stat .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--green-bright);
+}
+
+/* ============ Sections ============ */
+.section {
+  margin-bottom: 56px;
+  scroll-margin-top: 100px;
+}
+
+.section-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+
+.section h2 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+
+.section h3 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 19px;
+  font-weight: 600;
+  margin: 32px 0 14px;
+  letter-spacing: 0.3px;
+  scroll-margin-top: 100px;
+}
+
+.section h4 {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 22px 0 10px;
+  color: var(--text);
+}
+
+.section p {
+  margin-bottom: 14px;
+  color: var(--text-2);
+}
+
+.section p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.section ul, .section ol {
+  margin-bottom: 14px;
+  padding-left: 24px;
+  color: var(--text-2);
+}
+
+.section li {
+  margin-bottom: 6px;
+}
+
+.section li::marker {
+  color: var(--text-3);
+}
+
+/* ============ Callouts ============ */
+.callout {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 14px;
+}
+
+.callout-info { border-left-color: var(--blue); }
+.callout-warn { border-left-color: var(--amber); }
+.callout-danger { border-left-color: var(--red); }
+.callout-success { border-left-color: var(--green); }
+
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callout-info .callout-title { color: var(--blue); }
+.callout-warn .callout-title { color: var(--amber); }
+.callout-danger .callout-title { color: var(--red); }
+.callout-success .callout-title { color: var(--green); }
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ============ Code Blocks ============ */
+.code-block {
+  position: relative;
+  margin: 20px 0;
+  background: #060F0C;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+}
+
+.code-lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-lang::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+.code-lang.prompt::before { background: var(--amber); }
+.code-lang.bash::before { background: var(--blue); }
+
+.copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: var(--bg-card);
+  color: var(--green);
+  border-color: var(--green-deep);
+}
+
+.copy-btn.copied {
+  color: var(--green-bright);
+  border-color: var(--green);
+  background: rgba(116, 198, 157, 0.08);
+}
+
+pre {
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--green-bright);
+  border: 1px solid var(--border);
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 1em;
+}
+
+/* ============ Prompt Card ============ */
+.prompt-card {
+  background: linear-gradient(135deg, rgba(230, 182, 85, 0.04), rgba(116, 198, 157, 0.04));
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  margin: 24px 0;
+  overflow: hidden;
+}
+
+.prompt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.prompt-card-title {
+  font-size: 13px;
+  color: var(--amber);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Noto Serif SC', serif;
+  letter-spacing: 0.3px;
+}
+
+.prompt-card-title::before {
+  content: '⌘';
+  font-family: 'JetBrains Mono', monospace;
+  width: 22px;
+  height: 22px;
+  background: rgba(230, 182, 85, 0.15);
+  color: var(--amber);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.prompt-card pre {
+  background: #060F0C;
+  margin: 0;
+  border-radius: 0;
+  padding: 18px 20px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ============ Tables ============ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--bg-2);
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+tr:last-child td { border-bottom: 0; }
+
+tr:hover td { background: var(--bg-elev); color: var(--text); }
+
+/* ============ Checklist ============ */
+.checklist {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 22px;
+  margin: 20px 0;
+  list-style: none !important;
+  padding-left: 22px;
+}
+
+.checklist-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--green);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checklist-title::before {
+  content: '✓';
+  width: 20px;
+  height: 20px;
+  background: rgba(116, 198, 157, 0.15);
+  color: var(--green);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.checklist li {
+  padding: 6px 0 6px 26px;
+  position: relative;
+  color: var(--text-2);
+  font-size: 13px;
+  list-style: none;
+}
+
+.checklist li::before {
+  content: '☐';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ============ Task Card ============ */
+.task-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  margin: 24px 0;
+  position: relative;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 24px;
+  bottom: 24px;
+  width: 3px;
+  background: linear-gradient(180deg, var(--green), var(--green-deep));
+  border-radius: 0 2px 2px 0;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.8px;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.task-id {
+  padding: 3px 8px;
+  background: rgba(116, 198, 157, 0.12);
+  color: var(--green);
+  border-radius: 3px;
+}
+
+.task-duration {
+  padding: 3px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ============ Misc ============ */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+  margin: 48px 0;
+}
+
+a { color: var(--green-bright); text-decoration: none; }
+a:hover { color: var(--green); text-decoration: underline; }
+
+blockquote {
+  border-left: 3px solid var(--green-deep);
+  padding: 8px 16px;
+  margin: 16px 0;
+  color: var(--text-2);
+  background: var(--bg-card);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.do-dont {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.dd-card {
+  padding: 14px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.dd-card.do {
+  background: rgba(116, 198, 157, 0.05);
+  border-color: rgba(116, 198, 157, 0.2);
+}
+
+.dd-card.dont {
+  background: rgba(224, 120, 86, 0.04);
+  border-color: rgba(224, 120, 86, 0.2);
+}
+
+.dd-card .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.dd-card.do .label { color: var(--green); }
+.dd-card.dont .label { color: var(--red); }
+
+/* ============ Scrollbar ============ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green-deep); }
+
+/* ============ Print ============ */
+@media print {
+  .header, .sidebar { display: none; }
+  .layout { grid-template-columns: 1fr; padding: 0; }
+  body { background: white; color: black; }
+}
+
+/* ============ Mobile ============ */
+@media (max-width: 1024px) {
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  .sidebar { display: none; }
+  .hero-grid { grid-template-columns: repeat(2, 1fr); }
+  .do-dont { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 24px; }
+}
+
+/* ============ Footer ============ */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">穗</div>
+      <div class="brand-text">
+        <h1>UI 设计任务清单</h1>
+        <div class="sub">GRAIN-RISK · DESIGN HANDBOOK · v1.0</div>
+      </div>
+    </div>
+    <div class="role-badge">周煜楠 · 前端 UI 设计</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ Sidebar TOC ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-title">目录导航</div>
+    <ul class="toc">
+      <li class="toc-item"><a href="#sec-1" class="active">一、要先理解的三件事</a></li>
+      <li class="toc-item"><a href="#sec-2">二、准备工作</a></li>
+      <li class="toc-item"><a href="#sec-3">三、任务 1：设计系统</a></li>
+      <li class="toc-item"><a href="#sec-4">四、任务 2：风险地图</a></li>
+      <li class="toc-item"><a href="#sec-5">五、任务 3：SHAP 看板</a></li>
+      <li class="toc-item"><a href="#sec-6">六、任务 4：情景模拟</a></li>
+      <li class="toc-item"><a href="#sec-7">七、任务 5：路径推荐</a></li>
+      <li class="toc-item"><a href="#sec-8">八、迭代美化技巧</a></li>
+      <li class="toc-item"><a href="#sec-9">九、最终交付清单</a></li>
+      <li class="toc-item"><a href="#sec-10">十、常见问题</a></li>
+      <li class="toc-item"><a href="#sec-11">十一、时间规划</a></li>
+    </ul>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">FRONTEND DESIGN HANDBOOK</div>
+      <h1>5 份 HTML 设计稿，做出评委记得住的 UI</h1>
+      <p class="hero-sub">基于多模态的极端气候下我国粮食生产风险核心因子识别与韧性提升可视化系统。你不需要懂工程，专注审美与视觉表达就行。</p>
+      <div class="hero-grid">
+        <div class="hero-stat"><div class="label">总周期</div><div class="value">2 周</div></div>
+        <div class="hero-stat"><div class="label">交付物</div><div class="value">5 份 HTML</div></div>
+        <div class="hero-stat"><div class="label">工具</div><div class="value">claude.ai</div></div>
+        <div class="hero-stat"><div class="label">代码量</div><div class="value">~0%</div></div>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <section class="section" id="sec-1">
+      <div class="section-header">
+        <div class="section-num">SECTION · 01</div>
+        <h2>一、你要先理解的三件事</h2>
+      </div>
+
+      <h3>1. 你做的不是"完整网站"，是"设计稿"</h3>
+      <p>你做出来的每一份 HTML 都是给潘妙齐参考的<strong>视觉蓝本</strong>。他会把你的设计在 Vue 工程里重新实现一遍，所以：</p>
+
+      <div class="do-dont">
+        <div class="dd-card do">
+          <div class="label">✓ 你需要做的</div>
+          只做单页 HTML，不考虑路由、API、数据库；数据全部写死在代码里（mock 数据），不调真模型；视觉、交互、布局做漂亮就行。
+        </div>
+        <div class="dd-card dont">
+          <div class="label">✗ 你不用管的</div>
+          不需要懂 npm、git、终端命令；不用考虑响应式适配；不用考虑数据来源；不用学 Vue。
+        </div>
+      </div>
+
+      <h3>2. claude.ai 的 Artifact 是你的核心工具</h3>
+      <p>每次发起对话，Claude 会在右侧生成一个 Artifact（HTML/React 文件），你可以：</p>
+      <ul>
+        <li><strong>预览</strong>：右上角 Preview 切换到效果图</li>
+        <li><strong>复制代码</strong>：右上角 Copy 复制完整代码</li>
+        <li><strong>下载</strong>：点击下载按钮存为 .html 文件</li>
+        <li><strong>分享</strong>：点击 Publish 生成可分享链接</li>
+      </ul>
+
+      <h3>3. 设计风格已经定了——不要再发散</h3>
+      <p>我们的项目是<strong>农业 + 政府决策支持</strong>性质，不是消费类 App，所以：</p>
+
+      <table>
+        <thead><tr><th>用</th><th>不用</th></tr></thead>
+        <tbody>
+          <tr><td>深绿色为主调（农业气质）</td><td>渐变紫、霓虹色（科技感过头）</td></tr>
+          <tr><td>深色背景（专业、严肃）</td><td>Bootstrap 默认样式</td></tr>
+          <tr><td>Noto Serif SC（标题）</td><td>Comic Sans、Arial</td></tr>
+          <tr><td>JetBrains Mono（数字）</td><td>Emoji 装饰</td></tr>
+          <tr><td>数据密度高</td><td>大段空白配大字</td></tr>
+          <tr><td>克制的微交互</td><td>满屏动画</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 2 -->
+    <section class="section" id="sec-2">
+      <div class="section-header">
+        <div class="section-num">SECTION · 02</div>
+        <h2>二、准备工作（10 分钟）</h2>
+      </div>
+
+      <h3>Step 1：登录 claude.ai</h3>
+      <p>用你的账号登录 <a href="https://claude.ai" target="_blank">claude.ai</a>，确认能正常对话。<strong>模型选 Claude Opus</strong>（不是 Sonnet，Opus 设计能力更强）。</p>
+
+      <h3>Step 2：建一个项目（Project）</h3>
+      <p>点击左上角 "New Project"，命名为"粮食风险系统 UI 设计"。把这份文档贴进项目知识里，这样后续每个对话都能继承上下文。</p>
+
+      <h3>Step 3：测试一下</h3>
+      <p>在项目里新建对话，发一句"你好，确认收到了项目知识"。如果 Claude 回复时提到了"粮食生产风险"，就说明配置成功了。</p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 小提示</div>
+        Project 知识库是关键，5 份设计稿要共享同一套风格，靠它来保证不同对话之间的一致性。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 3 -->
+    <section class="section" id="sec-3">
+      <div class="section-header">
+        <div class="section-num">SECTION · 03</div>
+        <h2>三、任务 1：建立设计系统（半天，最重要！）</h2>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠ 为什么先做这个？</div>
+        4 个模块的视觉风格必须一致，否则潘做出来的成品像 4 个不同的网站。设计系统是给后面 4 个模块当"配色字典"用的。
+      </div>
+
+      <div class="task-card">
+        <div class="task-meta">
+          <span class="task-id">TASK 01</span>
+          <span class="task-duration">半天</span>
+          <span>设计系统 design-system.html</span>
+        </div>
+        <h3 style="margin-top:0">任务目标</h3>
+        <p>输出一份 design-system.html，包含：</p>
+        <ul>
+          <li>完整的颜色变量定义（CSS variables）</li>
+          <li>字体规范（标题、正文、数据三套）</li>
+          <li>8 种常用组件样例（卡片、按钮、滑块、表格、标签、徽章、图表配色、空状态）</li>
+          <li>间距与圆角规范</li>
+        </ul>
+      </div>
+
+      <h3>直接复制下面这段 Prompt 发给 Claude</h3>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 设计系统初始化</div>
+          <button class="copy-btn" data-target="prompt-1">复制</button>
+        </div>
+        <pre id="prompt-1">我在做"基于多模态的极端气候下我国粮食生产风险核心因子识别与韧性提升可视化系统"项目，需要你为我建立一份设计系统（Design System）HTML 文档。
+
+【项目调性】
+- 服务对象：农业管理部门、农业保险机构、农业科研机构
+- 视觉气质：政务+学术+科技感的交叉，要让评委一眼觉得"专业可信"
+- 灵感参考：Stripe Dashboard、Linear、Vercel Analytics 的克制美学，但配色用农业绿（不要科技蓝紫）
+
+【硬性要求】
+1. 深色主题（dark mode），主背景 #0A1612 到 #0F1F1A 之间
+2. 主色用深绿系：#1B4332 / #2D6A4F / #74C69D / #95D5B2
+3. 警示色用暖红：#E07856 / #B14A36（用于风险高的省份）
+4. 中性色用棕灰：#E8E4D8（文字）/ #A8B5AC（次文字）/ #6B7A72（弱化）
+5. 强调色用琥珀：#E6B655（用于中等风险、数字高亮）
+6. 字体三套：
+   - 标题：Noto Serif SC（衬线，让中文有"报告感"）
+   - 正文：Noto Sans SC
+   - 数字/代码：JetBrains Mono
+7. 圆角整体克制：卡片 4-6px，按钮 4px，徽章 2-3px
+8. 阴影几乎不用，靠 border + 背景层次区分
+
+【需要包含的组件样例】
+请把下面每个组件都做一个真实样例放在页面上：
+
+A. 颜色系统：色板可视化，每个色显示色值、用途
+B. 字体规范：H1-H6 + 正文 + 数字三套，给真实示例文字
+C. 卡片组件：3 种变体（普通、带标题、带 meta）
+D. 按钮组件：主按钮、次按钮、危险按钮、禁用态、加载态
+E. 滑块（slider）：单值、双值范围、带刻度的滑块
+F. 表格：紧凑型数据表，有 zebra stripe，有数字右对齐
+G. 徽章/标签：风险等级标签（低/中/高/极高）、状态标签（正常/警告/错误）
+H. 图表配色卡：给出 5 种数据可视化色板（顺序色阶、发散色阶、定性色板）
+I. 空状态：当某个模块没有数据时怎么显示
+
+【交互细节】
+- 所有 hover 状态都要有，过渡 0.2-0.25s
+- 滑块拖动要顺滑
+- 不要任何 emoji 装饰
+- 可以用极简的 SVG 图标（如箭头、放大镜、铃铛）但不超过 8 个
+
+【输出要求】
+1. 单文件 HTML，CSS 全部用 :root CSS variables 定义
+2. 顶部加一个目录导航（锚点跳转）
+3. 每个组件下方加一段说明：什么时候用、什么时候别用
+4. 不需要 JavaScript，纯静态展示页
+
+做完先给我看效果，我会反馈调整。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收标准</div>
+        <li>整体看上去像"政府/科研机构的设计规范网站"，不是消费 App</li>
+        <li>颜色全部走 CSS 变量，没有硬编码色值</li>
+        <li>有 8 类组件，都能看到真实样例</li>
+        <li>字体规范清晰，中文不糊</li>
+        <li>没有任何 emoji，没有渐变紫</li>
+      </ul>
+
+      <div class="callout">
+        <div class="callout-title">如果不满意，直接告诉 Claude 哪里不对</div>
+        <p>例如："色板太暗了，把 #0A1612 提亮到 #0D2118"<br>"卡片圆角太大了，从 6px 改到 4px"<br>"字体规范没有给真实示例文字，每个号都要写一段例子"</p>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 4 -->
+    <section class="section" id="sec-4">
+      <div class="section-header">
+        <div class="section-num">SECTION · 04</div>
+        <h2>四、任务 2：风险时空地图模块（1-2 天）</h2>
+      </div>
+
+      <div class="callout callout-success">
+        <div class="callout-title">★ 模块定位</div>
+        这是整个系统的<strong>门面</strong>，评委一进来第一眼看到的就是这个。要做到一打开就"哇"。
+      </div>
+
+      <h3>数据规范</h3>
+      <p>地图上展示 31 省的粮食生产风险值（去趋势单产波动 Y），数据区间 <code>0.011 - 0.043</code>。Top-3 高风险省份是青海(0.040)、西藏(0.038)、新疆(0.036)，低风险是北京(0.018)、上海(0.019)、黑龙江(0.020)。</p>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 风险时空地图</div>
+          <button class="copy-btn" data-target="prompt-2">复制</button>
+        </div>
+        <pre id="prompt-2">基于我项目知识里的设计系统，请帮我做"风险时空地图"模块的高保真 UI 原型，单文件 HTML，用 ECharts 5（CDN 引入）。
+
+【布局】
+- 顶部：模块标题、副标题、右侧实时推理状态徽章
+- 左侧 70%：中国地图 + 底部年份滑块
+- 右侧 30%：图例 + Top10 高风险省份列表 + 当前 hover 省份详情卡
+
+【中国地图要求】
+- 用 ECharts registerMap 加载 china.json（从
+  https://cdn.jsdelivr.net/gh/apache/echarts@4.6.0/map/json/china.json
+  获取）
+- 31 省按风险值上色，色阶用设计系统的 visualMap：
+  绿 → 浅绿 → 琥珀 → 暖红 → 深红
+- 省份 label 默认半透明显示，hover 时变白色加粗
+- 支持鼠标滚轮缩放、拖动平移
+- 背景透明（融入页面深色背景）
+
+【年份滑块】
+- 范围 2011-2023
+- 滑块拖动时地图数据实时更新（用伪随机数模拟年度波动，每年的省份排名应该有合理变化但不要完全打乱）
+- 滑块旁边显示当前选中年份（用 JetBrains Mono 字体，大号）
+
+【Top10 列表】
+- 按风险值降序，序号用 01-10 两位数（JetBrains Mono）
+- 每行：序号、省份名、风险值
+- 风险值用颜色编码：>0.030 红、0.025-0.030 琥珀、<0.025 绿
+- 点击某行时，地图自动高亮对应省份
+
+【明细卡】
+- 默认显示"悬停省份查看明细"占位
+- hover 地图时实时更新，显示：
+  - 省份名（大号衬线字体）
+  - 风险类型标签（如"洪涝主导型"、"旱作主导型"等）
+  - 5 个关键指标：风险指数 Y、灌溉率%、洪涝占比%、日照时数 h、SPEI 干旱指数
+  - 每个指标用 progress bar 横向条显示相对全国位置
+
+【交互要求】
+- 所有过渡 250ms ease
+- 滑块拖动有惯性
+- 地图 hover 有 200ms 防抖
+- 整个页面加载时有 stagger 入场动画（每个卡片间隔 80ms 淡入上浮）
+
+【数据】
+请在 JS 顶部定义一个 PROVINCES 对象，包含 31 省的 mock 数据：
+- 省份名（中文简称：北京、河北、山西…）
+- y（风险值，0.011-0.043 区间）
+- irr（灌溉率，20-120）
+- flood（洪涝占比，0-24）
+- sun（日照时数，970-3350）
+- spei（干旱指数，-3 到 3）
+- temp（年均温，2-26）
+- type（风险类型标签，如"洪涝主导型"、"旱作主导型"、"沿海台风型"等）
+
+数据要符合现实：南方省份洪涝占比高、西北日照多但 SPEI 偏干、东北温度低、新疆/青海风险值高。
+
+【兜底】
+如果中国地图 JSON 加载失败，地图区域显示一个"地图加载中..."的占位 SVG，不要白屏。
+
+做完先给我看效果。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收标准</div>
+        <li>中国地图正常显示，31 省都有颜色</li>
+        <li>年份滑块拖动时数据有变化</li>
+        <li>hover 省份时右侧明细卡实时更新</li>
+        <li>Top10 列表准确反映当前数据</li>
+        <li>整体视觉和设计系统统一</li>
+        <li>在 1920×1080 屏上效果完美，在 1440×900 笔记本屏也不溢出</li>
+      </ul>
+
+      <h3>进阶迭代（如果还有时间）</h3>
+      <p>第二轮可以让 Claude 加入：</p>
+      <ul>
+        <li>时间轴动画（点击播放按钮，自动从 2011 播放到 2023）</li>
+        <li>省份对比模式（选 2 个省份并排显示）</li>
+        <li>风险变化趋势小图（hover 时显示该省 13 年趋势 mini chart）</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 5 -->
+    <section class="section" id="sec-5">
+      <div class="section-header">
+        <div class="section-num">SECTION · 05</div>
+        <h2>五、任务 3：SHAP 归因看板模块（2-3 天）</h2>
+      </div>
+
+      <div class="callout callout-success">
+        <div class="callout-title">★ 模块定位</div>
+        这是项目"可解释 AI"的核心展示位，专业评委会盯着这里看。要做到<strong>学术规范 + 视觉惊艳</strong>。
+      </div>
+
+      <h3>数据规范</h3>
+      <p>11 个特征的全局 SHAP 重要性（基于论文实测）：</p>
+
+      <table>
+        <thead><tr><th>排名</th><th>特征</th><th>重要性</th><th>方向</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>灌溉率 Irr</td><td>0.420</td><td style="color:var(--green)">韧性（减损）</td></tr>
+          <tr><td>2</td><td>洪涝占比 Flood_R</td><td>0.385</td><td style="color:var(--red)">致灾（增灾）</td></tr>
+          <tr><td>3</td><td>日照时数 Sun</td><td>0.312</td><td style="color:var(--green)">韧性</td></tr>
+          <tr><td>4</td><td>平均气温 Temp</td><td>0.225</td><td style="color:var(--red)">致灾</td></tr>
+          <tr><td>5</td><td>降水量 Prec</td><td>0.185</td><td style="color:var(--red)">致灾</td></tr>
+          <tr><td>6</td><td>干旱指数 SPEI</td><td>0.162</td><td style="color:var(--green)">韧性</td></tr>
+          <tr><td>7</td><td>农机总动力 Mech</td><td>0.124</td><td style="color:var(--green)">韧性</td></tr>
+          <tr><td>8</td><td>化肥施用量 Fert</td><td>0.092</td><td style="color:var(--red)">致灾</td></tr>
+          <tr><td>9</td><td>旱灾面积 Drou_A</td><td>0.075</td><td style="color:var(--red)">致灾</td></tr>
+          <tr><td>10</td><td>水灾面积 Flood_A</td><td>0.058</td><td style="color:var(--red)">致灾</td></tr>
+          <tr><td>11</td><td>NDVI 异常</td><td>0.034</td><td style="color:var(--green)">韧性</td></tr>
+        </tbody>
+      </table>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · SHAP 归因看板</div>
+          <button class="copy-btn" data-target="prompt-3">复制</button>
+        </div>
+        <pre id="prompt-3">基于设计系统，请帮我做"SHAP 归因看板"模块的高保真 UI 原型，单文件 HTML，ECharts 5。
+
+【布局】2×2 网格
+- 左上：全局特征重要性柱状图（Mean |SHAP|）
+- 右上：单样本预测分解瀑布图（SHAP Waterfall）
+- 左下：SHAP 蜂群分布（Beeswarm Plot）
+- 右下：核心因子自然语言解读卡片列表
+
+【全局特征重要性柱状图】
+- 横向条形图（h-bar），11 个特征
+- 按重要性降序（从上到下：灌溉率、洪涝占比、日照时数...）
+- 颜色编码：韧性因子用绿色渐变，致灾因子用红色渐变
+- bar 末端显示数值（保留 3 位小数）
+- 标题：「全局特征重要性 — Mean |SHAP value|」
+- 副标题：「基于 XGBoost-SHAP 框架，n=403」
+
+【SHAP Waterfall】
+- 主题：「单样本预测分解 — 河南省 2022 年度」
+- 起点：E[f(x)] 基线 = 0.0235
+- 终点：f(x) 预测值 = 0.0249
+- 中间 6 个特征贡献：
+  + 洪涝占比 4.2% → +0.0028
+  + 化肥施用量 → +0.0009
+  + 平均气温 14.2°C → +0.0015
+  − 灌溉率 65.4% → −0.0022
+  − 日照时数 2240h → −0.0011
+  − 农机总动力 → −0.0005
+- 正贡献用红色（推高风险），负贡献用绿色（降低风险）
+- 基线和终点用琥珀和蓝色高亮区分
+
+【SHAP 蜂群图】
+- Y 轴：Top 5 特征（灌溉率、洪涝占比、日照时数、平均气温、SPEI）
+- X 轴：SHAP 值，0 为分界，左减损右增灾
+- 每个特征 50-80 个点，X 位置 = SHAP 值，Y 位置 = 特征位置加抖动
+- 点颜色 = 该样本下特征的原始值（用 visualMap 蓝→红梯度）
+- 用 ECharts scatter，symbolSize: 5, opacity: 0.7
+
+【自然语言解读卡片】
+做 4 张卡片，每张：
+- 顶部：图标（↑或↓）+ 因子名 + 韧性/致灾标签
+- 中部：一句话核心结论
+- 底部：一段 2-3 行的详细解释（用真实数字）
+
+例如灌溉率卡片：
+图标 ↓ | 灌溉率 (Irr) | 韧性因子
+"高灌溉率显著负向拉动风险值"
+"是抵御极端气候的核心人为调节手段。SHAP 平均贡献 −0.42，全国均值 56.7%，提升至 70% 可降低单产风险约 15%。"
+
+四张卡片分别是：灌溉率、洪涝占比、日照时数、"灌溉率×气温"交互效应。
+
+【上方控件栏】
+顶部放一个 segmented control，允许切换：
+- 全部样本（默认）
+- 仅北方省份
+- 仅南方省份
+- 仅主产区（13 个粮食主产省）
+
+切换时柱状图和蜂群图的数据有合理变化（可以用伪数据，但比例关系要保持现实感）。
+
+【交互】
+- hover 柱状条显示完整 tooltip
+- 点击柱状条切换瀑布图的特征（如点击"平均气温"则瀑布图变成气温在该样本的局部解释）
+- 蜂群图点 hover 显示该样本的省份+年份+特征值
+- 卡片 hover 时整张卡片轻微上浮（translateY(-2px) + shadow）
+
+数据 mock 即可，比例要符合论文表格。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收标准</div>
+        <li>四张图严格按 2×2 布局，没有错位</li>
+        <li>柱状图颜色编码清晰（绿=韧性，红=致灾）</li>
+        <li>Waterfall 起点终点 + 6 个中间贡献都标出</li>
+        <li>蜂群图看起来像真实 SHAP 输出（点的颜色梯度合理）</li>
+        <li>解读卡片文字专业、不空话</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 6 -->
+    <section class="section" id="sec-6">
+      <div class="section-header">
+        <div class="section-num">SECTION · 06</div>
+        <h2>六、任务 4：参数情景模拟模块（1-2 天）</h2>
+      </div>
+
+      <div class="callout callout-success">
+        <div class="callout-title">★ 模块定位</div>
+        这是项目的"可玩性"亮点，评委会上手拖滑块。要做到<strong>即时反馈 + 视觉惊喜</strong>。
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 参数情景模拟</div>
+          <button class="copy-btn" data-target="prompt-4">复制</button>
+        </div>
+        <pre id="prompt-4">基于设计系统，请帮我做"参数情景模拟"模块的高保真 UI 原型，单文件 HTML，ECharts 5。
+
+【布局】1:1.5 两栏
+- 左侧 40%：参数控制台（省份下拉 + 5 个滑块 + 重置按钮）
+- 右侧 60%：结果展示（双仪表盘 + 风险变化大数字 + 因子贡献对比图）
+
+【左侧参数控制台】
+1. 省份下拉框：31 省，默认"河南"
+2. 5 个滑块（每个滑块独立卡片）：
+   - 灌溉率（20-120%，默认根据省份基线）
+   - 洪涝占比（0-24%）
+   - 日照时数（970-3350 小时/年）
+   - 平均气温（2-26°C）
+   - SPEI 干旱指数（-3 到 +3）
+3. 每个滑块卡片包含：
+   - 顶部：参数名 + 当前值（JetBrains Mono 大号绿色）
+   - 中部：滑块本体
+   - 底部：刻度标签（最小值、方向提示、最大值）
+4. "重置参数为省份基线值"按钮（次按钮样式）
+
+【右侧结果展示】
+1. 顶部双仪表盘并排：
+   - 左仪表盘：基线风险（琥珀指针）
+   - 右仪表盘：模拟风险（绿/红指针，根据是否改善）
+   - 仪表盘色带：绿→琥珀→红，刻度 0.005-0.055
+2. 中间「风险变化 Δ」大数字卡：
+   - 标签：「风险变化 Δ」
+   - 主体：超大数字（36px JetBrains Mono），如 "−0.0028"
+   - 改善时显示绿色，恶化时显示红色
+   - 副标题：「较基线风险降低/上升 X%」
+3. 底部因子贡献对比柱状图：
+   - 5 个特征的 SHAP 贡献横向条形图
+   - 当前调节的因子贡献条会高亮（粗一点 + 发光描边）
+
+【实时计算逻辑】
+当任意滑块变动时，按下面线性近似公式实时计算（不要太精确，看起来合理就行）：
+
+baseRisk = 0.0235  (E[f(x)])
+irrEffect = -(irr - 56.7) * 0.000115
+floodEffect = (flood - 2.97) * 0.000420
+sunEffect = -(sun - 2086) * 0.0000023
+tempEffect = (temp - 14.0) * 0.000180
+speiEffect = -(spei - (-0.08)) * 0.000310
+simRisk = base + 所有 effect 之和
+delta = simRisk - 省份基线 Y
+
+【交互细节】
+- 滑块拖动时仪表盘指针平滑过渡（不要瞬间跳）
+- 大数字卡有 count-up 动画（从旧值动到新值）
+- 调节滑块时对应的贡献条短暂闪烁（如金黄色边框 300ms）
+- 顶部加一个小型"近期模拟历史"，记录最近 5 次的模拟参数和结果（像 Linear 的 Recent Actions）
+
+【右上角加】
+"另存为情景"按钮：点击后弹出一个保存对话框（mock，不需要真存），记录情景名+当前所有参数值
+
+数据 mock，公式如上。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收标准</div>
+        <li>5 个滑块都能正常拖动，数值实时更新</li>
+        <li>仪表盘指针平滑过渡</li>
+        <li>大数字卡有 count-up 动画</li>
+        <li>调节滑块时贡献条会高亮反馈</li>
+        <li>切换省份时所有数据正确切换</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 7 -->
+    <section class="section" id="sec-7">
+      <div class="section-header">
+        <div class="section-num">SECTION · 07</div>
+        <h2>七、任务 5：韧性路径推荐模块（1 天）</h2>
+      </div>
+
+      <div class="callout callout-success">
+        <div class="callout-title">★ 模块定位</div>
+        这是项目"落地价值"的体现，要做到<strong>像咨询报告 + 美观可读</strong>。
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-header">
+          <div class="prompt-card-title">Prompt · 韧性路径推荐</div>
+          <button class="copy-btn" data-target="prompt-5">复制</button>
+        </div>
+        <pre id="prompt-5">基于设计系统，请帮我做"韧性路径推荐"模块的高保真 UI 原型，单文件 HTML。
+
+【布局】1:2 两栏
+- 左侧 30%：省份信息卡 + 切换下拉 + 目标用户卡
+- 右侧 70%：三阶段路径时间线
+
+【左侧省份信息卡】
+- 大号衬线省份名（如"河南省"）
+- 风险类型标签（琥珀色，如"⚠ 洪涝主导型 · 主产区"）
+- 一段 2-3 行的省份风险特征描述
+- 2×2 关键指标网格：
+  - 风险指数 0.026
+  - 全国排名 第 12
+  - 灌溉率 65.4%
+  - 洪涝占比 4.2%
+
+【左侧切换器】
+省份下拉，切换时右侧路径自动重新生成
+
+【左侧目标用户卡】
+列出 4 类目标用户：
+- 省/市农业农村厅
+- 中国人寿财险等农险机构
+- 农科院粮食产业研究机构
+- 国家粮食和物资储备局
+
+【右侧三阶段时间线】
+垂直时间线，3 张大卡片：
+
+卡片 1：短期应急（0-1 年）
+- 左边框 3px 实线，绿色（#74C69D）
+- 标题：「▸ 短期应急（0 — 1 年）」（衬线字体）
+- 副标题：「监测 · 预警 · 培训」（mono 字体小号灰色）
+- 下方 3-4 个行动项，每项：
+  - 圆形序号徽章（01、02、03）
+  - 加粗的行动名（如"建立县域洪涝监测预警网络"）
+  - 一段说明（如"依托气象站点与遥感数据..."）
+
+卡片 2：中期建设（1-3 年）
+- 左边框琥珀色（#E6B655）
+- 副标题：「基础设施 · 品种结构 · 技术推广」
+- 4 个行动项
+
+卡片 3：长期战略（3-5 年）
+- 左边框蓝色（#6BA8B5）
+- 副标题：「制度建设 · 产业升级 · 协同治理」
+- 3-4 个行动项
+
+【路径生成逻辑】
+根据省份特征自动生成不同行动项。规则示例：
+
+if 洪涝占比 > 5：
+  短期加入"建立洪涝监测预警网络"
+  中期加入"提升排涝防洪标准"
+if 灌溉率 < 50：
+  中期加入"高标准农田灌溉升级"
+if 平均气温 > 18：
+  中期加入"引入耐热抗旱品种"
+if SPEI < -0.5：
+  短期加入"部署土壤墒情监测站"
+  长期加入"探索可持续水资源利用"
+
+不同省份切换时，路径行动项有明显差异（不是模板化套话）。
+
+【交互】
+- 切换省份时三张卡片有 stagger 重新入场动画
+- 行动项 hover 时整行轻微高亮 + 左边出现一个"▸"指示符
+- 右上角加一个"导出 PDF 报告"按钮（mock，不需要真导出）
+
+每个省份的路径行动项要写得专业、具体、有数字，不要空话套话。</pre>
+      </div>
+
+      <ul class="checklist">
+        <div class="checklist-title">验收标准</div>
+        <li>三阶段卡片视觉层级清晰</li>
+        <li>切换省份时路径有明显变化</li>
+        <li>行动项文案专业，不像 AI 套话</li>
+        <li>整体像一份"咨询公司报告"的质感</li>
+      </ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 8 -->
+    <section class="section" id="sec-8">
+      <div class="section-header">
+        <div class="section-num">SECTION · 08</div>
+        <h2>八、迭代美化技巧</h2>
+      </div>
+
+      <h3>如何让 Claude 改你想要的细节</h3>
+
+      <div class="do-dont">
+        <div class="dd-card dont">
+          <div class="label">✗ 错误说法</div>
+          "再美观一点"<br>"看起来不专业"<br>"感觉差点意思"
+        </div>
+        <div class="dd-card do">
+          <div class="label">✓ 正确说法</div>
+          "卡片的圆角从 6px 改到 4px"<br>"顶部 metrics 字号 18px→22px，字重 600"<br>"右侧列表项之间间距 4px→8px"
+        </div>
+      </div>
+
+      <h3>如果 Claude 改坏了</h3>
+      <p>直接说"撤回上一次修改，回到 2 步前的版本"，它会重新生成。</p>
+
+      <h3>跨模块视觉一致性</h3>
+      <p>每个模块做完后，把 4 个模块的 HTML 截图发给 Claude，问：</p>
+      <blockquote>对比这 4 张图，找出视觉风格不一致的地方，并给我修改建议</blockquote>
+      <p>它会指出诸如"模块 1 卡片圆角 6px 但模块 3 是 4px"这类问题，你逐个修过去就行。</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 9 -->
+    <section class="section" id="sec-9">
+      <div class="section-header">
+        <div class="section-num">SECTION · 09</div>
+        <h2>九、最终交付清单</h2>
+      </div>
+
+      <p>完成后你应该有 5 份 HTML 文件：</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang bash">交付目录结构</div>
+        </div>
+        <pre>ui-designs/
+├── 00-design-system.html       (设计系统规范)
+├── 01-risk-map.html             (风险时空地图)
+├── 02-shap-dashboard.html       (SHAP 归因看板)
+├── 03-scenario-simulator.html   (参数情景模拟)
+└── 04-resilience-paths.html     (韧性路径推荐)</pre>
+      </div>
+
+      <p>把这 5 个文件打包发给潘妙齐，他会用 Claude Code 把这些设计稿迁移到 Vue 工程里。</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 10 -->
+    <section class="section" id="sec-10">
+      <div class="section-header">
+        <div class="section-num">SECTION · 10</div>
+        <h2>十、常见问题</h2>
+      </div>
+
+      <h4>Q1：Claude 生成的代码太长，预览跑不起来？</h4>
+      <p>发送"代码有没有语法错误？请检查并修复，告诉我修了什么"。</p>
+
+      <h4>Q2：中国地图加载失败？</h4>
+      <p>网络问题或 CDN 被墙。让 Claude "改用 https://geojson.cn/api/china/100000.json 这个备用源"。</p>
+
+      <h4>Q3：图表颜色不在设计系统色板里？</h4>
+      <p>让 Claude "所有图表配色严格走 CSS 变量，不要硬编码 hex 值"。</p>
+
+      <h4>Q4：响应式怎么处理？</h4>
+      <p>你不用管，重点做 1920×1080 桌面端就行，潘后续会做响应式适配。</p>
+
+      <h4>Q5：能不能用 React 而不是 HTML？</h4>
+      <p>能。在第一句加上"用 React + Tailwind 实现"。但 HTML 更省心，建议 4 个模块都用 HTML。</p>
+
+      <h4>Q6：和潘对接时给什么？</h4>
+      <p>给他 HTML 文件 + 截图 + 一句话说明（"这是 M01 风险地图，右侧明细卡的设计已经定稿，请按此实现 Vue 版"）。</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Section 11 -->
+    <section class="section" id="sec-11">
+      <div class="section-header">
+        <div class="section-num">SECTION · 11</div>
+        <h2>十一、时间规划建议</h2>
+      </div>
+
+      <table>
+        <thead><tr><th>天数</th><th>任务</th></tr></thead>
+        <tbody>
+          <tr><td>Day 1 上午</td><td>读完本文档 + 设置 Project + 测试对话</td></tr>
+          <tr><td>Day 1 下午</td><td>任务 1：建立设计系统（含 1-2 轮迭代）</td></tr>
+          <tr><td>Day 2-3</td><td>任务 2：风险时空地图</td></tr>
+          <tr><td>Day 4-6</td><td>任务 3：SHAP 归因看板（最复杂）</td></tr>
+          <tr><td>Day 7-8</td><td>任务 4：参数情景模拟</td></tr>
+          <tr><td>Day 9</td><td>任务 5：韧性路径推荐</td></tr>
+          <tr><td>Day 10</td><td>全局视觉一致性检查 + 截图存档</td></tr>
+          <tr><td>Day 11-14</td><td>配合潘妙齐做 Vue 集成、视觉验收</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠ 重要提醒</div>
+        遇到任何卡住的地方，发消息给潘队长或问指导老师，不要自己憋着。
+      </div>
+
+      <p style="margin-top:32px; text-align:center; font-family:'Noto Serif SC',serif; font-size:18px; color:var(--green-bright)">加油，做出来的东西能让评委记住你的名字。</p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  © 2026 山西农业大学信息科学与工程学院 · 极端气候下粮食生产风险智能分析项目组
+</footer>
+
+<script>
+// 复制按钮
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    navigator.clipboard.writeText(target.textContent).then(() => {
+      btn.textContent = '✓ 已复制';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '复制';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+});
+
+// TOC 滚动高亮
+const sections = document.querySelectorAll('.section');
+const tocLinks = document.querySelectorAll('.toc a');
+
+function updateActiveTOC() {
+  let current = '';
+  sections.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= 150) current = sec.id;
+  });
+  tocLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateActiveTOC, { passive: true });
+updateActiveTOC();
+</script>
+</body>
+</html>
