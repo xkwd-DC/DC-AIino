@@ -45,10 +45,12 @@ data/processed/
 !data/interim/
 !data/processed/
 !data/interim/paper_panel_raw.parquet
+!data/interim/paper_panel_v1.parquet
 !data/interim/modis_province_monthly.parquet
 !data/interim/nasa_power_annual.csv
 !data/interim/spei_province_annual.csv
 !data/interim/province_centroids.csv
+!data/interim/alignment_report.md
 !data/**/.gitkeep
 !data/**/README.md
 
