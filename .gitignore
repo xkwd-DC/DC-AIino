@@ -34,6 +34,17 @@ data/processed/
 *.tiff
 *.nc
 
+# 保留 data/ 下的目录结构（让仓库可见但不存大文件）
+!data/raw/
+!data/raw/modis_ndvi/
+!data/raw/modis_lst/
+!data/raw/gis_province/
+!data/raw/gis_cropland/
+!data/interim/
+!data/processed/
+!data/**/.gitkeep
+!data/**/README.md
+
 # 模型权重与产物
 models/checkpoints/
 models/runs/
