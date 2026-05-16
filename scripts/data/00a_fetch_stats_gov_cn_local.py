@@ -1,23 +1,24 @@
 """国家统计局 fsnd（分省年度）数据抓取——**必须在国内 IP 下运行**。
 
-从这台机的 GCP IP 访问 stats.gov.cn 被 WAF UrlACL 直接拒。
-石灵子在自己的电脑/校园网（CN 大陆 IP）跑这个脚本，然后把输出 CSV 传回服务器。
+⚠️  Windows + Python 3.12+ 下 stats.gov.cn 的 WAF 会基于 TLS 指纹（JA3）
+    识别 Python requests/urllib3 并 403 屏蔽所有 API endpoint。
+    本脚本**改用 Windows 自带的 curl.exe 走 subprocess**——curl 用 SChannel，
+    TLS 指纹和浏览器一致，能过 WAF。
 
-依赖：
-    pip install curl_cffi pandas         # ← 首选，模仿真浏览器 TLS 指纹绕 WAF JA3
-    # 或退而求其次（可能被 WAF 拒）：
-    # pip install requests pandas
+依赖（极简）：
+    pip install pandas         # 仅 pandas，HTTP 走 curl.exe
+    # 不需要 requests / curl_cffi / 等等
 
-⚠️  Windows + Python 3.14 + 代理 rules 模式下，stats.gov.cn 的 WAF 会基于 TLS
-    指纹（JA3）识别 Python requests 并 reset 连接。**必须用 curl_cffi**——它
-    底层调 libcurl 并伪装成 Chrome 的 ClientHello。
+前提：
+    - Windows 10/11 自带 curl.exe（系统 PATH 里）
+    - CN 大陆 IP（学校/家庭网，不要走境外代理）
 
 用法：
 
-    # 1. 先探索模式：列出 A0D（农业）大类下的所有指标，肉眼对照本脚本里的候选 code
+    # 1. 探索（列出 A0D 农业大类的子指标，肉眼对照 INDICATORS）
     python 00a_fetch_stats_gov_cn_local.py --explore
 
-    # 2. 跑全量抓取（5 个指标 × 31 省 × 13 年，~30 秒）
+    # 2. 跑全量抓取
     python 00a_fetch_stats_gov_cn_local.py --years 2011-2023
 
 输出：
@@ -28,9 +29,8 @@
     out/disaster.csv       农作物受灾面积
     out/stats_panel.csv    合并后的宽表（你只需要回传这一份）
 
-⚠️  Indicator code 不一定全对！每个 fetch 完会打印「拿到的指标名」，对比预期：
-    - 名字对得上 → 数据可用
-    - 名字对不上 → 改 `INDICATORS` 里的 `code` 重试
+⚠️  Indicator code 不一定全对！跑 --explore 看实际 code 树，对照 INDICATORS
+    第一列改 code。
 """
 from __future__ import annotations
 
@@ -38,54 +38,19 @@ import argparse
 import csv
 import json
 import logging
-import ssl
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Iterable
-
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.poolmanager import PoolManager
+from urllib.parse import urlencode
 
 API = "https://data.stats.gov.cn/easyquery.htm"
+HOME = "https://data.stats.gov.cn/"
 DBCODE = "fsnd"  # 分省年度
 TIMEOUT = 30
-
-
-def _make_legacy_ctx() -> ssl.SSLContext:
-    """最大兼容性的 SSL 上下文：强制 TLS 1.2、SECLEVEL=0、关 hostname 校验、放行 legacy renegotiation。"""
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    # 强制 TLS 1.2（stats.gov.cn 不支持 TLS 1.3）
-    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-    ctx.maximum_version = ssl.TLSVersion.TLSv1_2
-    # SECLEVEL=0 接受所有 cipher（包括很老的）
-    ctx.set_ciphers("DEFAULT@SECLEVEL=0:!aNULL:!eNULL")
-    # OpenSSL 3.0+ 的 legacy renegotiation 兼容
-    try:
-        ctx.options |= 0x4  # OP_LEGACY_SERVER_CONNECT
-    except AttributeError:
-        pass
-    # 关掉 ALPN，避免 h2 协商把握手搞糊
-    try:
-        ctx.set_alpn_protocols([])
-    except (NotImplementedError, ValueError):
-        pass
-    return ctx
-
-
-class LegacyTLSAdapter(HTTPAdapter):
-    """国家统计局服务器的 TLS 实现老旧，需要 TLS 1.2 + SECLEVEL=0 + legacy renegotiation。"""
-
-    def init_poolmanager(self, *args, **kwargs):
-        kwargs["ssl_context"] = _make_legacy_ctx()
-        return super().init_poolmanager(*args, **kwargs)
-
-    def proxy_manager_for(self, *args, **kwargs):
-        kwargs["ssl_context"] = _make_legacy_ctx()
-        return super().proxy_manager_for(*args, **kwargs)
+COOKIES_FILE = "stats_cookies.txt"
 
 INDICATORS = [
     # (内部列名,    候选 zb code 列表,                       预期指标名包含,  单位)
@@ -99,31 +64,56 @@ INDICATORS = [
 
 OUT_DIR = Path("out")
 
-
-def make_session() -> requests.Session:
-    s = requests.Session()
-    s.mount("https://", LegacyTLSAdapter())
-    s.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/120.0 Safari/537.36",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Language": "zh-CN,zh;q=0.9",
-        "Referer": "https://data.stats.gov.cn/easyquery.htm",
-        "X-Requested-With": "XMLHttpRequest",
-    })
-    # InsecureRequestWarning 静音
-    try:
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    except Exception:
-        pass
-    # 拿 JSESSIONID；连不通就让上层处理
-    s.get("https://data.stats.gov.cn/", timeout=TIMEOUT, verify=False)
-    return s
+HEADERS = [
+    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept: application/json, text/javascript, */*; q=0.01",
+    "Accept-Language: zh-CN,zh;q=0.9,en;q=0.8",
+    "Referer: https://data.stats.gov.cn/easyquery.htm",
+    "X-Requested-With: XMLHttpRequest",
+]
 
 
-def query(session: requests.Session, zb: str, sj: str) -> dict:
-    """一次拉 31 省 × N 年。"""
+def find_curl() -> str:
+    """定位 curl.exe（Windows 10+ 自带）。"""
+    for cmd in ("curl.exe", "curl"):
+        path = shutil.which(cmd)
+        if path:
+            return path
+    # Windows 自带路径
+    win_default = Path(r"C:\Windows\System32\curl.exe")
+    if win_default.exists():
+        return str(win_default)
+    raise SystemExit(
+        "找不到 curl.exe。Windows 10/11 应自带于 C:\\Windows\\System32\\curl.exe。"
+        "Win7/8 请去 https://curl.se/windows/ 下载并加 PATH。"
+    )
+
+
+def curl_get(curl: str, url: str, cookies_file: str, *, follow_redirects: bool = True) -> str:
+    """用 curl.exe 发 GET。返回响应 body 字符串。"""
+    args = [
+        curl, "-sS", "--max-time", str(TIMEOUT),
+        "-c", cookies_file, "-b", cookies_file,
+    ]
+    if follow_redirects:
+        args.append("-L")
+    for h in HEADERS:
+        args.extend(["-H", h])
+    args.append(url)
+    proc = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", timeout=TIMEOUT + 10)
+    if proc.returncode != 0:
+        raise RuntimeError(f"curl 退出码 {proc.returncode}：{proc.stderr[:200]}")
+    return proc.stdout
+
+
+def init_session(curl: str, cookies_file: str) -> None:
+    """先 GET 主页拿 JSESSIONID。"""
+    logging.debug("初始化 cookies → %s", cookies_file)
+    curl_get(curl, HOME, cookies_file)
+
+
+def query(curl: str, cookies_file: str, zb: str, sj: str) -> dict:
     params = {
         "m": "QueryData",
         "dbcode": DBCODE,
@@ -134,40 +124,42 @@ def query(session: requests.Session, zb: str, sj: str) -> dict:
                              {"wdcode": "sj", "valuecode": sj}]),
         "k1": str(int(time.time() * 1000)),
     }
-    r = session.get(API, params=params, timeout=TIMEOUT, verify=False)
-    r.raise_for_status()
-    return r.json()
+    url = f"{API}?{urlencode(params)}"
+    body = curl_get(curl, url, cookies_file)
+    if not body.strip():
+        raise RuntimeError("响应为空")
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"响应非 JSON（前 200 字符）：{body[:200]!r}") from e
 
 
-def explore(session: requests.Session, parent_id: str = "A0D") -> None:
-    """打印 parent_id 下所有子指标，肉眼匹配 code。"""
-    r = session.get(
-        API,
-        params={
-            "m": "getTree",
-            "id": parent_id,
-            "dbcode": DBCODE,
-            "wdcode": "zb",
-        },
-        timeout=TIMEOUT,
-        verify=False,
-    )
-    r.raise_for_status()
-    items = r.json()
+def explore(curl: str, cookies_file: str, parent_id: str = "A0D") -> None:
+    params = {
+        "m": "getTree",
+        "id": parent_id,
+        "dbcode": DBCODE,
+        "wdcode": "zb",
+    }
+    url = f"{API}?{urlencode(params)}"
+    body = curl_get(curl, url, cookies_file)
+    if not body.strip():
+        raise RuntimeError("getTree 响应为空")
+    try:
+        items = json.loads(body)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"getTree 响应非 JSON：{body[:300]!r}")
     print(f"\n=== {parent_id} 下子节点 ===")
     print(f"{'code':12s} {'isParent':10s} {'name'}")
     for it in items:
         is_p = "[+]" if it.get("isParent") else "   "
         print(f"  {it['id']:12s} {is_p:10s} {it['name']}")
-    print("\n(树形）若 isParent=true，可加 --explore-id <code> 继续展开")
+    print("\n(若 isParent=[+]，加 --explore-id <code> 继续展开)")
 
 
 def parse_panel(payload: dict, our_col: str) -> tuple[list[dict], str]:
-    """提取 returndata.datanodes → 31 省 × N 年。返回 (rows, indicator_name)。"""
     nodes = payload.get("returndata", {}).get("datanodes", [])
     wdnodes = payload.get("returndata", {}).get("wdnodes", [])
-
-    sj_map = {n["code"]: n["name"] for w in wdnodes if w["wdcode"] == "sj" for n in w["nodes"]}
     reg_map = {n["code"]: n["name"] for w in wdnodes if w["wdcode"] == "reg" for n in w["nodes"]}
     zb_nodes = [n for w in wdnodes if w["wdcode"] == "zb" for n in w["nodes"]]
     indicator_name = zb_nodes[0]["name"] if zb_nodes else "?"
@@ -188,19 +180,18 @@ def parse_panel(payload: dict, our_col: str) -> tuple[list[dict], str]:
     return rows, indicator_name
 
 
-def try_codes(session: requests.Session, codes: Iterable[str], sj: str, our_col: str,
-              expect_keyword: str) -> tuple[str, list[dict], str] | None:
-    """依次试候选 code，第一个名字包含期望关键词的就用。"""
+def try_codes(curl: str, cookies_file: str, codes: Iterable[str], sj: str,
+              our_col: str, expect_keyword: str) -> tuple[str, list[dict], str] | None:
     for code in codes:
         try:
-            payload = query(session, code, sj)
+            payload = query(curl, cookies_file, code, sj)
         except Exception as e:
-            logging.warning("  zb=%s 请求失败：%s", code, e)
+            logging.warning("  zb=%s 请求失败：%s", code, str(e)[:120])
             continue
         try:
             rows, name = parse_panel(payload, our_col)
         except Exception as e:
-            logging.warning("  zb=%s 解析失败：%s", code, e)
+            logging.warning("  zb=%s 解析失败：%s", code, str(e)[:120])
             continue
         if expect_keyword in name:
             return code, rows, name
@@ -210,11 +201,12 @@ def try_codes(session: requests.Session, codes: Iterable[str], sj: str, our_col:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="国家统计局 fsnd 数据抓取（仅 CN IP 可用）")
+    parser = argparse.ArgumentParser(description="国家统计局 fsnd 数据抓取（仅 CN IP 可用，走 curl.exe）")
     parser.add_argument("--years", type=str, default="2011-2023")
     parser.add_argument("--out", type=Path, default=OUT_DIR)
-    parser.add_argument("--explore", action="store_true", help="只打印 A0D 农业大类的指标列表")
-    parser.add_argument("--explore-id", type=str, default="A0D", help="自定义探索节点 id")
+    parser.add_argument("--explore", action="store_true", help="只列 A0D 子节点")
+    parser.add_argument("--explore-id", type=str, default="A0D")
+    parser.add_argument("--cookies", type=str, default=COOKIES_FILE)
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args(argv)
 
@@ -224,10 +216,12 @@ def main(argv: list[str] | None = None) -> int:
         datefmt="%H:%M:%S",
     )
 
-    session = make_session()
+    curl = find_curl()
+    logging.info("使用 curl: %s", curl)
+    init_session(curl, args.cookies)
 
     if args.explore:
-        explore(session, args.explore_id)
+        explore(curl, args.cookies, args.explore_id)
         return 0
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -236,13 +230,12 @@ def main(argv: list[str] | None = None) -> int:
     all_dfs: dict[str, list[dict]] = {}
     for col, codes, expect, unit in INDICATORS:
         logging.info("=== 抓 %s (候选 %s, 期望含 '%s', 单位 %s) ===", col, codes, expect, unit)
-        result = try_codes(session, codes, sj, col, expect)
+        result = try_codes(curl, args.cookies, codes, sj, col, expect)
         if result is None:
             logging.error("❌ %s 所有候选 code 都没匹配上 → 跑 --explore 看实际 code", col)
             continue
         code, rows, name = result
         logging.info("✅ %s 用 zb=%s 拿到 '%s'，%d 行", col, code, name, len(rows))
-
         out_csv = args.out / f"{col}.csv"
         with out_csv.open("w", encoding="utf-8", newline="") as fp:
             w = csv.DictWriter(fp, fieldnames=["province_code", "province", "year", col])
@@ -252,7 +245,6 @@ def main(argv: list[str] | None = None) -> int:
         all_dfs[col] = rows
         time.sleep(1.5)
 
-    # 合并宽表
     if all_dfs:
         first_col = next(iter(all_dfs))
         keys = {(r["province_code"], r["year"]): {"province_code": r["province_code"],
@@ -272,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
             w.writeheader()
             w.writerows(wide)
         logging.info("✅ 合并宽表 %s（%d 行 × %d 列）", wide_csv, len(wide), len(fields))
-        logging.info("把 %s 传回 /home/darcy/DC/DC/data/raw/paper_panel/", wide_csv)
+        logging.info("把 %s 传回服务器 data/raw/paper_panel/", wide_csv)
     return 0
 
 
