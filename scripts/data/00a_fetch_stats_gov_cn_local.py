@@ -32,16 +32,51 @@ import argparse
 import csv
 import json
 import logging
+import ssl
 import sys
 import time
 from pathlib import Path
 from typing import Iterable
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.poolmanager import PoolManager
 
 API = "https://data.stats.gov.cn/easyquery.htm"
 DBCODE = "fsnd"  # 分省年度
 TIMEOUT = 30
+
+
+class LegacyTLSAdapter(HTTPAdapter):
+    """国家统计局服务器的 TLS 实现老旧，Python 3.12+ 默认 security level=2 会握手失败。
+
+    把 SECLEVEL 降到 1 + 启用 unsafe_legacy_renegotiation 才能连上。
+    """
+
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        # OpenSSL 3.0+ 默认禁掉了 legacy renegotiation；statics 服务器需要
+        try:
+            ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
+        except AttributeError:
+            pass
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        kwargs["ssl_context"] = ctx
+        return super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        try:
+            ctx.options |= 0x4
+        except AttributeError:
+            pass
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        kwargs["ssl_context"] = ctx
+        return super().proxy_manager_for(*args, **kwargs)
 
 INDICATORS = [
     # (内部列名,    候选 zb code 列表,                       预期指标名包含,  单位)
@@ -58,6 +93,7 @@ OUT_DIR = Path("out")
 
 def make_session() -> requests.Session:
     s = requests.Session()
+    s.mount("https://", LegacyTLSAdapter())
     s.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/120.0 Safari/537.36",
@@ -66,7 +102,14 @@ def make_session() -> requests.Session:
         "Referer": "https://data.stats.gov.cn/easyquery.htm",
         "X-Requested-With": "XMLHttpRequest",
     })
-    s.get("https://data.stats.gov.cn/", timeout=TIMEOUT)  # 拿一个 JSESSIONID
+    # InsecureRequestWarning 静音
+    try:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    except Exception:
+        pass
+    # 拿 JSESSIONID；连不通就让上层处理
+    s.get("https://data.stats.gov.cn/", timeout=TIMEOUT, verify=False)
     return s
 
 
@@ -82,7 +125,7 @@ def query(session: requests.Session, zb: str, sj: str) -> dict:
                              {"wdcode": "sj", "valuecode": sj}]),
         "k1": str(int(time.time() * 1000)),
     }
-    r = session.get(API, params=params, timeout=TIMEOUT)
+    r = session.get(API, params=params, timeout=TIMEOUT, verify=False)
     r.raise_for_status()
     return r.json()
 
@@ -98,6 +141,7 @@ def explore(session: requests.Session, parent_id: str = "A0D") -> None:
             "wdcode": "zb",
         },
         timeout=TIMEOUT,
+        verify=False,
     )
     r.raise_for_status()
     items = r.json()
