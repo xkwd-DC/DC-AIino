@@ -222,7 +222,8 @@ def main(argv: list[str] | None = None) -> int:
             merged["lst_night_valid_count"] = 0
 
         # valid_pixel_ratio：以 NDVI 为基准（per 省域 1km 像元总数）
-        merged["valid_pixel_ratio"] = merged["ndvi_valid_count"] / merged["ndvi_valid_count"].max().clip(lower=1)
+        max_count = max(int(merged["ndvi_valid_count"].max() or 0), 1)
+        merged["valid_pixel_ratio"] = merged["ndvi_valid_count"] / max_count
         all_rows.append(merged)
 
     if not all_rows:

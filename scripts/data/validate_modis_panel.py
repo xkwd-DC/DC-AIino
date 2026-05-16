@@ -39,8 +39,10 @@ MONTH_RANGE = (1, 12)
 EXPECTED_ROWS = 31 * 13 * 12  # 4836
 
 NDVI_BOUNDS = (-0.2, 1.0)
-LST_DAY_BOUNDS_K = (273.0, 320.0)
-LST_NIGHT_BOUNDS_K = (250.0, 320.0)
+# LST 白天/夜间下限放宽——西藏/新疆/黑龙江冬季 1km 像元 LST 可低至 -50°C（220K）
+# 上限 320K (47°C) 已经覆盖南方夏季陆面温度极值
+LST_DAY_BOUNDS_K = (220.0, 330.0)
+LST_NIGHT_BOUNDS_K = (200.0, 320.0)
 VALID_PIXEL_BOUNDS = (0.0, 1.0)
 
 CANONICAL_PROVINCES: tuple[tuple[str, str, str], ...] = (
