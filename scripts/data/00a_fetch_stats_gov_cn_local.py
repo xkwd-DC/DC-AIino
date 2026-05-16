@@ -47,35 +47,38 @@ DBCODE = "fsnd"  # 分省年度
 TIMEOUT = 30
 
 
-class LegacyTLSAdapter(HTTPAdapter):
-    """国家统计局服务器的 TLS 实现老旧，Python 3.12+ 默认 security level=2 会握手失败。
+def _make_legacy_ctx() -> ssl.SSLContext:
+    """最大兼容性的 SSL 上下文：强制 TLS 1.2、SECLEVEL=0、关 hostname 校验、放行 legacy renegotiation。"""
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    # 强制 TLS 1.2（stats.gov.cn 不支持 TLS 1.3）
+    ctx.minimum_version = ssl.TLSVersion.TLSv1
+    ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+    # SECLEVEL=0 接受所有 cipher（包括很老的）
+    ctx.set_ciphers("DEFAULT@SECLEVEL=0:!aNULL:!eNULL")
+    # OpenSSL 3.0+ 的 legacy renegotiation 兼容
+    try:
+        ctx.options |= 0x4  # OP_LEGACY_SERVER_CONNECT
+    except AttributeError:
+        pass
+    # 关掉 ALPN，避免 h2 协商把握手搞糊
+    try:
+        ctx.set_alpn_protocols([])
+    except (NotImplementedError, ValueError):
+        pass
+    return ctx
 
-    把 SECLEVEL 降到 1 + 启用 unsafe_legacy_renegotiation 才能连上。
-    """
+
+class LegacyTLSAdapter(HTTPAdapter):
+    """国家统计局服务器的 TLS 实现老旧，需要 TLS 1.2 + SECLEVEL=0 + legacy renegotiation。"""
 
     def init_poolmanager(self, *args, **kwargs):
-        ctx = ssl.create_default_context()
-        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
-        # OpenSSL 3.0+ 默认禁掉了 legacy renegotiation；statics 服务器需要
-        try:
-            ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
-        except AttributeError:
-            pass
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        kwargs["ssl_context"] = ctx
+        kwargs["ssl_context"] = _make_legacy_ctx()
         return super().init_poolmanager(*args, **kwargs)
 
     def proxy_manager_for(self, *args, **kwargs):
-        ctx = ssl.create_default_context()
-        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
-        try:
-            ctx.options |= 0x4
-        except AttributeError:
-            pass
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        kwargs["ssl_context"] = ctx
+        kwargs["ssl_context"] = _make_legacy_ctx()
         return super().proxy_manager_for(*args, **kwargs)
 
 INDICATORS = [
