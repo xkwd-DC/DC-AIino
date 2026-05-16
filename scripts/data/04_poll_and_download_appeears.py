@@ -99,7 +99,8 @@ def _download_file(token: str, task_id: str, file_id: str, file_name: str, file_
     dest = dest_dir / file_name
     if dest.exists() and dest.stat().st_size == file_size:
         return
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    # file_name 可能带子目录前缀（"MOD11A2.061_xxx/xxx.tif"），需要 mkdir 整条 parent path
+    dest.parent.mkdir(parents=True, exist_ok=True)
     partial = dest.with_suffix(dest.suffix + ".partial")
     already = partial.stat().st_size if partial.exists() else 0
     headers = {"Authorization": f"Bearer {token}"}
