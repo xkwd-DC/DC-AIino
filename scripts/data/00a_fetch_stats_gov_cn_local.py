@@ -3,8 +3,14 @@
 从这台机的 GCP IP 访问 stats.gov.cn 被 WAF UrlACL 直接拒。
 石灵子在自己的电脑/校园网（CN 大陆 IP）跑这个脚本，然后把输出 CSV 传回服务器。
 
-依赖（极简）：
-    pip install requests pandas
+依赖：
+    pip install curl_cffi pandas         # ← 首选，模仿真浏览器 TLS 指纹绕 WAF JA3
+    # 或退而求其次（可能被 WAF 拒）：
+    # pip install requests pandas
+
+⚠️  Windows + Python 3.14 + 代理 rules 模式下，stats.gov.cn 的 WAF 会基于 TLS
+    指纹（JA3）识别 Python requests 并 reset 连接。**必须用 curl_cffi**——它
+    底层调 libcurl 并伪装成 Chrome 的 ClientHello。
 
 用法：
 
@@ -53,7 +59,7 @@ def _make_legacy_ctx() -> ssl.SSLContext:
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
     # 强制 TLS 1.2（stats.gov.cn 不支持 TLS 1.3）
-    ctx.minimum_version = ssl.TLSVersion.TLSv1
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.maximum_version = ssl.TLSVersion.TLSv1_2
     # SECLEVEL=0 接受所有 cipher（包括很老的）
     ctx.set_ciphers("DEFAULT@SECLEVEL=0:!aNULL:!eNULL")
