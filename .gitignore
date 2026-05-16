@@ -40,8 +40,15 @@ data/processed/
 !data/raw/modis_lst/
 !data/raw/gis_province/
 !data/raw/gis_cropland/
+!data/raw/paper_panel/
+!data/raw/paper_panel/**/*.xlsx
 !data/interim/
 !data/processed/
+!data/interim/paper_panel_raw.parquet
+!data/interim/modis_province_monthly.parquet
+!data/interim/nasa_power_annual.csv
+!data/interim/spei_province_annual.csv
+!data/interim/province_centroids.csv
 !data/**/.gitkeep
 !data/**/README.md
 
