@@ -34,6 +34,29 @@ data/processed/
 *.tiff
 *.nc
 
+# 保留 data/ 下的目录结构（让仓库可见但不存大文件）
+!data/raw/
+!data/raw/modis_ndvi/
+!data/raw/modis_lst/
+!data/raw/gis_province/
+!data/raw/gis_cropland/
+!data/raw/paper_panel/
+!data/raw/paper_panel/**/*.xlsx
+!data/interim/
+!data/processed/
+!data/interim/paper_panel_raw.parquet
+!data/interim/paper_panel_v1.parquet
+!data/interim/paper_panel_v2.parquet
+!data/interim/paper_panel_v3.parquet
+!data/interim/yield_detrend_report.md
+!data/interim/modis_province_monthly.parquet
+!data/interim/nasa_power_annual.csv
+!data/interim/spei_province_annual.csv
+!data/interim/province_centroids.csv
+!data/interim/alignment_report.md
+!data/**/.gitkeep
+!data/**/README.md
+
 # 模型权重与产物
 models/checkpoints/
 models/runs/

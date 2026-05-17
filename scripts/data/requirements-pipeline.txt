@@ -1,0 +1,32 @@
+# 数据采集 pipeline 完整依赖（rasterio/geopandas/earthaccess 等地理栈）
+# 与 backend/.venv 隔离，与 scripts/data/requirements.txt（仅 schema 校验）分开
+#
+# 安装：
+#   uv pip install --python .venv-data/bin/python -r scripts/data/requirements-pipeline.txt
+#
+# Python: 3.11（GDAL 系生态对 3.14 wheel 还不全；3.11 是最稳的选择）
+
+# 核心数据处理
+pandas~=2.2.2
+pyarrow>=15.0.0
+numpy~=1.26
+
+# 地理栈（wheel 自带 GDAL，不需要系统装 GDAL）
+rasterio>=1.3.10
+rioxarray>=0.15
+geopandas>=0.14
+shapely>=2.0
+pyproj>=3.6
+xarray>=2024.3
+rasterstats>=0.19
+
+# MODIS 下载
+earthaccess>=0.10  # NASA EARTHDATA 官方 Python 客户端
+
+# HTTP（geodata.cn 登录、Zenodo 直链、AppEEARS API）
+requests>=2.31
+tqdm>=4.66       # 下载进度条
+
+# CLI / 工具
+click>=8.1
+python-dotenv>=1.0  # 读取 .env 里的 EARTHDATA_USERNAME / EARTHDATA_PASSWORD
