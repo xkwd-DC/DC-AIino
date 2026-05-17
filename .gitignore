@@ -47,6 +47,8 @@ data/processed/
 !data/interim/paper_panel_raw.parquet
 !data/interim/paper_panel_v1.parquet
 !data/interim/paper_panel_v2.parquet
+!data/interim/paper_panel_v3.parquet
+!data/interim/yield_detrend_report.md
 !data/interim/modis_province_monthly.parquet
 !data/interim/nasa_power_annual.csv
 !data/interim/spei_province_annual.csv
