@@ -70,4 +70,7 @@
 ## 状态
 ✅ 多种子均值通过申报书硬指标。
 
-> ⚠️ 注意：`lstm_feature_columns.json` 现在是 11 列（原 10 列）；若 `backend/inference.py` 仍按 10 列硬编码，需要同步更新。
+## 后端集成
+`backend/services/inference.py` 的 `predict_lstm_yield()` 已加载 `lstm_scaler.pkl`
++ `lstm_y_scaler.pkl`，对 z-score 输出做 `inverse_transform` 回 kg/ha。
+跑 `python -m backend.services.inference` 通过 Henan 2022 sanity（与真值偏差 < 500 kg/ha）。

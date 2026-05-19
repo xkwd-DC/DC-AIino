@@ -273,7 +273,9 @@ model_card = f"""# Model Card — XGBoost 基线（v3 真实单产，11 维）
 ## 状态
 {'✅ 基线通过申报书硬指标，可作为下游 LSTM / Attention-LSTM 的参照。' if passed else '❌ 未达硬指标，需排查。'}
 
-> ⚠️ 注意：`feature_columns.json` 现在是 11 列（原 10 列）；若 `backend/inference.py` 仍按 10 列硬编码，需要同步更新。
+## 后端集成
+`backend/services/inference.py` 的 `_load_artifacts()` + `predict_xgb_yield()` 已对齐
+11 维 + `scaler.pkl`，跑 `python -m backend.services.inference` 通过 Henan 2022 sanity。
 """
 (MODELS_DIR / "model_card.md").write_text(model_card)
 
