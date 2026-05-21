@@ -76,10 +76,10 @@
 |---|---|
 | 合并 PR | **10 个**（#2-#8 + #11/#13/#14） |
 | 待合并 PR | 0（待潘开 PR：周 UI 入仓 + Phase 1 骨架 + 路线决策） |
-| 公开 Issues | **4**（#6 熊鑫 / #9 石灵子 / #10 路线决策 / #12 CRAIC 5-23）|
+| 公开 Issues | **5**（#6 熊鑫 / #9 石灵子 / #10 路线决策 / #12 CRAIC 5-23 / #17 M3 系统开发 Phase 0-5）|
 | Backend 测试 | **16 个端点测试**（health + 31 省 + 11 特征 predict + ensemble + 校验 + 404 兜底），全过 |
 | Backend 完成度 | 80%（health/provinces/predict mock 完整；待补 SHAP API + recommendation API + year 参数） |
-| Frontend 完成度 | 静态原型 100%（周 6 份 HTML），Vue 化 0% |
+| Frontend 完成度 | 静态原型 100%（周 6 份 HTML）+ Vue 3 骨架 100%（4 view 占位 + router + axios + health 灯），M01-M04 业务 Vue 化 0% |
 | 数据资产 | paper_panel_v3 (403×27, y_detrended 完美) + MODIS 11 维 panel + GIS 三级 + CLCD |
 | 文档总数 | **15** 篇（00–12 + STATUS + CHANGELOG） |
 
@@ -187,6 +187,8 @@ Issue #10 列出的章节重写约 1–2 天工作量。可与 M1 评审材料 +
 | ✅ done | docs/12 系统开发执行计划落档 | 潘 | 完成于 5/21 |
 | ✅ done | docs/CHANGELOG.md 启动 | 潘 | 完成于 5/21 |
 | ✅ done | 周煜楠 6 份 UI 原型入仓 `frontend/prototypes/` | 协调中心 | 完成于 5/21 |
+| ✅ done | Vue 3 + Vite 工程骨架（4 view + router + axios + health 灯）| 潘 | 完成于 5/21 |
+| ✅ done | 系统开发 Phase 0-5 tracking Issue #17 | 协调中心 | 完成于 5/21 |
 
 ---
 
