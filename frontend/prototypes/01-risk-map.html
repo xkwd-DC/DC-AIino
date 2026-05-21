@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>风险时空地图 · 极端气候下粮食生产风险智能分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+  --red: #B86F4D;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+
+  /* 风险色阶(琥珀→赭石) */
+  --risk-1: #F2DDB8;
+  --risk-2: #E6B655;
+  --risk-3: #C68552;
+  --risk-4: #A56548;
+  --risk-5: #7E4530;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(160, 183, 133, 0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 5%, rgba(160, 183, 133, 0.04) 0%, transparent 35%),
+    radial-gradient(circle at 90% 95%, rgba(230, 182, 85, 0.03) 0%, transparent 35%);
+}
+
+/* ============ Header ============ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 17px;
+  color: #0E1A14;
+}
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+.breadcrumb .cur { color: var(--green-bright); }
+.breadcrumb span:nth-child(2) { color: var(--text-3); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 11px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.6px;
+}
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulseDot 2.2s infinite;
+}
+
+/* ============ Page Title ============ */
+.page-title {
+  padding: 24px 32px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.page-title h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.page-title .sub {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.page-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+.page-meta .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+/* ============ Main Grid 70/30 ============ */
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  gap: 20px;
+  padding: 0 32px 32px;
+}
+
+/* ============ Left: Map Panel ============ */
+.map-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 720px;
+  animation: fadeUp 0.6s var(--ease-out) both;
+}
+
+.map-toolbar {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.map-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-title .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+.map-title h3 {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.map-tools {
+  display: flex;
+  gap: 6px;
+}
+
+.tool-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-2);
+  width: 30px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: all var(--dur-fast) var(--ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tool-btn:hover {
+  border-color: var(--green);
+  color: var(--green-bright);
+}
+.tool-btn.active {
+  background: var(--green-deep);
+  border-color: var(--green);
+  color: var(--text);
+}
+
+.map-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 540px;
+}
+
+#map { width: 100%; height: 100%; }
+
+.map-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.map-placeholder.error { color: var(--amber); }
+
+/* ============ Timeline ============ */
+.timeline {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.timeline-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.timeline-year {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--green-bright);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  border: none;
+  color: #0E1A14;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all var(--dur-base) var(--ease-spring);
+}
+.play-btn:hover {
+  background: var(--green-bright);
+  transform: scale(1.08);
+}
+.play-btn.playing {
+  background: var(--amber);
+}
+
+.year-step {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+
+.slider-track-wrap {
+  position: relative;
+  padding: 16px 8px 8px;
+}
+
+.slider-track {
+  position: relative;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-deep), var(--green));
+  border-radius: 2px;
+  width: 50%;
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: var(--green-bright);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  box-shadow: 0 0 12px rgba(160, 183, 133, 0.5);
+  transition: width var(--dur-fast), height var(--dur-fast);
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; width: 20px; height: 20px; }
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  padding: 0 2px;
+}
+.tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color var(--dur-fast);
+}
+.tick::before {
+  content: '';
+  width: 1px;
+  height: 6px;
+  background: var(--border-strong);
+}
+.tick:hover { color: var(--green-bright); }
+.tick.active { color: var(--green-bright); font-weight: 600; }
+.tick.active::before { background: var(--green); height: 8px; }
+
+input[type="range"].native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 30px;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* ============ Right: Side Panel ============ */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.6s var(--ease-out) both;
+  animation-delay: 0.08s;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-head h3 {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-head h3::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  background: var(--green);
+  border-radius: 1px;
+}
+
+.card-head .meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ============ Legend ============ */
+.legend-body { padding: 14px 18px; }
+
+.legend-bar {
+  display: flex;
+  height: 18px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.legend-bar > div {
+  flex: 1;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+.legend-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 11px;
+  color: var(--text-2);
+}
+.legend-meta .v {
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ============ Top10 List ============ */
+.top10-body {
+  max-height: 360px;
+  overflow-y: auto;
+}
+.top10-body::-webkit-scrollbar { width: 4px; }
+.top10-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 90px 80px;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--dur-fast);
+  font-size: 13px;
+}
+.rank-row:last-child { border-bottom: none; }
+.rank-row:hover { background: var(--bg-elev); }
+.rank-row.active {
+  background: var(--bg-elev);
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+.rank-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.rank-row:nth-child(-n+3) .rank-num {
+  color: var(--red);
+}
+
+.rank-name { color: var(--text); }
+
+.rank-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.rank-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.rank-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* ============ Detail Card ============ */
+.detail-body {
+  padding: 16px 18px;
+  min-height: 240px;
+}
+
+.detail-empty {
+  text-align: center;
+  padding: 30px 16px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.4px;
+}
+.detail-empty .icon {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  color: var(--border-strong);
+  margin-bottom: 8px;
+  display: block;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.detail-province {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: rgba(230, 182, 85, 0.12);
+  color: var(--amber);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+.detail-type::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--amber);
+  border-radius: 50%;
+}
+
+.detail-stats {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.stat-label {
+  color: var(--text-2);
+  font-size: 11px;
+}
+
+.stat-progress {
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.stat-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--text);
+}
+
+.detail-trend {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.detail-trend .trend-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+#mini-chart {
+  width: 100%;
+  height: 64px;
+}
+
+.detail-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--dur-fast);
+}
+.btn:hover { border-color: var(--green); color: var(--green-bright); }
+.btn.primary {
+  background: var(--green);
+  color: #0E1A14;
+  border-color: var(--green);
+}
+.btn.primary:hover { background: var(--green-bright); }
+
+/* ============ Compare Drawer ============ */
+.compare-drawer {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  z-index: 80;
+  width: 520px;
+  max-width: calc(100vw - 64px);
+  transform: translateY(calc(100% + 40px));
+  transition: transform 0.4s var(--ease-out);
+  overflow: hidden;
+}
+.compare-drawer.open { transform: translateY(0); }
+
+.compare-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+.compare-head h3 {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+.close-btn:hover { color: var(--text); }
+
+.compare-body {
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.compare-slot {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  min-height: 140px;
+}
+.compare-slot.empty {
+  border-style: dashed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.cmp-province {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+.cmp-val {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--green-bright);
+  margin: 4px 0 10px;
+}
+.cmp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 11px;
+}
+.cmp-grid > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.cmp-grid .l { color: var(--text-3); }
+.cmp-grid .v { font-family: var(--font-mono); color: var(--text); }
+
+.compare-trigger {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 50px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  z-index: 75;
+  transition: all var(--dur-base) var(--ease-out);
+  letter-spacing: 0.5px;
+}
+.compare-trigger:hover {
+  border-color: var(--green);
+  color: var(--green-bright);
+  transform: translateY(-2px);
+}
+.compare-trigger.hidden { opacity: 0; pointer-events: none; }
+.compare-trigger .count {
+  background: var(--green);
+  color: #0E1A14;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+/* ============ ECharts tooltip override ============ */
+.echarts-tooltip-custom {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--r-md) !important;
+  color: var(--text) !important;
+  font-family: var(--font-sans) !important;
+  padding: 10px 14px !important;
+  font-size: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-logo">粮</div>
+    <div class="brand-text">
+      <h1>极端气候下粮食生产风险智能分析</h1>
+      <div class="sub">SPATIO-TEMPORAL RISK MAP · M01</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="breadcrumb">
+      <span>首页</span>
+      <span>›</span>
+      <span class="cur">风险时空地图</span>
+    </div>
+    <span class="status-badge">MODEL ACTIVE · SHAP v2.1</span>
+  </div>
+</header>
+
+<div class="page-title">
+  <div>
+    <h2>风险时空地图</h2>
+    <p class="sub">基于 SHAP 可解释模型,展示中国 31 省 2011–2023 年粮食生产风险时空分布。色阶由琥珀至赭石映射风险强度,数据滑块可回溯任意年份。</p>
+  </div>
+  <div class="page-meta">
+    <span>数据源 · 国家统计局 + CMA + NASA POWER</span>
+    <span class="dot"></span>
+    <span>更新 2026-05</span>
+    <span class="dot"></span>
+    <span>样本 N=403</span>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ============ LEFT: Map Panel ============ -->
+  <section class="map-panel">
+
+    <div class="map-toolbar">
+      <div class="map-title">
+        <span class="num">M01-A</span>
+        <h3>中国粮食生产风险分布</h3>
+      </div>
+      <div class="map-tools">
+        <button class="tool-btn" id="btn-reset" title="重置视角">⟲</button>
+        <button class="tool-btn" id="btn-zoom-in" title="放大">+</button>
+        <button class="tool-btn" id="btn-zoom-out" title="缩小">−</button>
+      </div>
+    </div>
+
+    <div class="map-canvas-wrap">
+      <div id="map"></div>
+      <div class="map-placeholder" id="map-loading">
+        <div class="spinner"></div>
+        <div>正在加载中国地图…</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-head">
+        <div>
+          <div class="timeline-label">YEAR · 时间维度</div>
+          <div class="timeline-year" id="year-display">2023</div>
+        </div>
+        <div class="timeline-controls">
+          <span class="year-step">2011 — 2023 · 13 年</span>
+          <button class="play-btn" id="play-btn" title="播放/暂停">▶</button>
+        </div>
+      </div>
+      <div class="slider-track-wrap">
+        <div class="slider-track">
+          <div class="slider-fill" id="slider-fill"></div>
+          <div class="slider-thumb" id="slider-thumb"></div>
+        </div>
+        <input type="range" class="native" id="year-range" min="2011" max="2023" step="1" value="2023">
+        <div class="slider-ticks" id="ticks"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ RIGHT: Side Panel ============ -->
+  <aside class="side-panel">
+
+    <!-- Legend -->
+    <div class="card" style="animation: fadeUp 0.6s var(--ease-out) both; animation-delay: 0.16s;">
+      <div class="card-head">
+        <h3>风险图例</h3>
+        <span class="meta">Y · DETRENDED VOLATILITY</span>
+      </div>
+      <div class="legend-body">
+        <div class="legend-bar">
+          <div style="background: var(--risk-1)"></div>
+          <div style="background: var(--risk-2)"></div>
+          <div style="background: var(--risk-3)"></div>
+          <div style="background: var(--risk-4)"></div>
+          <div style="background: var(--risk-5)"></div>
+        </div>
+        <div class="legend-labels">
+          <span>低 0.011</span>
+          <span>0.020</span>
+          <span>0.027</span>
+          <span>0.034</span>
+          <span>高 0.043</span>
+        </div>
+        <div class="legend-meta">
+          <span>当前年份全国均值</span>
+          <span class="v" id="legend-avg">0.0259</span>
+        </div>
+        <div class="legend-meta" style="border-top: none; padding-top: 4px; margin-top: 4px;">
+          <span>较前年</span>
+          <span class="v" id="legend-delta" style="color: var(--red);">▲ +3.2%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top10 -->
+    <div class="card" style="animation: fadeUp 0.6s var(--ease-out) both; animation-delay: 0.24s;">
+      <div class="card-head">
+        <h3>Top 10 高风险省份</h3>
+        <span class="meta" id="top10-year">YEAR 2023</span>
+      </div>
+      <div class="top10-body" id="top10-body"></div>
+    </div>
+
+    <!-- Detail -->
+    <div class="card" style="animation: fadeUp 0.6s var(--ease-out) both; animation-delay: 0.32s;">
+      <div class="card-head">
+        <h3>省份明细</h3>
+        <span class="meta" id="detail-meta">HOVER 查看</span>
+      </div>
+      <div class="detail-body" id="detail-body">
+        <div class="detail-empty">
+          <span class="icon">◐</span>
+          悬停地图省份查看明细
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<!-- Compare Drawer Trigger -->
+<button class="compare-trigger hidden" id="compare-trigger">
+  <span>对比分析</span>
+  <span class="count" id="compare-count">0</span>
+</button>
+
+<!-- Compare Drawer -->
+<div class="compare-drawer" id="compare-drawer">
+  <div class="compare-head">
+    <h3>省份对比 · COMPARE</h3>
+    <button class="close-btn" id="compare-close">✕</button>
+  </div>
+  <div class="compare-body" id="compare-body">
+    <div class="compare-slot empty">点击明细卡的"加入对比"<br>选 2 个省份并排查看</div>
+    <div class="compare-slot empty">点击明细卡的"加入对比"<br>选 2 个省份并排查看</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1. DATA LAYER · 31 省 mock 数据 + 13 年时间序列
+   ============================================================ */
+
+// 31 省基础数据(锚定示例值 + 按现实地理逻辑生成)
+// 字段: name, y(风险值), irr(灌溉率%), flood(洪涝占比%), sun(日照h), spei(干旱), temp(年均温), type(类型)
+const PROVINCES_BASE = [
+  // 西北高风险带: 干旱+灌溉依赖
+  { name: '青海', y: 0.040, irr: 28,  flood: 1.2,  sun: 3120, spei: -1.8, temp: 4.5,  type: '高寒旱作型' },
+  { name: '西藏', y: 0.038, irr: 25,  flood: 0.8,  sun: 3320, spei: -1.5, temp: 5.2,  type: '高寒旱作型' },
+  { name: '新疆', y: 0.036, irr: 110, flood: 0.5,  sun: 3150, spei: -2.3, temp: 8.6,  type: '极端干旱型' },
+  { name: '甘肃', y: 0.034, irr: 65,  flood: 1.5,  sun: 2680, spei: -1.6, temp: 9.5,  type: '半干旱型' },
+  { name: '宁夏', y: 0.032, irr: 88,  flood: 1.1,  sun: 2820, spei: -1.4, temp: 9.8,  type: '半干旱灌溉型' },
+  { name: '内蒙古', y: 0.033, irr: 52, flood: 2.3, sun: 2950, spei: -1.2, temp: 5.8, type: '草原旱作型' },
+  { name: '陕西', y: 0.029, irr: 56, flood: 3.8,  sun: 2200, spei: -0.6, temp: 13.2, type: '半干旱过渡型' },
+  { name: '山西', y: 0.028, irr: 48, flood: 3.2,  sun: 2480, spei: -0.9, temp: 11.0, type: '半干旱过渡型' },
+
+  // 西南: 山地复杂
+  { name: '云南', y: 0.027, irr: 38, flood: 5.2, sun: 2180, spei: -0.5, temp: 16.5, type: '山地多灾型' },
+  { name: '贵州', y: 0.026, irr: 32, flood: 6.8, sun: 1380, spei:  0.2, temp: 15.4, type: '岩溶多雨型' },
+  { name: '四川', y: 0.024, irr: 58, flood: 5.1, sun: 1280, spei:  0.1, temp: 16.8, type: '盆地温润型' },
+  { name: '重庆', y: 0.025, irr: 54, flood: 7.2, sun: 1180, spei:  0.4, temp: 18.2, type: '盆地多雨型' },
+  { name: '广西', y: 0.027, irr: 62, flood: 9.5, sun: 1620, spei:  0.6, temp: 21.5, type: '南方多洪型' },
+
+  // 中部主产区: 中等风险
+  { name: '河南', y: 0.026, irr: 65, flood: 4.2, sun: 2160, spei: -0.1, temp: 14.8, type: '主产区主导型' },
+  { name: '湖北', y: 0.023, irr: 68, flood: 7.5, sun: 1820, spei:  0.3, temp: 16.6, type: '中游洪涝型' },
+  { name: '湖南', y: 0.024, irr: 72, flood: 8.8, sun: 1620, spei:  0.4, temp: 17.5, type: '中游多雨型' },
+  { name: '安徽', y: 0.025, irr: 75, flood: 9.2, sun: 2020, spei:  0.2, temp: 15.8, type: '江淮多洪型' },
+  { name: '江西', y: 0.026, irr: 70, flood: 11.5, sun: 1780, spei:  0.5, temp: 18.2, type: '南方多洪型' },
+
+  // 沿海: 台风型
+  { name: '广东', y: 0.025, irr: 65, flood: 14.2, sun: 1880, spei:  0.7, temp: 22.5, type: '沿海台风型' },
+  { name: '福建', y: 0.026, irr: 58, flood: 18.5, sun: 1820, spei:  0.6, temp: 20.4, type: '沿海台风型' },
+  { name: '浙江', y: 0.022, irr: 62, flood: 13.8, sun: 1900, spei:  0.4, temp: 17.6, type: '沿海台风型' },
+  { name: '海南', y: 0.024, irr: 48, flood: 22.5, sun: 2080, spei:  0.8, temp: 24.5, type: '热带台风型' },
+  { name: '台湾', y: 0.022, irr: 55, flood: 19.2, sun: 1980, spei:  0.5, temp: 22.8, type: '热带台风型' },
+
+  // 华北平原
+  { name: '河北', y: 0.022, irr: 78, flood: 3.5, sun: 2540, spei: -0.5, temp: 12.5, type: '主产区主导型' },
+  { name: '山东', y: 0.021, irr: 82, flood: 4.1, sun: 2480, spei: -0.3, temp: 13.6, type: '主产区主导型' },
+  { name: '天津', y: 0.020, irr: 88, flood: 3.2, sun: 2580, spei: -0.4, temp: 12.8, type: '城郊型' },
+  { name: '江苏', y: 0.021, irr: 90, flood: 6.8, sun: 2120, spei:  0.0, temp: 15.5, type: '主产区主导型' },
+
+  // 低风险: 灌溉好/城市为主
+  { name: '北京', y: 0.018, irr: 92, flood: 2.8, sun: 2620, spei: -0.4, temp: 12.6, type: '城郊低风险型' },
+  { name: '上海', y: 0.019, irr: 95, flood: 5.5, sun: 1980, spei:  0.1, temp: 16.2, type: '城郊低风险型' },
+  { name: '黑龙江', y: 0.020, irr: 35, flood: 2.5, sun: 2580, spei: -0.6, temp:  2.6, type: '寒地大田型' },
+  { name: '吉林', y: 0.023, irr: 42, flood: 2.8, sun: 2580, spei: -0.4, temp:  5.6, type: '寒地大田型' },
+  { name: '辽宁', y: 0.022, irr: 56, flood: 3.6, sun: 2420, spei: -0.3, temp:  8.8, type: '东北边缘型' },
+];
+
+// 伪随机: 同 seed 输出相同结果
+function seededRandom(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+// 生成 2011-2023 年度数据
+// 策略: 基础值 + 年度趋势(气候渐变) + 省份特异波动(seed = name 哈希 + year)
+const YEARS = Array.from({length: 13}, (_, i) => 2011 + i);
+
+function hashStr(s) {
+  let h = 0;
+  for (const c of s) h = ((h << 5) - h + c.charCodeAt(0)) | 0;
+  return Math.abs(h);
+}
+
+// 给每个省份每年生成一个完整指标快照
+function makeYearSnapshot(p, year) {
+  const seed = hashStr(p.name) + year * 17;
+  const rng = seededRandom(seed);
+  const yIdx = year - 2011;  // 0..12
+
+  // 年度风险整体趋势: 近几年极端气候增多,2018+ 略升
+  const trend = yIdx < 7 ? -0.001 + yIdx * 0.0002 : 0.0006 + (yIdx - 7) * 0.0008;
+  // 省份特异波动 ±15%
+  const noise = (rng() - 0.5) * 0.30 * p.y;
+
+  return {
+    name: p.name,
+    type: p.type,
+    y: Math.max(0.011, Math.min(0.045, p.y + trend + noise)),
+    irr: Math.max(20, Math.min(120, p.irr + (rng() - 0.5) * 6)),
+    flood: Math.max(0, Math.min(24, p.flood + (rng() - 0.5) * 3)),
+    sun: Math.max(970, Math.min(3350, p.sun + (rng() - 0.5) * 200)),
+    spei: Math.max(-3, Math.min(3, p.spei + (rng() - 0.5) * 0.5)),
+    temp: p.temp + (rng() - 0.5) * 0.8,
+  };
+}
+
+// 预生成 13 年所有数据,提速
+const ALL_DATA = {};
+for (const year of YEARS) {
+  ALL_DATA[year] = PROVINCES_BASE.map(p => makeYearSnapshot(p, year));
+}
+
+// 各指标全国 min/max (用于明细卡 progress bar)
+const RANGES = {
+  y:     [0.011, 0.045],
+  irr:   [20, 120],
+  flood: [0, 24],
+  sun:   [970, 3350],
+  spei:  [-3, 3],
+  temp:  [2, 26],
+};
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+const state = {
+  currentYear: 2023,
+  hoveredProvince: null,
+  selectedProvince: null,
+  compareList: [],
+  playing: false,
+  playTimer: null,
+  chart: null,
+  miniChart: null,
+};
+
+/* ============================================================
+   3. UTILITIES
+   ============================================================ */
+
+// 风险值→色阶
+function riskColor(y) {
+  if (y < 0.018) return getCSS('--risk-1');
+  if (y < 0.024) return getCSS('--risk-2');
+  if (y < 0.030) return getCSS('--risk-3');
+  if (y < 0.036) return getCSS('--risk-4');
+  return getCSS('--risk-5');
+}
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+// 数字格式化
+function fmt(n, digits = 4) {
+  if (Math.abs(n) < 0.01) return n.toFixed(digits);
+  if (Math.abs(n) < 1) return n.toFixed(3);
+  if (Math.abs(n) < 10) return n.toFixed(1);
+  return Math.round(n);
+}
+
+// 求百分位
+function percentile(val, range) {
+  return Math.max(0, Math.min(100, ((val - range[0]) / (range[1] - range[0])) * 100));
+}
+
+/* ============================================================
+   4. MAP (ECharts)
+   ============================================================ */
+const CHINA_MAP_URL = 'https://cdn.jsdelivr.net/gh/apache/echarts@4.6.0/map/json/china.json';
+
+async function loadMap() {
+  const mapEl = document.getElementById('map');
+  const loadingEl = document.getElementById('map-loading');
+
+  try {
+    // 5s 超时
+    const fetchPromise = fetch(CHINA_MAP_URL).then(r => r.json());
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 8000)
+    );
+    const geoJson = await Promise.race([fetchPromise, timeoutPromise]);
+
+    echarts.registerMap('china', geoJson);
+    state.chart = echarts.init(mapEl, null, { renderer: 'canvas' });
+    renderMap();
+    loadingEl.style.display = 'none';
+
+    // hover 防抖
+    let hoverTimer = null;
+    state.chart.on('mouseover', { seriesType: 'map' }, (params) => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        state.hoveredProvince = params.name;
+        renderDetail(params.name);
+        highlightInList(params.name);
+      }, 200);
+    });
+    state.chart.on('mouseout', { seriesType: 'map' }, () => {
+      clearTimeout(hoverTimer);
+    });
+    state.chart.on('click', { seriesType: 'map' }, (params) => {
+      state.selectedProvince = params.name;
+    });
+
+    window.addEventListener('resize', () => state.chart && state.chart.resize());
+
+  } catch (e) {
+    console.error('地图加载失败:', e);
+    loadingEl.classList.add('error');
+    loadingEl.innerHTML = `
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <rect x="8" y="8" width="48" height="48" rx="4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <path d="M20 32h24M32 20v24" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+        <circle cx="32" cy="32" r="3" fill="currentColor"/>
+      </svg>
+      <div>地图数据加载失败</div>
+      <div style="font-size: 10px; opacity: 0.7;">请检查网络连接,刷新重试</div>
+    `;
+  }
+}
+
+function renderMap() {
+  if (!state.chart) return;
+  const data = ALL_DATA[state.currentYear];
+
+  const mapData = data.map(d => ({
+    name: d.name,
+    value: d.y,
+    type: d.type,
+  }));
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: getCSS('--bg-card'),
+      borderColor: getCSS('--border-strong'),
+      borderWidth: 1,
+      textStyle: {
+        color: getCSS('--text'),
+        fontFamily: 'Noto Sans SC, sans-serif',
+        fontSize: 12,
+      },
+      extraCssText: 'border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 10px 14px;',
+      formatter: (p) => {
+        if (p.value == null || isNaN(p.value)) return `<b>${p.name}</b><br/><span style="color: ${getCSS('--text-3')}">无数据</span>`;
+        const item = data.find(d => d.name === p.name);
+        return `
+          <div style="font-family: 'Noto Serif SC'; font-size: 14px; font-weight: 600; margin-bottom: 4px;">${p.name}</div>
+          <div style="font-family: 'JetBrains Mono'; color: ${getCSS('--green-bright')}; font-size: 18px; font-weight: 600;">${p.value.toFixed(4)}</div>
+          <div style="color: ${getCSS('--text-2')}; font-size: 11px; margin-top: 2px;">${item ? item.type : ''}</div>
+        `;
+      }
+    },
+    visualMap: {
+      show: false,
+      min: 0.011,
+      max: 0.043,
+      inRange: {
+        color: [getCSS('--risk-1'), getCSS('--risk-2'), getCSS('--risk-3'), getCSS('--risk-4'), getCSS('--risk-5')]
+      }
+    },
+    series: [{
+      type: 'map',
+      map: 'china',
+      roam: true,
+      scaleLimit: { min: 0.8, max: 4 },
+      zoom: 1.15,
+      itemStyle: {
+        areaColor: getCSS('--bg-elev'),
+        borderColor: getCSS('--border-strong'),
+        borderWidth: 0.6,
+      },
+      emphasis: {
+        label: {
+          show: true,
+          color: '#0E1A14',
+          fontWeight: 'bold',
+          fontSize: 12,
+          textBorderColor: 'transparent',
+          textBorderWidth: 0
+        },
+        itemStyle: {
+          areaColor: getCSS('--green-bright'),
+          borderColor: getCSS('--text'),
+          borderWidth: 1.5,
+        }
+      },
+      label: {
+        show: true,
+        color: '#FFFFFF',
+        fontSize: 9,
+        fontFamily: 'Noto Sans SC',
+        textBorderColor: 'rgba(0, 0, 0, 0.6)',
+        textBorderWidth: 2,
+      },
+      select: {
+        itemStyle: { areaColor: getCSS('--green') },
+        label: { color: '#0E1A14', textBorderColor: 'transparent', textBorderWidth: 0 }
+      },
+      data: mapData
+    }]
+  };
+
+  state.chart.setOption(option, true);
+}
+
+/* ============================================================
+   5. RENDER · 时间轴/Top10/明细卡
+   ============================================================ */
+
+function updateYear(year) {
+  state.currentYear = year;
+  document.getElementById('year-display').textContent = year;
+  document.getElementById('top10-year').textContent = 'YEAR ' + year;
+
+  // 更新滑块视觉
+  const pct = ((year - 2011) / 12) * 100;
+  document.getElementById('slider-fill').style.width = pct + '%';
+  document.getElementById('slider-thumb').style.left = pct + '%';
+  document.getElementById('year-range').value = year;
+
+  // 更新刻度高亮
+  document.querySelectorAll('.tick').forEach(t => {
+    t.classList.toggle('active', parseInt(t.dataset.year) === year);
+  });
+
+  // 重渲染
+  renderMap();
+  renderLegendMeta();
+  renderTop10();
+
+  // 如果当前有 hover 省份,刷新明细
+  if (state.hoveredProvince) {
+    renderDetail(state.hoveredProvince);
+  }
+}
+
+function renderLegendMeta() {
+  const data = ALL_DATA[state.currentYear];
+  const avg = data.reduce((s, d) => s + d.y, 0) / data.length;
+  document.getElementById('legend-avg').textContent = avg.toFixed(4);
+
+  if (state.currentYear > 2011) {
+    const prev = ALL_DATA[state.currentYear - 1];
+    const prevAvg = prev.reduce((s, d) => s + d.y, 0) / prev.length;
+    const delta = ((avg - prevAvg) / prevAvg) * 100;
+    const el = document.getElementById('legend-delta');
+    if (delta >= 0) {
+      el.textContent = '▲ +' + delta.toFixed(1) + '%';
+      el.style.color = getCSS('--red');
+    } else {
+      el.textContent = '▼ ' + delta.toFixed(1) + '%';
+      el.style.color = getCSS('--green-bright');
+    }
+  } else {
+    document.getElementById('legend-delta').textContent = '— 起始年';
+  }
+}
+
+function renderTop10() {
+  const data = [...ALL_DATA[state.currentYear]].sort((a, b) => b.y - a.y).slice(0, 10);
+  const body = document.getElementById('top10-body');
+  body.innerHTML = data.map((d, i) => {
+    const pct = ((d.y - 0.011) / (0.043 - 0.011)) * 100;
+    return `
+      <div class="rank-row" data-name="${d.name}">
+        <span class="rank-num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="rank-name">${d.name}</span>
+        <div class="rank-bar"><div class="rank-bar-fill" style="width:${pct}%; background:${riskColor(d.y)}"></div></div>
+        <span class="rank-val" style="color:${riskColor(d.y)}">${d.y.toFixed(4)}</span>
+      </div>
+    `;
+  }).join('');
+
+  // 绑定点击
+  body.querySelectorAll('.rank-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const name = row.dataset.name;
+      state.hoveredProvince = name;
+      renderDetail(name);
+      highlightInList(name);
+      // 在地图上高亮
+      if (state.chart) {
+        state.chart.dispatchAction({ type: 'highlight', name });
+        setTimeout(() => state.chart.dispatchAction({ type: 'downplay', name }), 1500);
+      }
+    });
+  });
+}
+
+function highlightInList(name) {
+  document.querySelectorAll('.rank-row').forEach(r => {
+    r.classList.toggle('active', r.dataset.name === name);
+  });
+}
+
+function renderDetail(name) {
+  const data = ALL_DATA[state.currentYear].find(d => d.name === name);
+  if (!data) {
+    document.getElementById('detail-body').innerHTML = `
+      <div class="detail-empty">
+        <span class="icon">◐</span>
+        ${name}<br/>暂无 ${state.currentYear} 年数据
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById('detail-meta').textContent = `${state.currentYear} · ${data.type}`;
+
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div>
+      <div class="detail-province">
+        <span>${data.name}</span>
+        <span style="font-family: var(--font-mono); font-size: 22px; color: ${riskColor(data.y)};">${data.y.toFixed(4)}</span>
+      </div>
+      <div class="detail-type">${data.type}</div>
+    </div>
+
+    <div class="detail-stats">
+      ${statRow('风险指数 Y', data.y, RANGES.y, 4, getCSS('--green'))}
+      ${statRow('灌溉率 (%)', data.irr, RANGES.irr, 1, getCSS('--blue'))}
+      ${statRow('洪涝占比 (%)', data.flood, RANGES.flood, 1, getCSS('--blue'))}
+      ${statRow('日照时数 (h)', data.sun, RANGES.sun, 0, getCSS('--amber'))}
+      ${statRow('SPEI 干旱指数', data.spei, RANGES.spei, 2, getCSS('--purple'))}
+    </div>
+
+    <div class="detail-trend">
+      <div class="trend-label">
+        <span>13 年风险趋势</span>
+        <span id="trend-range">2011 — 2023</span>
+      </div>
+      <div id="mini-chart"></div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="btn" id="add-compare">加入对比</button>
+      <button class="btn primary" onclick="window.open('javascript:void(0)','_self')">导出明细</button>
+    </div>
+  `;
+
+  renderMiniChart(name);
+
+  // 加入对比按钮
+  document.getElementById('add-compare').addEventListener('click', () => addToCompare(name));
+}
+
+function statRow(label, value, range, digits, color) {
+  const pct = percentile(value, range);
+  const display = digits === 0 ? Math.round(value) : value.toFixed(digits);
+  return `
+    <div class="stat-row">
+      <span class="stat-label">${label}</span>
+      <div class="stat-progress">
+        <div class="stat-progress-fill" style="width:${pct}%; background:${color}"></div>
+      </div>
+      <span class="stat-value">${display}</span>
+    </div>
+  `;
+}
+
+function renderMiniChart(name) {
+  const el = document.getElementById('mini-chart');
+  if (!el) return;
+  if (state.miniChart) { state.miniChart.dispose(); state.miniChart = null; }
+  state.miniChart = echarts.init(el, null, { renderer: 'canvas' });
+
+  const series = YEARS.map(y => {
+    const d = ALL_DATA[y].find(x => x.name === name);
+    return d ? d.y : null;
+  });
+  const currentIdx = state.currentYear - 2011;
+
+  state.miniChart.setOption({
+    backgroundColor: 'transparent',
+    grid: { left: 0, right: 0, top: 6, bottom: 6 },
+    xAxis: { type: 'category', show: false, data: YEARS },
+    yAxis: { type: 'value', show: false, scale: true },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: getCSS('--bg-elev'),
+      borderColor: getCSS('--border-strong'),
+      textStyle: { color: getCSS('--text'), fontSize: 11 },
+      formatter: (params) => {
+        const p = params[0];
+        return `${p.axisValue} · <b style="color:${getCSS('--green-bright')}">${p.value.toFixed(4)}</b>`;
+      }
+    },
+    series: [{
+      type: 'line',
+      data: series,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { color: getCSS('--green'), width: 2 },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(160, 183, 133, 0.4)' },
+            { offset: 1, color: 'rgba(160, 183, 133, 0)' },
+          ]
+        }
+      },
+      markPoint: {
+        symbol: 'circle',
+        symbolSize: 8,
+        data: [{ coord: [currentIdx, series[currentIdx]] }],
+        itemStyle: {
+          color: getCSS('--green-bright'),
+          borderColor: getCSS('--bg'),
+          borderWidth: 2,
+        },
+        label: { show: false }
+      }
+    }],
+    animation: true,
+    animationDuration: 400,
+  });
+}
+
+/* ============================================================
+   6. TIMELINE · 滑块 + 播放
+   ============================================================ */
+
+function initTimeline() {
+  // 渲染刻度
+  const ticksEl = document.getElementById('ticks');
+  ticksEl.innerHTML = YEARS.map(y => `
+    <div class="tick ${y === 2023 ? 'active' : ''}" data-year="${y}">${String(y).slice(-2)}</div>
+  `).join('');
+  ticksEl.querySelectorAll('.tick').forEach(t => {
+    t.addEventListener('click', () => updateYear(parseInt(t.dataset.year)));
+  });
+
+  // 滑块
+  const range = document.getElementById('year-range');
+  range.addEventListener('input', (e) => updateYear(parseInt(e.target.value)));
+
+  // 播放按钮
+  document.getElementById('play-btn').addEventListener('click', togglePlay);
+}
+
+function togglePlay() {
+  const btn = document.getElementById('play-btn');
+  if (state.playing) {
+    state.playing = false;
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    clearInterval(state.playTimer);
+  } else {
+    state.playing = true;
+    btn.textContent = '❚❚';
+    btn.classList.add('playing');
+    // 如果在 2023,从 2011 开始播
+    if (state.currentYear === 2023) updateYear(2011);
+    state.playTimer = setInterval(() => {
+      const next = state.currentYear + 1;
+      if (next > 2023) {
+        clearInterval(state.playTimer);
+        state.playing = false;
+        btn.textContent = '▶';
+        btn.classList.remove('playing');
+      } else {
+        updateYear(next);
+      }
+    }, 850);
+  }
+}
+
+/* ============================================================
+   7. COMPARE
+   ============================================================ */
+
+function addToCompare(name) {
+  if (state.compareList.includes(name)) return;
+  if (state.compareList.length >= 2) state.compareList.shift();
+  state.compareList.push(name);
+  renderCompareUI();
+}
+
+function removeFromCompare(name) {
+  state.compareList = state.compareList.filter(x => x !== name);
+  renderCompareUI();
+}
+
+function renderCompareUI() {
+  const trigger = document.getElementById('compare-trigger');
+  const count = document.getElementById('compare-count');
+  count.textContent = state.compareList.length;
+
+  if (state.compareList.length === 0) {
+    trigger.classList.add('hidden');
+    document.getElementById('compare-drawer').classList.remove('open');
+    return;
+  }
+
+  trigger.classList.remove('hidden');
+
+  // 渲染抽屉
+  const body = document.getElementById('compare-body');
+  body.innerHTML = '';
+  for (let i = 0; i < 2; i++) {
+    const name = state.compareList[i];
+    if (!name) {
+      body.innerHTML += `<div class="compare-slot empty">点击"加入对比"<br>再选一个省份</div>`;
+      continue;
+    }
+    const d = ALL_DATA[state.currentYear].find(x => x.name === name);
+    body.innerHTML += `
+      <div class="compare-slot">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <div class="cmp-province">${d.name}</div>
+          <button class="close-btn" onclick="removeFromCompare('${d.name}')" style="padding: 0 4px; font-size: 14px;">✕</button>
+        </div>
+        <div class="cmp-val" style="color:${riskColor(d.y)}">${d.y.toFixed(4)}</div>
+        <div style="font-size:10px; color: var(--text-3); margin-bottom: 8px; font-family: var(--font-mono);">${d.type}</div>
+        <div class="cmp-grid">
+          <div><span class="l">灌溉</span><span class="v">${d.irr.toFixed(1)}%</span></div>
+          <div><span class="l">洪涝</span><span class="v">${d.flood.toFixed(1)}%</span></div>
+          <div><span class="l">日照</span><span class="v">${Math.round(d.sun)}h</span></div>
+          <div><span class="l">SPEI</span><span class="v">${d.spei.toFixed(2)}</span></div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+document.getElementById('compare-trigger').addEventListener('click', () => {
+  document.getElementById('compare-drawer').classList.toggle('open');
+});
+document.getElementById('compare-close').addEventListener('click', () => {
+  document.getElementById('compare-drawer').classList.remove('open');
+});
+
+window.removeFromCompare = removeFromCompare;  // 暴露给 inline onclick
+
+/* ============================================================
+   8. MAP TOOLS
+   ============================================================ */
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (state.chart) state.chart.dispatchAction({ type: 'restore' });
+  state.chart && state.chart.setOption({ series: [{ zoom: 1.15, center: undefined }] });
+});
+
+document.getElementById('btn-zoom-in').addEventListener('click', () => {
+  if (!state.chart) return;
+  const opt = state.chart.getOption();
+  const z = (opt.series[0].zoom || 1) * 1.25;
+  state.chart.setOption({ series: [{ zoom: Math.min(z, 4) }] });
+});
+
+document.getElementById('btn-zoom-out').addEventListener('click', () => {
+  if (!state.chart) return;
+  const opt = state.chart.getOption();
+  const z = (opt.series[0].zoom || 1) / 1.25;
+  state.chart.setOption({ series: [{ zoom: Math.max(z, 0.8) }] });
+});
+
+/* ============================================================
+   9. INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initTimeline();
+  renderLegendMeta();
+  renderTop10();
+  loadMap();
+});
+</script>
+
+</body>
+</html>
