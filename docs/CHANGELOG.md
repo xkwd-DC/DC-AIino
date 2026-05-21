@@ -32,9 +32,34 @@
 
 ### 明天计划（5/22）
 
-- npm install 完成 + `npm run dev` 验证 4 个 tab 切换
 - 开 PR `feat/system-skeleton`：周 UI 入仓 + Phase 1 骨架 + docs/10 v2 + docs/12
 - CRAIC 5/23 提交准备
 - 群里发：路线 v2 通告 + 系统开发启动公告
+
+---
+
+## 2026-05-21（接续 · 晚间本地联调验收）
+
+### 进展
+
+- **backend venv 建好**：`backend/.venv`（Python 3.14），装 mock 阶段最小依赖（flask 3.1.3 / flask-cors 6.0.2 / python-dotenv / pytest）；numpy/tf 暂不装，Phase 2 时切 GCP Python 3.11 venv
+- **backend pytest**：`.venv/bin/python -m pytest` **16 通过 / 0.03s**；之前 STATUS 写"17 个"是 inflate，按实际 16 修正
+- **backend 启动**：`python app.py` → 0.0.0.0:5000；curl `/api/health` 返 200 OK + service=grain-risk-api + version=0.1.0；curl `/api/provinces` 返 31 省 11 特征 JSON
+- **frontend tsconfig 修复**：`@vue/tsconfig@0.5.1` 包内不存在 `tsconfig.node.json`（只有 dom/lib/json）→ `tsconfig.node.json` 改为 self-contained（不再 extends 缺失文件）；装 `@types/node` 给 `vite.config.ts` 的 `node:url` import
+- **frontend build**：`vue-tsc --noEmit && vite build` 100 modules transformed，输出 142.51 KB（gzipped 55.6 KB），远低于 web rules "App page < 300KB gzip" 预算
+- **frontend dev**：`npm run dev` → 5173 OK；vite proxy `/api/*` → `:5000` 工作；浏览器 `/` 200，4 view 各自单独 chunk
+- **Phase 1 本地验收 ✅**：前端骨架 + 后端 health + proxy 联通全部通过
+
+### 遇到问题
+
+- 系统 `python` 命令不存在，只有 `python3`；改用 venv 后无影响
+- 一次 parallel Bash 调用因为 inline `__version__` 探测脚本对 `python-dotenv` 报 AttributeError（dotenv 没这个属性）触发 exit 1，连带 cancel 了同批的 npm install——补跑就好，不是真问题
+
+### 明天计划（5/22）
+
+- 把今日所有变更分批 commit 推 `feat/system-skeleton` PR
+- 群里发：路线 v2 通告 + Phase 1 本地验收通过 + CRAIC 5/23 倒计时
+- CRAIC 三份材料 PDF 终版校对
+- memory 落档：deployment_route_v2（GCP 路线决策）+ session_role 更新（Vue 集成归潘）
 
 ---
