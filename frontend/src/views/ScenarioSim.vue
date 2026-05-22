@@ -1,40 +1,654 @@
 <script setup lang="ts">
-// M03 参数情景模拟 — Vue 化 Phase 3.4 实装
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import * as echarts from 'echarts'
+import { PROVINCES_PROFILE, type ProvinceProfile } from '@/data/recommendation'
+import { getCSSVar } from '@/data/mockProvinces'
+
+interface SliderDef {
+  key: 'irr' | 'flood' | 'sun' | 'temp' | 'spei'
+  label: string
+  icon: string
+  iconCls: 'green' | 'red' | 'amber' | 'purple'
+  unit: string
+  min: number
+  max: number
+  step: number
+  hint: string
+}
+
+const SLIDERS: SliderDef[] = [
+  { key: 'irr', label: '灌溉率', icon: '灌', iconCls: 'green', unit: '%', min: 20, max: 120, step: 0.5, hint: '↑ 越高风险越低' },
+  { key: 'flood', label: '洪涝占比', icon: '洪', iconCls: 'red', unit: '%', min: 0, max: 24, step: 0.1, hint: '↑ 越高风险越高' },
+  { key: 'sun', label: '日照时数', icon: '日', iconCls: 'amber', unit: 'h', min: 970, max: 3350, step: 5, hint: '↑ 越高风险越低' },
+  { key: 'temp', label: '平均气温', icon: '温', iconCls: 'red', unit: '°C', min: 2, max: 26, step: 0.1, hint: '↑ 越高风险越高' },
+  { key: 'spei', label: 'SPEI 干旱', icon: 'D', iconCls: 'purple', unit: '', min: -3, max: 3, step: 0.05, hint: '↑ 越湿润风险越低' },
+]
+
+// 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维 mock 公式。
+// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（无延迟），后端记录 + Phase 2 切真模型。
+const FORMULA_BASE = 0.0235
+const MEANS: Record<SliderDef['key'], number> = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 }
+const WEIGHTS: Record<SliderDef['key'], number> = {
+  irr: -0.000115,
+  flood: 0.000420,
+  sun: -0.0000023,
+  temp: 0.000180,
+  spei: -0.000310,
+}
+
+function calcEffect(key: SliderDef['key'], val: number): number {
+  return (val - MEANS[key]) * WEIGHTS[key]
+}
+
+function calcSimRisk(params: Record<SliderDef['key'], number>): number {
+  let r = FORMULA_BASE
+  for (const k of Object.keys(WEIGHTS) as Array<SliderDef['key']>) {
+    r += calcEffect(k, params[k])
+  }
+  return Math.max(0.005, Math.min(0.055, r))
+}
+
+const selectedIdx = ref(PROVINCES_PROFILE.findIndex((p) => p.name === '河南'))
+const selected = computed<ProvinceProfile>(() => PROVINCES_PROFILE[selectedIdx.value])
+
+const baseline = computed(() => ({
+  irr: selected.value.irr,
+  flood: selected.value.flood,
+  sun: selected.value.sun,
+  temp: selected.value.temp,
+  spei: selected.value.spei,
+}))
+
+const params = ref<Record<SliderDef['key'], number>>({ ...baseline.value })
+
+watch(selected, () => {
+  params.value = { ...baseline.value }
+})
+
+const simRisk = computed(() => calcSimRisk(params.value))
+const delta = computed(() => simRisk.value - selected.value.y)
+const deltaPct = computed(() => (delta.value / selected.value.y) * 100)
+const isWorse = computed(() => delta.value > 0)
+
+const gaugeBaseEl = ref<HTMLDivElement | null>(null)
+const gaugeSimEl = ref<HTMLDivElement | null>(null)
+const contribEl = ref<HTMLDivElement | null>(null)
+
+let gaugeBase: echarts.ECharts | null = null
+let gaugeSim: echarts.ECharts | null = null
+let contribChart: echarts.ECharts | null = null
+let resizeHandler: (() => void) | null = null
+
+function gaugeOption(value: number, label: string, pointerColor: string) {
+  return {
+    backgroundColor: 'transparent',
+    series: [
+      {
+        type: 'gauge',
+        min: 0.005,
+        max: 0.055,
+        startAngle: 200,
+        endAngle: -20,
+        radius: '95%',
+        center: ['50%', '62%'],
+        progress: { show: false },
+        axisLine: {
+          lineStyle: {
+            width: 12,
+            color: [
+              [0.3, getCSSVar('--green')],
+              [0.55, getCSSVar('--amber')],
+              [0.8, getCSSVar('--risk-4')],
+              [1.0, getCSSVar('--risk-5')],
+            ] as Array<[number, string]>,
+          },
+        },
+        pointer: {
+          icon: 'path://M2,0 L-2,0 L0,-65 Z',
+          length: '70%',
+          offsetCenter: [0, 0],
+          itemStyle: { color: pointerColor },
+          width: 4,
+        },
+        anchor: {
+          show: true,
+          showAbove: true,
+          size: 10,
+          itemStyle: { color: getCSSVar('--bg'), borderColor: pointerColor, borderWidth: 2 },
+        },
+        axisTick: { length: 5, lineStyle: { color: getCSSVar('--text-3'), width: 1 } },
+        splitLine: { length: 9, lineStyle: { color: getCSSVar('--text-2'), width: 2 } },
+        axisLabel: {
+          distance: -16,
+          color: getCSSVar('--text-3'),
+          fontSize: 8,
+          fontFamily: 'JetBrains Mono',
+          formatter: (v: number) => (v < 0.01 ? '' : v.toFixed(2)),
+        },
+        title: { offsetCenter: [0, '32%'], color: getCSSVar('--text-3'), fontSize: 10, fontFamily: 'JetBrains Mono' },
+        detail: {
+          valueAnimation: true,
+          offsetCenter: [0, '15%'],
+          formatter: (v: number) => v.toFixed(4),
+          color: pointerColor,
+          fontSize: 22,
+          fontFamily: 'JetBrains Mono',
+          fontWeight: 600,
+        },
+        data: [{ value, name: label }],
+        animationDuration: 600,
+        animationEasing: 'cubicOut',
+      },
+    ],
+  }
+}
+
+function renderGauges() {
+  if (!gaugeBase || !gaugeSim) return
+  gaugeBase.setOption(gaugeOption(selected.value.y, '基线 BASE', getCSSVar('--amber')))
+  const simColor = isWorse.value ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
+  gaugeSim.setOption(
+    gaugeOption(simRisk.value, isWorse.value ? '模拟 ↑ WORSE' : '模拟 ↓ BETTER', simColor),
+  )
+}
+
+function renderContrib() {
+  if (!contribChart) return
+  const effects = SLIDERS.map((def) => ({
+    key: def.key,
+    name: def.label,
+    value: calcEffect(def.key, params.value[def.key]),
+  })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+  const yData = effects.map((e) => e.name).reverse()
+  const xData = effects.map((e) => e.value).reverse()
+
+  contribChart.setOption(
+    {
+      backgroundColor: 'transparent',
+      grid: { left: 92, right: 70, top: 14, bottom: 28 },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: getCSSVar('--bg-elev'),
+        borderColor: getCSSVar('--border-strong'),
+        textStyle: { color: getCSSVar('--text'), fontSize: 12 },
+        formatter: (p: { value: number; dataIndex: number }) => {
+          const name = yData[p.dataIndex]
+          const sign = p.value > 0 ? '+' : ''
+          const color = p.value > 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
+          return `<b>${name}</b><br/><span style="font-family:JetBrains Mono;color:${color};font-size:14px;font-weight:600;">${sign}${p.value.toFixed(4)}</span>`
+        },
+      },
+      xAxis: {
+        type: 'value',
+        max: 0.008,
+        min: -0.008,
+        splitLine: { lineStyle: { color: getCSSVar('--border'), type: 'dashed' } },
+        axisLine: { lineStyle: { color: getCSSVar('--border-strong') } },
+        axisLabel: { color: getCSSVar('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10, formatter: (v: number) => v.toFixed(3) },
+      },
+      yAxis: {
+        type: 'category',
+        data: yData,
+        axisLine: { lineStyle: { color: getCSSVar('--border-strong') } },
+        axisLabel: { color: getCSSVar('--text'), fontFamily: 'Noto Sans SC', fontSize: 12, fontWeight: 500 },
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: xData.map((v) => ({
+            value: v,
+            itemStyle: {
+              color: v > 0 ? getCSSVar('--risk-4') : getCSSVar('--green'),
+              borderRadius: v > 0 ? [0, 3, 3, 0] : [3, 0, 0, 3],
+            },
+          })),
+          barWidth: 22,
+          label: {
+            show: true,
+            position: (p: { value: number }) => (p.value > 0 ? 'right' : 'left'),
+            color: getCSSVar('--text'),
+            fontFamily: 'JetBrains Mono',
+            fontSize: 11,
+            fontWeight: 500,
+            formatter: (p: { value: number }) => (p.value > 0 ? '+' : '') + p.value.toFixed(4),
+          },
+          animationDuration: 400,
+          animationDurationUpdate: 250,
+        },
+      ],
+    },
+    true,
+  )
+}
+
+function rerender() {
+  renderGauges()
+  renderContrib()
+}
+
+watch([params, selected], rerender, { deep: true })
+
+function pctOf(val: number, def: SliderDef): number {
+  return ((val - def.min) / (def.max - def.min)) * 100
+}
+
+function fmtVal(key: SliderDef['key'], val: number): string {
+  if (key === 'sun') return Math.round(val).toString()
+  if (key === 'spei') return val.toFixed(2)
+  return val.toFixed(1)
+}
+
+function resetToBaseline() {
+  params.value = { ...baseline.value }
+}
+
+onMounted(() => {
+  if (gaugeBaseEl.value) gaugeBase = echarts.init(gaugeBaseEl.value, undefined, { renderer: 'canvas' })
+  if (gaugeSimEl.value) gaugeSim = echarts.init(gaugeSimEl.value, undefined, { renderer: 'canvas' })
+  if (contribEl.value) contribChart = echarts.init(contribEl.value, undefined, { renderer: 'canvas' })
+  rerender()
+  resizeHandler = () => {
+    gaugeBase?.resize()
+    gaugeSim?.resize()
+    contribChart?.resize()
+  }
+  window.addEventListener('resize', resizeHandler)
+})
+
+onBeforeUnmount(() => {
+  if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+  gaugeBase?.dispose()
+  gaugeSim?.dispose()
+  contribChart?.dispose()
+})
 </script>
 
 <template>
   <section class="page">
-    <div class="eyebrow">M03 · SCENARIO SIMULATION</div>
-    <h2>参数情景模拟</h2>
-    <p class="lead">5 滑块实时联动 + 双仪表盘 + odometer 数字滚动 + 情景保存。Phase 3.4 实装。</p>
-    <div class="placeholder">
-      <p>Vue 化 pending · Phase 3.4 ddl 6/12（mock 推理 API 已就位）</p>
-      <a href="/prototypes/03-scenario-sim.html" target="_blank">查看周煜楠静态原型 ↗</a>
+    <header class="page-head">
+      <div class="eyebrow">M03 · COUNTERFACTUAL SCENARIO SIMULATION</div>
+      <h2>参数情景模拟</h2>
+      <p class="lead">
+        在选定省份基线值之上调节 5 个核心干预参数（灌溉率 / 洪涝占比 / 日照 / 气温 / SPEI），
+        实时计算模拟风险 Y 与基线差值。前端走线性近似公式（与 <code>backend/api/predict.py</code> 一致），
+        Phase 2 接入熊鑫 .pkl/.h5 真模型后改为 POST <code>/api/predict</code>。
+      </p>
+    </header>
+
+    <div class="grid">
+      <!-- 左：省份 + sliders -->
+      <aside class="left-col">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-A · TARGET</div>
+              <h3>选择省份</h3>
+            </div>
+            <button class="reset-btn" @click="resetToBaseline">↺ 重置基线</button>
+          </div>
+          <select v-model.number="selectedIdx" class="province-select">
+            <option v-for="(p, i) in PROVINCES_PROFILE" :key="p.name" :value="i">
+              {{ p.name }} · {{ p.type }}
+            </option>
+          </select>
+          <div class="baseline-info">
+            <span>基线 Y</span>
+            <span class="v">{{ selected.y.toFixed(4) }}</span>
+            <span class="dot">·</span>
+            <span>{{ selected.type }}</span>
+          </div>
+        </div>
+
+        <div class="card sliders-card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-B · CONTROLS</div>
+              <h3>5 维干预参数</h3>
+            </div>
+          </div>
+          <div class="sliders">
+            <div v-for="def in SLIDERS" :key="def.key" class="slider-card">
+              <div class="slider-head">
+                <span class="slider-name">
+                  <span class="icon" :class="def.iconCls">{{ def.icon }}</span>
+                  {{ def.label }}
+                  <span class="key">{{ def.key.toUpperCase() }}</span>
+                </span>
+                <span class="slider-value">
+                  {{ fmtVal(def.key, params[def.key]) }}<span class="unit">{{ def.unit }}</span>
+                </span>
+              </div>
+              <div class="slider-track-wrap">
+                <div class="slider-track">
+                  <div class="slider-baseline" :style="{ left: pctOf(baseline[def.key], def) + '%' }"></div>
+                  <div class="slider-fill" :style="{ width: pctOf(params[def.key], def) + '%' }"></div>
+                  <div class="slider-thumb" :style="{ left: pctOf(params[def.key], def) + '%' }"></div>
+                </div>
+                <input
+                  v-model.number="params[def.key]"
+                  type="range"
+                  class="native-range"
+                  :min="def.min"
+                  :max="def.max"
+                  :step="def.step"
+                />
+              </div>
+              <div class="slider-scale">
+                <span>{{ def.min }}</span>
+                <span class="hint">{{ def.hint }}</span>
+                <span>{{ def.max }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右：双 gauge + delta + 贡献度 -->
+      <section class="right-col">
+        <div class="gauges">
+          <div class="card gauge-card">
+            <div class="card-head">
+              <div>
+                <div class="num">M03-C · BASELINE</div>
+                <h3>基线风险 Y</h3>
+              </div>
+            </div>
+            <div ref="gaugeBaseEl" class="gauge-canvas"></div>
+          </div>
+          <div class="card gauge-card">
+            <div class="card-head">
+              <div>
+                <div class="num">M03-D · SIMULATED</div>
+                <h3>模拟风险 Y</h3>
+              </div>
+              <span class="sim-tag" :class="{ worse: isWorse, better: !isWorse }">
+                {{ isWorse ? 'WORSE' : 'BETTER' }}
+              </span>
+            </div>
+            <div ref="gaugeSimEl" class="gauge-canvas"></div>
+          </div>
+        </div>
+
+        <div class="card delta-card" :class="{ worse: isWorse, better: !isWorse }">
+          <div class="delta-head">
+            <span class="num">M03-E · DELTA</span>
+            <span class="label">基线 → 模拟</span>
+          </div>
+          <div class="delta-body">
+            <div class="delta-main">
+              <span class="arrow">{{ isWorse ? '▲' : '▼' }}</span>
+              <span class="abs">{{ Math.abs(delta).toFixed(4) }}</span>
+            </div>
+            <div class="delta-sub">
+              较基线 <span class="pct">{{ isWorse ? '+' : '−' }}{{ Math.abs(deltaPct).toFixed(1) }}%</span>
+              <span class="dot">·</span>
+              {{ isWorse ? '风险上升，建议复核干预方向' : '风险下降，韧性提升' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="card contrib-card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-F · CONTRIBUTION</div>
+              <h3>各参数对风险的边际贡献</h3>
+            </div>
+            <div class="contrib-legend">
+              <span><span class="swatch up"></span>推升风险</span>
+              <span><span class="swatch dn"></span>降低风险</span>
+            </div>
+          </div>
+          <div ref="contribEl" class="contrib-canvas"></div>
+        </div>
+      </section>
     </div>
+
+    <footer class="page-foot">
+      <a href="/prototypes/03-scenario-sim.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
+      <span class="note">前端公式与 <code>backend/api/predict.py _COEFS</code> 对齐；Phase 2 (6/01-15) 切真模型后改 POST</span>
+    </footer>
   </section>
 </template>
 
 <style scoped>
-.page { padding: 24px 32px; max-width: 1320px; margin: 0 auto; }
-.eyebrow {
+.page { padding: 24px 32px; max-width: 1480px; margin: 0 auto; }
+
+.page-head { margin-bottom: 24px; }
+.eyebrow { font-family: var(--font-mono); font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.page-head h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+.lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
+.lead code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(0, 1.3fr);
+  gap: 20px;
+}
+
+.left-col, .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 16px;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.card-head .num { font-family: var(--font-mono); font-size: 9px; color: var(--text-3); letter-spacing: 1px; margin-bottom: 2px; }
+.card-head h3 { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
+
+.reset-btn {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--green);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+  padding: 4px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  cursor: pointer;
 }
-h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
-.lead { font-size: 13px; color: var(--text-2); max-width: 720px; margin-bottom: 32px; }
-.placeholder {
-  background: var(--bg-card);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--r-xl);
-  padding: 32px;
+.reset-btn:hover { color: var(--green-bright); border-color: var(--green); }
+
+.province-select {
+  width: 100%;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  appearance: none;
+  margin-bottom: 10px;
 }
-.placeholder a {
+.province-select:focus { outline: none; border-color: var(--green); }
+
+.baseline-info {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.baseline-info .v { color: var(--green-bright); font-weight: 600; }
+.baseline-info .dot { color: var(--border-strong); }
+
+/* ============ sliders ============ */
+.sliders-card .sliders { display: flex; flex-direction: column; gap: 12px; max-height: 560px; overflow-y: auto; padding-right: 4px; }
+.sliders::-webkit-scrollbar { width: 4px; }
+.sliders::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.slider-card {
+  background: var(--bg-elev);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  border: 1px solid transparent;
+}
+
+.slider-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.slider-name { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); font-weight: 500; }
+.slider-name .key { font-family: var(--font-mono); color: var(--text-3); font-size: 9px; letter-spacing: 0.5px; }
+.slider-name .icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  font-family: var(--font-serif); font-weight: 600; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.slider-name .icon.green { background: rgba(160, 183, 133, 0.15); color: var(--green-bright); }
+.slider-name .icon.red { background: rgba(184, 111, 77, 0.15); color: var(--risk-4); }
+.slider-name .icon.amber { background: rgba(230, 182, 85, 0.15); color: var(--amber); }
+.slider-name .icon.purple { background: rgba(180, 157, 216, 0.15); color: var(--purple); }
+
+.slider-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green-bright);
+}
+.slider-value .unit { font-size: 10px; margin-left: 2px; color: var(--text-3); font-weight: 400; }
+
+.slider-track-wrap { position: relative; padding: 8px 0; }
+.slider-track {
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  position: relative;
+}
+.slider-baseline {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 10px;
+  background: var(--text-3);
+  border-radius: 1px;
+  transform: translateX(-1px);
+}
+.slider-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--green-deep), var(--green-bright));
+  border-radius: 2px;
+}
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px; height: 12px;
+  background: var(--bg);
+  border: 2px solid var(--green-bright);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.native-range {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; z-index: 2;
+}
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+}
+.slider-scale .hint { color: var(--text-2); }
+
+/* ============ gauges ============ */
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gauge-card { display: flex; flex-direction: column; }
+.gauge-canvas { height: 220px; }
+
+.sim-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+}
+.sim-tag.worse { background: rgba(184, 111, 77, 0.12); color: var(--risk-4); }
+.sim-tag.better { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
+
+/* ============ delta ============ */
+.delta-card { padding: 18px 20px; }
+.delta-card.worse { border-left: 4px solid var(--risk-4); }
+.delta-card.better { border-left: 4px solid var(--green-bright); }
+.delta-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.delta-head .num { font-family: var(--font-mono); font-size: 9px; color: var(--text-3); letter-spacing: 1px; }
+.delta-head .label { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); }
+.delta-body { display: flex; flex-direction: column; gap: 6px; }
+.delta-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+}
+.delta-main .arrow { font-size: 18px; }
+.delta-main .abs { font-size: 30px; font-weight: 700; line-height: 1; }
+.delta-card.worse .delta-main { color: var(--risk-4); }
+.delta-card.better .delta-main { color: var(--green-bright); }
+.delta-sub {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.delta-sub .pct {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  margin: 0 4px;
+}
+.delta-card.worse .delta-sub .pct { color: var(--risk-4); }
+.delta-card.better .delta-sub .pct { color: var(--green-bright); }
+.delta-sub .dot { color: var(--border-strong); margin: 0 6px; }
+
+/* ============ contrib ============ */
+.contrib-card { display: flex; flex-direction: column; min-height: 280px; }
+.contrib-legend {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+}
+.contrib-legend .swatch {
   display: inline-block;
-  margin-top: 12px;
+  width: 10px; height: 3px;
+  margin-right: 4px;
+  border-radius: 1px;
+  vertical-align: middle;
+}
+.contrib-legend .swatch.up { background: var(--risk-4); }
+.contrib-legend .swatch.dn { background: var(--green); }
+.contrib-canvas { flex: 1; min-height: 220px; }
+
+.page-foot {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-3);
+  gap: 16px;
+}
+.page-foot .note { font-family: var(--font-mono); text-align: right; }
+.page-foot .note code { background: var(--bg-elev); padding: 1px 5px; border-radius: 2px; font-size: 10px; }
+.proto-link {
+  flex-shrink: 0;
   padding: 6px 14px;
   background: var(--bg-elev);
   border: 1px solid var(--border-strong);
@@ -42,5 +656,8 @@ h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-b
   color: var(--green-bright);
   font-family: var(--font-mono);
   font-size: 11px;
+  letter-spacing: 0.3px;
+  transition: all var(--dur-fast);
 }
+.proto-link:hover { border-color: var(--green); transform: translateY(-1px); }
 </style>
