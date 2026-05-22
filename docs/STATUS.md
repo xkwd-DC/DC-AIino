@@ -195,13 +195,14 @@
 - 摘要 + §7.5 "双模型 Top-3 完全一致" **错的**：实测 XGB SHAP top-3 `ndvi/temp/prec` ≠ Att-LSTM 注意力 top-3 `Flood_A/Mech/Temp`
 - 表 1 Y 定义为 "Butterworth 滤波残差"，实际训练 target 是 `yield_kg_per_ha`；y_butter 上模型 R²=-0.10
 - 表 1 漏列 NDVI；§2.1 声称用 MODIS LST 但 11 维特征只有 NDVI
-- 表 2 多列均值漂移（Sun +52%、Prec +29%、Flood_A +54%）—— v3 数据来源待石灵子核对
+- 表 2 多列均值漂移（Sun +52%、Prec +29%、Flood_A +54%）—— v3 数据来源待石灵子核对（[#23](../../issues/23)）
 - LSTM 表 3 超参 4 项与代码不符（timesteps 13→1、batch 32→16、epochs 200→100、PyTorch 实际未用）
 - 公式 (13)(14)(15) 给的是 timestep-level attention，实际是 feature-level gating
 
 **已派任务：**
 - [#21](../../pull/21) PR — `scripts/plot_shap_v3.py` 重生成 5 张图（已合 → 待合）
 - [#22](../../issues/22) Issue — @xxxx9939 (熊鑫) 5/23 09:00 前跑脚本 + 上传图
+- [#23](../../issues/23) Issue — 石灵子核对 v3 sun/prec/flood_a 三列来源口径（5/22 简短回话）
 
 **剩下要做：** §7 文字 / 摘要 / 表 1 / 表 2 / 应用前景全面重写（图出后由协调中心 + 潘妙齐另开 PR）。完整 15 项审校单见上传论文对应会话归档。
 
