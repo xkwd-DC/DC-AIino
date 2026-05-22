@@ -65,6 +65,12 @@ models/runs/
 *.onnx
 mlruns/
 
+# SQLite 持久层(从 paper_panel_v3.parquet 衍生,可重建)
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+
 # 操作系统
 .DS_Store
 Thumbs.db
