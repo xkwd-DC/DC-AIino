@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import DOMPurify from 'dompurify'
 import {
   PROVINCES_PROFILE,
   buildPathway,
@@ -7,6 +8,18 @@ import {
   type ActionItem,
   type ProvinceProfile,
 } from '@/data/recommendation'
+
+// SECURITY: 所有 v-html 渲染必须经此 sanitize。
+// 当前 desc 来自 recommendation.ts 内部硬编码，目前安全；
+// 但 5/29 后会切换到 backend /api/recommendation/<省>（外部输入），
+// 不在数据源切换时统一加 sanitize = XSS 漏洞 100% 出现。
+// 防御性陷阱：今天加，未来扩展自动安全。
+// 白名单只允许 <span class="hl|num"> 这两类标签 + class。
+const ALLOWED_TAGS = ['span']
+const ALLOWED_ATTR = ['class']
+function sanitizeDesc(html: string): string {
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })
+}
 
 const selectedIdx = ref(PROVINCES_PROFILE.findIndex((p) => p.name === '河南'))
 
@@ -238,8 +251,8 @@ const stages = computed<StageVM[]>(() => [
                 <div class="action-num">{{ String(i + 1).padStart(2, '0') }}</div>
                 <div class="action-body">
                   <div class="action-title">{{ it.title }}</div>
-                  <!-- desc 由 recommendation.ts 内部硬编码，无外部输入，v-html 安全 -->
-                  <div class="action-desc" v-html="it.desc"></div>
+                  <!-- desc 经 DOMPurify 白名单（仅 <span class>）。即便未来切外部 API 也防 XSS。 -->
+                  <div class="action-desc" v-html="sanitizeDesc(it.desc)"></div>
                   <div class="action-tags">
                     <span
                       v-for="t in it.tags"

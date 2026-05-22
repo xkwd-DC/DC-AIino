@@ -27,9 +27,21 @@ with (DATA_DIR / "provinces_baseline.json").open(encoding="utf-8") as f:
 app = Flask(__name__)
 app.json.ensure_ascii = False  # 直接输出中文，便于 curl 调试；浏览器/前端两种都能解析
 
-# CORS：demo 阶段默认 *，部署时用 .env 的 CORS_ORIGINS 收窄到具体域名（逗号分隔）。
-cors_env = os.getenv("CORS_ORIGINS", "*")
-cors_origins = "*" if cors_env.strip() == "*" else [o.strip() for o in cors_env.split(",") if o.strip()]
+# SECURITY: CORS 默认收窄到 dev localhost 端口，**不再** allow all origins。
+# 生产部署必须显式设 CORS_ORIGINS=https://yourdomain.com,...
+# 历史教训：默认 * 在部署人忘设环境变量时会让任何恶意网站跨域读 API。
+_DEV_DEFAULT_ORIGINS = (
+    "http://localhost:5173,http://localhost:5174,"
+    "http://127.0.0.1:5173,http://127.0.0.1:5174"
+)
+cors_env = os.getenv("CORS_ORIGINS", _DEV_DEFAULT_ORIGINS)
+if cors_env.strip() == "*":
+    # 显式 opt-in 允许全部（不推荐生产用）。日志告警提醒。
+    import warnings
+    warnings.warn("CORS_ORIGINS=* — 允许任何源跨域，仅限开发/排障", stacklevel=1)
+    cors_origins: list[str] | str = "*"
+else:
+    cors_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 app.register_blueprint(predict_bp)
