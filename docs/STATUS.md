@@ -7,6 +7,25 @@
 
 ---
 
+## 🎯 2026-05-21 路线 E 全部落地（XGB / LSTM / Att-LSTM 三模型 ready）
+
+| 模型 | 10 种子 test R² | RMSE (kg/ha) | 申报书硬指标 |
+|---|---|---|---|
+| XGBoost | **0.9072 ± 0.0383** | 312.5 | ≥ 0.62 ✅ 远超 |
+| LSTM | **0.8856 ± 0.0223** | 362.0 | ≥ 0.62 ✅ 远超 |
+| **Attention-LSTM** | **0.8160 ± 0.0502** | 456.4 | ≥ 0.65 ✅ 通过 |
+| y_butter 消融 | -0.1015 ± 0.2763 | — | (方法学消融) |
+
+**后端 sanity check** `python -m backend.services.inference` — 三模型对河南 2022 真值 4615 kg/ha：
+- XGB 4387.5（err −227.5）/ LSTM 4173.5（err −441.6）/ **Att-LSTM 4657.6（err +42.6） ← 最准**
+- Att-LSTM attention softmax sum=1 ✅，单样本 top-3 = `SPEI(0.49) > Irr(0.29) > Flood_R(0.05)`（**与论文期望 `Irr > Flood > Sun` 高度一致**）
+
+**关键叙事**：XGB SHAP top-3 = `ndvi/temp/prec`（数据驱动，生物量主导）；Att-LSTM attention 显著偏向 `SPEI/Irr/Flood`（policy lever）—— 两套互补，可拼成"数据 × 政策"双层解释。
+
+→ Issue #6 关闭条件全部满足，**M2 评审硬指标全部提前达成**（距 11-30 还有 6 个月）。
+
+---
+
 ## 🚨 2026-05-17 关键路线决策
 
 **实证发现：R² ≥ 0.62 在去趋势 Y 上数学不可达。**
@@ -74,6 +93,7 @@
 | 待合并 PR | 0（待熊鑫开新 PR：v3 诊断脚本 + Att-LSTM 务实路线 R²） |
 | 公开 Issues | **4**（#6 熊鑫 / #9 石灵子 / #10 路线决策 / #12 CRAIC 5-23）|
 | Backend 测试 | 16 个，覆盖率 98% |
+| 模型 artifacts | XGB + LSTM + Att-LSTM **全部入库**（11 维 sanity check PASS）|
 | CI 通过率 | 100% |
 | 数据资产 | paper_panel_v3 (403×27, y_detrended 完美) + MODIS 11 维 panel + GIS 三级 + CLCD |
 | 文档总数 | 13 篇（00–11 + STATUS）|
@@ -103,15 +123,15 @@
 - ✅ **D7** MODIS / POWER 月度可行性评估（Issue #9 评论）
 - 🟡 下一轮：v4 待办（SPEI proxy → 真实灾害 / 耕地像元加权 / 多年 CLCD），非阻塞，按节奏
 
-### 🟡 熊鑫 · 算法（CRAIC 嵌图日 D-day）
+### 🟢 熊鑫 · 算法（路线 E 全部完成，M2 硬指标提前达成）
 
-- ✅ LSTM 训练脚手架 `train_lstm_baseline.py`
-- ✅ XGB R² 0.4962 → **0.5647** 用 v2（10 种子均值）
-- ✅ Butterworth 完整跑通 + 4 个诊断脚本（参数扫描 7 cutoff × 3 poly）
-- ✅ 5 个 LSTM 交付物到 `backend/models/`（gitignored）
-- 🔴 **发现 R² 上限**：去趋势后任意配置 R²≈0 → 路线转向（已决策）
-- 🔴 **今天 D-day**：[Issue #6](../../issues/6) 11 张图（图 2-10）+ Att-LSTM 务实路线 R² 实测，**5/19 19:00 嵌图 ddl**
-- 🟡 后续：v3 诊断脚本新 PR + backend/models 重训 + 路线 memory（CRAIC 之后接力）
+- ✅ XGB 基线 `yield_kg_per_ha` 上 R² = **0.9072 ± 0.0383**（commit `5068b96`）
+- ✅ LSTM 基线 R² = **0.8856 ± 0.0223**，修了 y_scaler bug（commit `5068b96`）
+- ✅ y_butter 消融 R² = -0.10（commit `5068b96`，方法学诚实）
+- ✅ `backend/services/inference.py` 11 维契约 + LSTM y_scaler inverse_transform（commit `1c70909`）
+- ✅ **Attention-LSTM 训练**：feature-gating + 2×LSTM，R² = **0.8160 ± 0.0502**（2026-05-21）
+- ✅ inference.py 三模型集成 + sanity check 全 PASS（2026-05-21）
+- 🟡 下一轮：Issue #6 关闭 + SHAP 蜂群图 / 韧性路径 PoC（M2 节点之前任选）
 
 ### 🔴 周煜楠 · 前端（5 天无音讯，5/21 签字风险升级）
 

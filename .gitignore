@@ -81,3 +81,7 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
+
+# 熊鑫的入门 sklearn toy-data demo（pedagogical only，与本项目数据无关）
+/demo_train.py
+/demo_compare.py
