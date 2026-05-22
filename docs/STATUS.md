@@ -3,7 +3,7 @@
 > **本文是项目级 single-source-of-truth dashboard**，任何 session 都该来这看大盘。
 > 每次重要进展（PR merge / 任务完成 / 新 blocker）都更新本文。
 >
-> 最近更新：**2026-05-22 凌晨**（协调中心：`cwd=/home/darcy/DC`，PR #16 + #18 merge 后同步）
+> 最近更新：**2026-05-22 上午**（协调中心：`cwd=/home/darcy/DC`，CRAIC 研究报告审校 + PR #21 SHAP 重生成脚本入仓）
 
 ---
 
@@ -176,6 +176,7 @@
 | **#14** | docs(handoff) 石灵子 2026-05-17 session 收尾 | 2026-05-19 |
 | **#16** | docs(coord) 协调二周目 — 系统开发启动 + GCP 路线 + 周 UI 入仓 + Vue 骨架 | 2026-05-22 |
 | **#18** | feat 路线 E 收尾 — Att-LSTM R²=0.8160 + 三模型 inference 集成（Closes #6） | 2026-05-22 |
+| **#21** | feat(scripts) plot_shap_v3.py — 重生成 §7.2-§7.5 SHAP/注意力图（待熊鑫执行 #22） | 2026-05-22（待 merge） |
 
 ---
 
@@ -186,6 +187,23 @@
 - ✅ 5/21 14:00 三人现场签字 + 学院盖章（IRL 结果待群里确认）
 - 🔥 **今天 5/22 PDF 终版校对** + 5/17 决策 §7 R² 数字最终化（0.5647 vs 0.8160 见 [Issue #12](../../issues/12)）
 - 🚨 5/23 09:00 上传 caairobot.com
+
+### 🔴 P0：CRAIC 研究报告（《极端气候下基于多模态的粮食风险预警系统》）§7 全部图与定性叙事失去依据（2026-05-22 上午发现）
+
+上传论文与 v3 系统实测对照发现 15 项不一致，重大者：
+- §7.1 表 4 R² (0.6293 / 0.6619) 是旧 normalized-y 指标，与 v3 实测 (XGB 0.9072 / LSTM 0.8856 / Att-LSTM 0.8160) 全部对不上
+- 摘要 + §7.5 "双模型 Top-3 完全一致" **错的**：实测 XGB SHAP top-3 `ndvi/temp/prec` ≠ Att-LSTM 注意力 top-3 `Flood_A/Mech/Temp`
+- 表 1 Y 定义为 "Butterworth 滤波残差"，实际训练 target 是 `yield_kg_per_ha`；y_butter 上模型 R²=-0.10
+- 表 1 漏列 NDVI；§2.1 声称用 MODIS LST 但 11 维特征只有 NDVI
+- 表 2 多列均值漂移（Sun +52%、Prec +29%、Flood_A +54%）—— v3 数据来源待石灵子核对
+- LSTM 表 3 超参 4 项与代码不符（timesteps 13→1、batch 32→16、epochs 200→100、PyTorch 实际未用）
+- 公式 (13)(14)(15) 给的是 timestep-level attention，实际是 feature-level gating
+
+**已派任务：**
+- [#21](../../pull/21) PR — `scripts/plot_shap_v3.py` 重生成 5 张图（已合 → 待合）
+- [#22](../../issues/22) Issue — @xxxx9939 (熊鑫) 5/23 09:00 前跑脚本 + 上传图
+
+**剩下要做：** §7 文字 / 摘要 / 表 1 / 表 2 / 应用前景全面重写（图出后由协调中心 + 潘妙齐另开 PR）。完整 15 项审校单见上传论文对应会话归档。
 
 ### 🟡 P1：系统开发 5/24 启动 — 关键路径解锁
 
