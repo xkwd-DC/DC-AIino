@@ -1,12 +1,20 @@
-"""模型推理服务 — 接口契约（Protocol stub）
+"""模型推理服务 — 接口契约（Protocol stub）+ 参考实现
 
-当前为骨架，**仅定义类型 / 接口**，未实装。
-M2 节点（2026-11 前）由潘妙齐填充实现：
-  - load_models() 启动时加载 .pkl/.h5/scaler
-  - predict_xgboost / predict_lstm / predict_dual 输入 11 特征 → 风险 + SHAP
+当前为骨架，**`ModelInferer` 仅定义类型 / 接口**。
+M2 节点（2026-11 前）由潘妙齐填充 Protocol 的 predict_xgboost / predict_lstm /
+predict_dual（接 SHAP / attention weights / consensus）。
 
-算法组（王天硕、张嘉越）只需保证产出的模型能用本文件底部 demo 加载即可。
-详细要求见 docs/07_模型训练任务_算法组.md
+本文件已落地的最小参考实现：
+  - `_load_artifacts()`：加载 6 个 artifact，校验两份 feature_columns 与契约一致
+  - `predict_xgb_yield(features, *, xgb, x_scaler)` → 单产 kg/ha
+  - `predict_lstm_yield(features, *, lstm, x_scaler, y_scaler)` → 单产 kg/ha
+    （LSTM 训练时 y 做了 StandardScaler，predict 出 z-score，必须 inverse_transform
+     回 kg/ha；M2 wrapper 必须保持这个 pipeline）
+
+算法组（熊鑫）保证产出的 11 个 artifact（见 `_REQUIRED` 列表）能被
+`_sanity_check_loadable()` 加载并通过 Henan 2022 样例的 PASS 检查（XGB / LSTM / Att-LSTM）。
+
+详细要求见 docs/07_模型训练任务_算法组.md。
 """
 from typing import Protocol, TypedDict
 
@@ -51,6 +59,11 @@ class LSTMOutput(TypedDict):
     attention_weights: dict[str, float] | None   # Attention-LSTM 才有
 
 
+class AttLSTMOutput(TypedDict):
+    risk: float
+    attention_weights: dict[str, float]          # 11 个特征的 attention 权重（∑=1）
+
+
 class DualOutput(TypedDict):
     xgboost_risk: float
     lstm_risk: float
@@ -75,60 +88,237 @@ class ModelInferer(Protocol):
     def predict_dual(self, features: dict[str, float]) -> DualOutput: ...
 
 
-# ─── 算法组验收脚本（参考实现） ─────────────────────────────────────────
-def _sanity_check_loadable():
-    """给王天硕 / 张嘉越交付时跑一遍这个，确认模型能被后端加载。
+# ─── 参考实现（路线 E artifact 加载 + 推理 pipeline） ───────────────────
+#
+# Target 单位说明（重要！）：
+#   路线 E 后 XGB / LSTM 都训练在 `yield_kg_per_ha`（真实单产，约 3000–4500 kg/ha）。
+#   旧的 "risk_score ∈ [0.005, 0.055]" 语义来自王天硕的坏 Y，已废弃。
+#   `api/predict.py` 的 _predict_mock 仍输出 risk_score —— M2 接真模型时需要
+#   把 yield 映射到 risk（或直接换 API 语义），不是本文件的事。
 
-    使用：
-        python -m backend.services.inference
+_REQUIRED = [
+    "xgb_model.pkl",                 # XGBRegressor → 直接输出 kg/ha
+    "scaler.pkl",                    # XGB X StandardScaler
+    "lstm_model.h5",                 # Keras LSTM → 输出 z-score
+    "lstm_scaler.pkl",               # LSTM X StandardScaler
+    "lstm_y_scaler.pkl",             # LSTM y StandardScaler（z → kg/ha 必须 inverse_transform）
+    "att_lstm_model.h5",             # Keras Att-LSTM（feature-gating + 2×LSTM）→ 输出 z-score
+    "att_lstm_x_scaler.pkl",         # Att-LSTM X StandardScaler
+    "att_lstm_y_scaler.pkl",         # Att-LSTM y StandardScaler
+    "feature_columns.json",
+    "lstm_feature_columns.json",
+    "att_lstm_feature_columns.json",
+]
 
-    通过 = 你的训练产物符合后端集成要求。
+# train_att_lstm_baseline.py 里的 Softmax 层 name，必须与之保持同步
+_ATT_LAYER_NAME = "feature_attention"
+
+
+def _load_artifacts(models_dir=None):
+    """加载全部 8 个二进制 artifact + 3 份 feature_columns，构造 attention 提取子模型。
+
+    返回 dict keys：
+      - 'xgb', 'xgb_x_scaler'
+      - 'lstm', 'lstm_x_scaler', 'lstm_y_scaler'
+      - 'att_lstm', 'att_lstm_x_scaler', 'att_lstm_y_scaler',
+        'att_lstm_attention'（Model(att_lstm.input, feature_attention 层) 用于读权重）
+
+    校验项（任一失败 → RuntimeError）：
+      - _REQUIRED 列表所有文件存在
+      - feature_columns.json / lstm_feature_columns.json / att_lstm_feature_columns.json
+        均等于 TRAINING_FEATURE_ORDER
     """
     import json
     from pathlib import Path
 
     import joblib
-    import numpy as np
     import tensorflow as tf
 
-    models_dir = Path(__file__).resolve().parent.parent / "models"
-    required = ["xgb_model.pkl", "lstm_model.h5", "scaler.pkl", "feature_columns.json"]
-    missing = [f for f in required if not (models_dir / f).exists()]
+    if models_dir is None:
+        models_dir = Path(__file__).resolve().parent.parent / "models"
+    else:
+        models_dir = Path(models_dir)
+
+    missing = [f for f in _REQUIRED if not (models_dir / f).exists()]
     if missing:
-        print(f"❌ 缺少文件：{missing}")
-        print(f"   预期路径：{models_dir}")
+        raise RuntimeError(f"缺少 artifact：{missing}（路径 {models_dir}）")
+
+    for fname in (
+        "feature_columns.json",
+        "lstm_feature_columns.json",
+        "att_lstm_feature_columns.json",
+    ):
+        cols = json.load(open(models_dir / fname))
+        if cols != TRAINING_FEATURE_ORDER:
+            raise RuntimeError(
+                f"{fname} 与契约不一致\n  期望：{TRAINING_FEATURE_ORDER}\n  实际：{cols}"
+            )
+
+    att_lstm = tf.keras.models.load_model(
+        models_dir / "att_lstm_model.h5", compile=False
+    )
+    att_attention = tf.keras.Model(
+        att_lstm.input, att_lstm.get_layer(_ATT_LAYER_NAME).output, name="att_extractor"
+    )
+
+    return {
+        "xgb": joblib.load(models_dir / "xgb_model.pkl"),
+        "xgb_x_scaler": joblib.load(models_dir / "scaler.pkl"),
+        "lstm": tf.keras.models.load_model(models_dir / "lstm_model.h5", compile=False),
+        "lstm_x_scaler": joblib.load(models_dir / "lstm_scaler.pkl"),
+        "lstm_y_scaler": joblib.load(models_dir / "lstm_y_scaler.pkl"),
+        "att_lstm": att_lstm,
+        "att_lstm_x_scaler": joblib.load(models_dir / "att_lstm_x_scaler.pkl"),
+        "att_lstm_y_scaler": joblib.load(models_dir / "att_lstm_y_scaler.pkl"),
+        "att_lstm_attention": att_attention,
+    }
+
+
+def predict_xgb_yield(features: dict[str, float], *, xgb, x_scaler) -> float:
+    """XGB 推理 pipeline：dict(训练字段名) → kg/ha。
+
+    XGB target 即 yield_kg_per_ha，predict 输出已经是原单位，无需 inverse_transform。
+    """
+    import numpy as np
+
+    arr = np.array([[features[k] for k in TRAINING_FEATURE_ORDER]], dtype=float)
+    return float(xgb.predict(x_scaler.transform(arr))[0])
+
+
+def predict_lstm_yield(features: dict[str, float], *, lstm, x_scaler, y_scaler) -> float:
+    """LSTM 推理 pipeline：dict(训练字段名) → kg/ha。
+
+    关键步骤：lstm.predict 出 z-score（因 train 时对 y 做了 StandardScaler），
+    必须 `y_scaler.inverse_transform` 回 kg/ha，否则得到的是无量纲值。
+    """
+    import numpy as np
+
+    arr = np.array([[features[k] for k in TRAINING_FEATURE_ORDER]], dtype=float)
+    scaled = x_scaler.transform(arr).reshape(1, 1, -1)        # (1, T=1, F=11)
+    z = lstm.predict(scaled, verbose=0)[0][0]
+    return float(y_scaler.inverse_transform(np.array([[z]]))[0][0])
+
+
+def predict_att_lstm_yield(
+    features: dict[str, float],
+    *,
+    att_lstm,
+    attention_model,
+    x_scaler,
+    y_scaler,
+) -> tuple[float, dict[str, float]]:
+    """Att-LSTM 推理 pipeline：dict(训练字段名) → (kg/ha, attention 权重 dict)。
+
+    与 LSTM 同样的 z → kg/ha inverse_transform pipeline；额外返回 11 维 attention
+    权重（Softmax 输出，∑=1），可与 XGB SHAP top-k 做"一致性"对照
+    （doc 06 §3.2 / 申报书 §3.1 韧性路径输入）。
+    """
+    import numpy as np
+
+    arr = np.array([[features[k] for k in TRAINING_FEATURE_ORDER]], dtype=float)
+    scaled = x_scaler.transform(arr).reshape(1, 1, -1)        # (1, T=1, F=11)
+
+    z = att_lstm.predict(scaled, verbose=0)[0][0]
+    yield_kg = float(y_scaler.inverse_transform(np.array([[z]]))[0][0])
+
+    attn = attention_model.predict(scaled, verbose=0)[0]      # shape (11,) ∑=1
+    weights = {k: float(v) for k, v in zip(TRAINING_FEATURE_ORDER, attn)}
+    return yield_kg, weights
+
+
+def _sanity_check_loadable():
+    """算法组交付验收脚本，确认 6 个 artifact 能被后端正确加载。
+
+    使用：
+        python -m backend.services.inference
+
+    通过 = 你的训练产物符合后端集成要求（feature 顺序、scaler 名称、y_scaler 存在）。
+    """
+    # Henan 2022 测试样例 — 取自 data/interim/paper_panel_v3.parquet 实际行
+    # （docs/07 §3.3 旧合成值未跟上 PR #7 的单位重整，比如 mech 1620 vs 实际 0.74，
+    #   drou_a 4.5 vs 实际 307；树模型对此鲁棒、LSTM 不鲁棒。用真值。）
+    # ground truth yield_kg_per_ha = 4615.01
+    henan_2022 = {
+        "Irr": 74.61, "Flood_R": 4.59, "Sun": 3355.83, "Temp": 16.23, "SPEI": -1.38,
+        "Prec": 604.32, "Mech": 0.74, "Fert": 595.31, "Drou_A": 307.73, "Flood_A": 527.87,
+        "NDVI": 0.60,
+    }
+    GROUND_TRUTH_YIELD = 4615.01  # 河南省 2022 实际单产
+
+    try:
+        art = _load_artifacts()
+    except RuntimeError as e:
+        print(f"❌ {e}")
         return False
 
-    columns = json.load(open(models_dir / "feature_columns.json"))
-    if columns != TRAINING_FEATURE_ORDER:
-        print(f"❌ feature_columns.json 与契约不一致")
-        print(f"   期望：{TRAINING_FEATURE_ORDER}")
-        print(f"   实际：{columns}")
+    xgb_yield = predict_xgb_yield(
+        henan_2022, xgb=art["xgb"], x_scaler=art["xgb_x_scaler"]
+    )
+    lstm_yield = predict_lstm_yield(
+        henan_2022,
+        lstm=art["lstm"],
+        x_scaler=art["lstm_x_scaler"],
+        y_scaler=art["lstm_y_scaler"],
+    )
+    att_lstm_yield, att_weights = predict_att_lstm_yield(
+        henan_2022,
+        att_lstm=art["att_lstm"],
+        attention_model=art["att_lstm_attention"],
+        x_scaler=art["att_lstm_x_scaler"],
+        y_scaler=art["att_lstm_y_scaler"],
+    )
+
+    xgb_err = xgb_yield - GROUND_TRUTH_YIELD
+    lstm_err = lstm_yield - GROUND_TRUTH_YIELD
+    att_err = att_lstm_yield - GROUND_TRUTH_YIELD
+    print(f"  ground truth      = {GROUND_TRUTH_YIELD:.1f} kg/ha")
+    print(f"✅ xgb_model.pkl     → 河南 2022 yield = {xgb_yield:.1f} kg/ha  (err {xgb_err:+.1f})")
+    print(f"✅ lstm_model.h5     → 河南 2022 yield = {lstm_yield:.1f} kg/ha  (err {lstm_err:+.1f})")
+    print(f"✅ att_lstm_model.h5 → 河南 2022 yield = {att_lstm_yield:.1f} kg/ha  (err {att_err:+.1f})")
+    print(f"   三模型最大分歧 |Δ| = "
+          f"{max(abs(xgb_yield - lstm_yield), abs(xgb_yield - att_lstm_yield), abs(lstm_yield - att_lstm_yield)):.1f} kg/ha")
+
+    top3 = sorted(att_weights.items(), key=lambda kv: -kv[1])[:3]
+    print(f"   Att-LSTM top-3 feature attention：" + ", ".join(f"{k}={v:.3f}" for k, v in top3))
+    # attention 权重必须接近 sum=1（Softmax 输出，允许 1e-3 数值误差）
+    if abs(sum(att_weights.values()) - 1.0) > 1e-3:
+        print(f"❌ attention 权重 sum={sum(att_weights.values()):.4f} ≠ 1，"
+              f"feature_attention 层 name 是不是变了？")
         return False
 
-    xgb = joblib.load(models_dir / "xgb_model.pkl")
-    lstm = tf.keras.models.load_model(models_dir / "lstm_model.h5", compile=False)
-    scaler = joblib.load(models_dir / "scaler.pkl")
-
-    # 河南 2022 测试样例（与 docs/07 §3.3 一致）
-    henan_2022 = np.array([[65.4, 4.2, 2240, 14.2, -0.2, 750, 1620, 360, 4.5, 3.8, -0.05]])
-    scaled = scaler.transform(henan_2022)
-
-    xgb_risk = float(xgb.predict(scaled)[0])
-    lstm_risk = float(lstm.predict(scaled.reshape(1, 1, 11), verbose=0)[0][0])
-
-    print(f"✅ xgb_model.pkl   → 河南 2022 risk = {xgb_risk:.4f}")
-    print(f"✅ lstm_model.h5   → 河南 2022 risk = {lstm_risk:.4f}")
-    print(f"   分歧 |Δ| = {abs(xgb_risk - lstm_risk):.4f}")
+    # 容忍度 = 3 × model card 报告的测试集 RMSE：
+    #   XGB      test RMSE = 312.5 kg/ha  → tolerance 940
+    #   LSTM     test RMSE = 362.0 kg/ha  → tolerance 1086
+    #   Att-LSTM test RMSE = 456.4 kg/ha  → tolerance 1370（feature-gating + dropout 收缩了表达力）
+    # 同时下限 500 kg/ha 防 z-score 漏 inverse_transform（z 通常在 ±2 → 漏算时 |y| < 5）。
+    XGB_TOL, LSTM_TOL, ATT_TOL = 940.0, 1086.0, 1370.0
+    MIN_YIELD = 500.0
 
     ok = (
-        0.020 <= xgb_risk <= 0.030 and
-        0.020 <= lstm_risk <= 0.030 and
-        abs(xgb_risk - lstm_risk) <= 0.005
+        xgb_yield > MIN_YIELD
+        and lstm_yield > MIN_YIELD
+        and att_lstm_yield > MIN_YIELD
+        and abs(xgb_err) <= XGB_TOL
+        and abs(lstm_err) <= LSTM_TOL
+        and abs(att_err) <= ATT_TOL
     )
-    print("✅ PASS" if ok else "❌ FAIL — 输出超出预期区间，请排查训练数据 / 模型加载")
+    if ok:
+        print(f"✅ PASS（|err| ≤ 3× RMSE：XGB ≤ {XGB_TOL:.0f}, "
+              f"LSTM ≤ {LSTM_TOL:.0f}, Att-LSTM ≤ {ATT_TOL:.0f}）")
+    else:
+        bad_yield = [n for n, y in
+                     (("XGB", xgb_yield), ("LSTM", lstm_yield), ("Att-LSTM", att_lstm_yield))
+                     if y <= MIN_YIELD]
+        if bad_yield:
+            print(f"❌ FAIL — {bad_yield} yield < {MIN_YIELD:.0f}，"
+                  f"可能 y_scaler.inverse_transform 漏调用")
+        else:
+            print(f"❌ FAIL — |err| 超出 3× RMSE 容忍区间，"
+                  f"请排查 feature 顺序 / scaler 加载 / 模型 seed 匹配")
     return ok
 
 
 if __name__ == "__main__":
-    _sanity_check_loadable()
+    import sys
+
+    sys.exit(0 if _sanity_check_loadable() else 1)

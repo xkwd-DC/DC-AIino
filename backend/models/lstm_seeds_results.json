@@ -1,0 +1,153 @@
+{
+  "target": "yield_kg_per_ha",
+  "data_path": "data/interim/paper_panel_v3.parquet",
+  "data_md5_12": "7f2070282216",
+  "n_rows": 403,
+  "n_features": 11,
+  "feature_cols_lower": [
+    "irr",
+    "flood",
+    "sun",
+    "temp",
+    "spei",
+    "prec",
+    "mech",
+    "fert",
+    "drou_a",
+    "flood_a",
+    "ndvi"
+  ],
+  "feature_cols_training": [
+    "Irr",
+    "Flood_R",
+    "Sun",
+    "Temp",
+    "SPEI",
+    "Prec",
+    "Mech",
+    "Fert",
+    "Drou_A",
+    "Flood_A",
+    "NDVI"
+  ],
+  "timesteps": 1,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "hyper": {
+    "timesteps": 1,
+    "lstm_units": [
+      64,
+      32
+    ],
+    "dropout": 0.2,
+    "batch_size": 16,
+    "epochs": 100,
+    "lr": 0.001,
+    "early_stop_patience": 10
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "tr_r2": 0.9319990277290344,
+      "tr_rmse_kg_per_ha": 275.7475280761719,
+      "te_r2": 0.8848063945770264,
+      "te_rmse_kg_per_ha": 352.25018310546875,
+      "epochs_run": 100
+    },
+    {
+      "seed": 1,
+      "tr_r2": 0.9409536123275757,
+      "tr_rmse_kg_per_ha": 260.4117431640625,
+      "te_r2": 0.8263855576515198,
+      "te_rmse_kg_per_ha": 408.01959228515625,
+      "epochs_run": 100
+    },
+    {
+      "seed": 2,
+      "tr_r2": 0.9169892072677612,
+      "tr_rmse_kg_per_ha": 299.86181640625,
+      "te_r2": 0.9039754867553711,
+      "te_rmse_kg_per_ha": 342.0015563964844,
+      "epochs_run": 85
+    },
+    {
+      "seed": 3,
+      "tr_r2": 0.9408868551254272,
+      "tr_rmse_kg_per_ha": 254.17428588867188,
+      "te_r2": 0.8973416686058044,
+      "te_rmse_kg_per_ha": 347.2705993652344,
+      "epochs_run": 100
+    },
+    {
+      "seed": 4,
+      "tr_r2": 0.9183539748191833,
+      "tr_rmse_kg_per_ha": 300.1788330078125,
+      "te_r2": 0.9102662801742554,
+      "te_rmse_kg_per_ha": 319.0970764160156,
+      "epochs_run": 77
+    },
+    {
+      "seed": 5,
+      "tr_r2": 0.9369231462478638,
+      "tr_rmse_kg_per_ha": 260.4106140136719,
+      "te_r2": 0.8944419026374817,
+      "te_rmse_kg_per_ha": 363.33465576171875,
+      "epochs_run": 100
+    },
+    {
+      "seed": 6,
+      "tr_r2": 0.9362004399299622,
+      "tr_rmse_kg_per_ha": 266.3527526855469,
+      "te_r2": 0.8889413475990295,
+      "te_rmse_kg_per_ha": 349.4071350097656,
+      "epochs_run": 100
+    },
+    {
+      "seed": 7,
+      "tr_r2": 0.9073333740234375,
+      "tr_rmse_kg_per_ha": 312.378662109375,
+      "te_r2": 0.8692536354064941,
+      "te_rmse_kg_per_ha": 417.84130859375,
+      "epochs_run": 81
+    },
+    {
+      "seed": 8,
+      "tr_r2": 0.9134652614593506,
+      "tr_rmse_kg_per_ha": 303.1192932128906,
+      "te_r2": 0.8896148204803467,
+      "te_rmse_kg_per_ha": 377.6661376953125,
+      "epochs_run": 87
+    },
+    {
+      "seed": 9,
+      "tr_r2": 0.9367566704750061,
+      "tr_rmse_kg_per_ha": 265.2750244140625,
+      "te_r2": 0.8912208676338196,
+      "te_rmse_kg_per_ha": 343.468017578125,
+      "epochs_run": 82
+    }
+  ],
+  "summary": {
+    "test_r2_mean": 0.8856247961521149,
+    "test_r2_std": 0.022349910367596287,
+    "test_r2_min": 0.8263855576515198,
+    "test_r2_max": 0.9102662801742554,
+    "test_rmse_kg_per_ha_mean": 362.03562622070314,
+    "test_rmse_kg_per_ha_std": 29.219648348104172,
+    "train_r2_mean": 0.9279861569404602,
+    "train_r2_std": 0.011941766442727174
+  },
+  "representative_seed": 8,
+  "declared_r2_target": 0.62,
+  "passed": true
+}
