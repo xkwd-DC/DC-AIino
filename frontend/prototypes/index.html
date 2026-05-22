@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极端气候下粮食生产风险智能分析 · 项目主页</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+  --red: #B86F4D;
+  --red-bright: #D8916F;
+  --amber: #E6B655;
+  --amber-bright: #F0CB76;
+  --blue: #6BA8B5;
+  --blue-bright: #8FC1CC;
+  --purple: #B49DD8;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 450ms;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(160, 183, 133, 0); }
+}
+@keyframes glowDrift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 25px); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(160, 183, 133, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 88% 92%, rgba(230, 182, 85, 0.03) 0%, transparent 40%);
+}
+
+/* ============ Header ============ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-logo {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+  color: #0E1A14;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.brand-logo:hover { transform: rotate(-6deg) scale(1.08); }
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta { display: flex; align-items: center; gap: 18px; }
+
+.nav-links {
+  display: flex;
+  gap: 18px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.4px;
+}
+.nav-links a {
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color var(--dur-fast);
+}
+.nav-links a:hover { color: var(--green-bright); }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 11px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.6px;
+}
+.status-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulseDot 2.2s infinite;
+}
+
+/* ============ Container ============ */
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* ============ Hero ============ */
+.hero {
+  padding: 80px 0 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -140px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(160, 183, 133, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glowDrift 24s var(--ease-out) infinite;
+  z-index: 0;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -100px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(230, 182, 85, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glowDrift 30s var(--ease-out) infinite reverse;
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 980px;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s var(--ease-out) both;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: var(--green-deep);
+}
+.hero-eyebrow::after { background: transparent; }
+
+.hero h2 {
+  font-family: var(--font-serif);
+  font-size: 46px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.08s;
+}
+.hero h2 .accent {
+  background: linear-gradient(135deg, var(--green-bright), var(--green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.hero-lead {
+  font-size: 16px;
+  color: var(--text-2);
+  line-height: 1.85;
+  max-width: 760px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.16s;
+}
+.hero-lead strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 880px;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.26s;
+}
+
+.hero-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  transition: all var(--dur-base) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+.hero-stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--green-deep), var(--green-bright));
+  transition: width 0.4s var(--ease-out);
+}
+.hero-stat:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.hero-stat:hover::before { width: 100%; }
+
+.hero-stat .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.hero-stat .val {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--green-bright);
+  letter-spacing: 0.3px;
+  line-height: 1;
+  animation: countUp 0.8s var(--ease-out) both;
+  animation-delay: 0.5s;
+}
+.hero-stat .val .unit {
+  font-size: 14px;
+  color: var(--text-3);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.hero-stat .sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.3px;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.36s;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--dur-base) var(--ease-out);
+  letter-spacing: 0.3px;
+}
+.btn:hover {
+  border-color: var(--green);
+  color: var(--green-bright);
+  transform: translateY(-1px);
+}
+.btn.primary {
+  background: var(--green);
+  color: #0E1A14;
+  border-color: var(--green);
+}
+.btn.primary:hover {
+  background: var(--green-bright);
+  color: #0E1A14;
+  box-shadow: 0 4px 16px rgba(160, 183, 133, 0.3);
+}
+.btn .arrow {
+  transition: transform var(--dur-fast);
+}
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* ============ Sections ============ */
+section.block {
+  padding: 56px 0;
+  position: relative;
+}
+
+.block-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.block-title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+}
+
+.block-lead {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.85;
+  max-width: 720px;
+  margin-bottom: 40px;
+}
+
+/* ============ Narrative 三段叙事 ============ */
+.narrative-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.narrative-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 28px 26px;
+  position: relative;
+  transition: all var(--dur-base) var(--ease-out);
+  overflow: hidden;
+}
+.narrative-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.narrative-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.narrative-num::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--green-deep), transparent);
+}
+
+.narrative-card h3 {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+}
+
+.narrative-card .body {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.85;
+  margin-bottom: 18px;
+}
+.narrative-card .body strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.narrative-card .body .hl {
+  font-family: var(--font-mono);
+  color: var(--green-bright);
+  font-weight: 600;
+}
+
+.narrative-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.narrative-card .chip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  padding: 3px 9px;
+  border-radius: var(--r-sm);
+  background: var(--bg-elev);
+  color: var(--text-3);
+}
+
+/* ============ Module Matrix ============ */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.module-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 22px 24px 20px;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: all var(--dur-base) var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 240px;
+}
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green-deep), var(--green-bright));
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.module-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+.module-card:hover::before { width: 100%; }
+
+.module-card.alt::before {
+  background: linear-gradient(90deg, var(--amber), var(--amber-bright));
+}
+.module-card.alt2::before {
+  background: linear-gradient(90deg, var(--blue), var(--blue-bright));
+}
+.module-card.foundation::before {
+  background: linear-gradient(90deg, var(--purple), var(--text-2));
+}
+.module-card.alt3::before {
+  background: linear-gradient(90deg, var(--red), var(--red-bright));
+}
+
+.module-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.module-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  font-weight: 600;
+}
+
+.module-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  background: rgba(160, 183, 133, 0.12);
+  color: var(--green-bright);
+  text-transform: uppercase;
+}
+
+.module-icon {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  color: var(--green);
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 14px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  letter-spacing: -1px;
+}
+.module-card.alt .module-icon { color: var(--amber); }
+.module-card.alt2 .module-icon { color: var(--blue); }
+.module-card.foundation .module-icon { color: var(--purple); }
+.module-card.alt3 .module-icon { color: var(--red); }
+
+.module-card h4 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.module-card .module-en {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.module-card .module-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.75;
+  margin-bottom: 14px;
+  flex: 1;
+}
+
+.module-card .module-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+}
+.module-card .module-tools {
+  display: flex;
+  gap: 4px;
+}
+.module-card .module-tool {
+  background: var(--bg-elev);
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  font-size: 9px;
+  color: var(--text-2);
+}
+
+.module-card .open {
+  color: var(--green-bright);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.module-card .open .arrow {
+  transition: transform var(--dur-fast);
+}
+.module-card:hover .open .arrow {
+  transform: translateX(3px);
+}
+
+/* ============ Tech Stack ============ */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.tech-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  transition: border-color var(--dur-fast);
+}
+.tech-card:hover { border-color: var(--border-strong); }
+
+.tech-cat {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.tech-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tech-items .item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+.tech-items .name {
+  color: var(--text);
+  font-weight: 500;
+}
+.tech-items .ver {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+/* ============ Data Sources ============ */
+.data-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.data-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-card h3 {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.data-card .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.data-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 12px;
+}
+.data-item:last-child { border-bottom: none; }
+
+.data-item .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-top: 6px;
+  margin-left: 6px;
+}
+.data-item.amber .dot { background: var(--amber); }
+.data-item.blue .dot { background: var(--blue); }
+.data-item.purple .dot { background: var(--purple); }
+
+.data-meta { line-height: 1.6; }
+.data-meta .name { color: var(--text); font-weight: 500; }
+.data-meta .desc { color: var(--text-2); font-size: 11px; margin-top: 2px; }
+
+.data-vol {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  text-align: right;
+  white-space: nowrap;
+}
+.data-vol .v {
+  color: var(--green-bright);
+  font-weight: 600;
+}
+
+/* Roadmap mini */
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.roadmap-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 14px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+}
+.roadmap-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.roadmap-day {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.5px;
+  padding-top: 2px;
+  font-weight: 600;
+}
+
+.roadmap-content .title {
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 500;
+}
+.roadmap-content .desc {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+}
+
+/* ============ Footer ============ */
+.footer {
+  margin-top: 64px;
+  padding: 32px 0 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  padding: 0 32px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footer-brand h4 {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+.footer-brand p {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+.footer-col h5 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.footer-col .ls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.footer-col .ls a {
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color var(--dur-fast);
+}
+.footer-col .ls a:hover { color: var(--green-bright); }
+
+.footer-bottom {
+  margin-top: 28px;
+  padding: 18px 32px 0;
+  border-top: 1px solid var(--border);
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+.footer-bottom .acc { color: var(--green); }
+
+/* === Animation stagger === */
+.stagger > * { animation: fadeUp 0.6s var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.13s; }
+.stagger > *:nth-child(3) { animation-delay: 0.21s; }
+.stagger > *:nth-child(4) { animation-delay: 0.29s; }
+.stagger > *:nth-child(5) { animation-delay: 0.37s; }
+.stagger > *:nth-child(6) { animation-delay: 0.45s; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .module-grid, .tech-grid { grid-template-columns: repeat(2, 1fr); }
+  .narrative-grid { grid-template-columns: 1fr; }
+  .data-grid { grid-template-columns: 1fr; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .hero h2 { font-size: 36px; }
+  .footer-inner { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Header ============ -->
+<header class="app-header">
+  <div class="brand">
+    <a href="#" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 14px;">
+      <div class="brand-logo">粮</div>
+      <div class="brand-text">
+        <h1>极端气候下粮食生产风险智能分析</h1>
+        <div class="sub">FOOD-RISK INTELLIGENCE PLATFORM</div>
+      </div>
+    </a>
+  </div>
+  <div class="header-meta">
+    <nav class="nav-links">
+      <a href="#modules">模块</a>
+      <a href="#methodology">方法</a>
+      <a href="#data">数据</a>
+      <a href="#tech">技术栈</a>
+    </nav>
+    <span class="status-badge">RELEASE v1.0 · 2026·05</span>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <div class="container hero-content">
+    <div class="hero-eyebrow">山西农业大学 · 信息科学与工程学院</div>
+    <h2>
+      用<span class="accent">可解释 AI</span>,<br>
+      为中国 31 省的<span class="accent">粮食安全</span>装上传感器
+    </h2>
+    <p class="hero-lead">
+      本系统整合 <strong>2011–2023 年</strong>气象、土壤、灌溉、灾害等多源数据,使用 <strong>XGBoost + SHAP</strong> 可解释机器学习框架,在 <strong>403 个省·年样本</strong>上对粮食单产风险进行建模,并通过 5 个交互模块支持决策推演与情景模拟,服务于农业农村厅、农险机构、研究单位与粮食储备体系。
+    </p>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="lbl">MODEL R²</div>
+        <div class="val">0.847</div>
+        <div class="sub">XGBoost · 5-fold CV</div>
+      </div>
+      <div class="hero-stat">
+        <div class="lbl">RMSE</div>
+        <div class="val">0.0062</div>
+        <div class="sub">去趋势单产波动 Y</div>
+      </div>
+      <div class="hero-stat">
+        <div class="lbl">SAMPLES</div>
+        <div class="val">403<span class="unit">省·年</span></div>
+        <div class="sub">31 省 × 13 年</div>
+      </div>
+      <div class="hero-stat">
+        <div class="lbl">FEATURES</div>
+        <div class="val">11<span class="unit">维</span></div>
+        <div class="sub">气候 / 管理 / 灾害</div>
+      </div>
+    </div>
+
+    <div class="hero-cta">
+      <a href="01-risk-map.html" class="btn primary">浏览风险地图 <span class="arrow">→</span></a>
+      <a href="#modules" class="btn">查看所有模块</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Narrative 三段叙事 ============ -->
+<section class="block" id="methodology">
+  <div class="container">
+    <div class="block-eyebrow">METHODOLOGY · 研究脉络</div>
+    <h2 class="block-title">从问题、方法、到落地价值</h2>
+    <p class="block-lead">本系统不止是一组可视化图表,而是一条完整的"<strong style="color:var(--green-bright)">问题识别 → 模型解释 → 决策赋能</strong>"研究链。下方三个环节,既是叙事顺序,也是模块的内在逻辑骨架。</p>
+
+    <div class="narrative-grid stagger">
+
+      <div class="narrative-card">
+        <div class="narrative-num">01 · CHALLENGE</div>
+        <h3>极端气候 × 粮食安全:14 亿人的稳态守护</h3>
+        <p class="body">
+          IPCC AR6 预测<strong>全球升温 1.5°C</strong>将使主产区产量波动幅度<span class="hl">放大 30%</span>。然而,传统农业风险评估仍依赖经验阈值,缺乏对<strong>多因子非线性交互</strong>的解释能力,在 2021 年"7·20"郑州暴雨事件中暴露出预警时滞与处置盲区。
+        </p>
+        <div class="meta">
+          <span class="chip">极端气候</span>
+          <span class="chip">粮食单产</span>
+          <span class="chip">31 省 · 主产区</span>
+        </div>
+      </div>
+
+      <div class="narrative-card">
+        <div class="narrative-num">02 · APPROACH</div>
+        <h3>XGBoost + SHAP:让黑箱模型"开口说话"</h3>
+        <p class="body">
+          采用<strong>梯度提升树</strong>对去趋势单产波动建模,在 <span class="hl">R² = 0.847</span> 的拟合精度下,通过 <strong>SHAP(SHapley Additive exPlanations)</strong>对每个样本的预测进行<strong>局部归因</strong>,识别出灌溉率、洪涝占比、日照时数为前 3 大风险驱动因子。
+        </p>
+        <div class="meta">
+          <span class="chip">XGBoost</span>
+          <span class="chip">SHAP</span>
+          <span class="chip">11 特征</span>
+          <span class="chip">省 × 年面板</span>
+        </div>
+      </div>
+
+      <div class="narrative-card">
+        <div class="narrative-num">03 · VALUE</div>
+        <h3>从可视化到行动:服务 4 类决策用户</h3>
+        <p class="body">
+          系统输出针对<strong>政府决策、农险定价、科研立项、储备布局</strong>四类用户的差异化呈现。情景模拟支持"What-If"推演(如灌溉率提至 70% 可降风险 <span class="hl">15%</span>),韧性路径推荐按省份生成<strong>三阶段</strong>具体行动项。
+        </p>
+        <div class="meta">
+          <span class="chip">决策支持</span>
+          <span class="chip">情景推演</span>
+          <span class="chip">路径推荐</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ Module Matrix ============ -->
+<section class="block" id="modules" style="background: rgba(31, 47, 42, 0.4);">
+  <div class="container">
+    <div class="block-eyebrow">MODULES · 5 个交互模块</div>
+    <h2 class="block-title">系统组件矩阵</h2>
+    <p class="block-lead">系统由 5 个独立交付的 HTML 模块组成,共享同一套设计系统。每个模块单独可用,串联起来形成完整的研究→分析→决策工作流。点击进入对应模块。</p>
+
+    <div class="module-grid stagger">
+
+      <a href="01-risk-map.html" class="module-card">
+        <div class="module-head">
+          <span class="module-id">M01 · MAP</span>
+          <span class="module-status">已交付</span>
+        </div>
+        <div class="module-icon">地</div>
+        <h4>风险时空地图</h4>
+        <div class="module-en">SPATIO-TEMPORAL RISK MAP</div>
+        <p class="module-desc">31 省风险值地理分布 + 2011-2023 时间轴 + Top10 列表 + 省份对比抽屉 + 趋势 mini chart。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">ECharts</span>
+            <span class="module-tool">GeoJSON</span>
+          </div>
+          <span class="open">打开 <span class="arrow">→</span></span>
+        </div>
+      </a>
+
+      <a href="02-shap-dashboard.html" class="module-card alt">
+        <div class="module-head">
+          <span class="module-id">M02 · SHAP</span>
+          <span class="module-status">已交付</span>
+        </div>
+        <div class="module-icon">归</div>
+        <h4>SHAP 归因看板</h4>
+        <div class="module-en">SHAP ATTRIBUTION DASHBOARD</div>
+        <p class="module-desc">2×2 网格:全局重要性 + Waterfall 瀑布 + Beeswarm 蜂群 + 4 张自然语言解读卡片。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">ECharts</span>
+            <span class="module-tool">SHAP</span>
+          </div>
+          <span class="open">打开 <span class="arrow">→</span></span>
+        </div>
+      </a>
+
+      <a href="03-scenario-sim.html" class="module-card alt3">
+        <div class="module-head">
+          <span class="module-id">M03 · SIM</span>
+          <span class="module-status">已交付</span>
+        </div>
+        <div class="module-icon">模</div>
+        <h4>参数情景模拟</h4>
+        <div class="module-en">SCENARIO SIMULATION</div>
+        <p class="module-desc">5 滑块实时联动 + 双仪表盘 + odometer 数字滚动 + 因子贡献图 + 情景保存。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">ECharts</span>
+            <span class="module-tool">实时推理</span>
+          </div>
+          <span class="open">打开 <span class="arrow">→</span></span>
+        </div>
+      </a>
+
+      <a href="04-resilience-pathway.html" class="module-card alt2">
+        <div class="module-head">
+          <span class="module-id">M04 · PATH</span>
+          <span class="module-status">已交付</span>
+        </div>
+        <div class="module-icon">径</div>
+        <h4>韧性路径推荐</h4>
+        <div class="module-en">RESILIENCE PATHWAY</div>
+        <p class="module-desc">基于省份指纹的三阶段(短期/中期/长期)行动路径,11 条规则引擎自动生成。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">规则引擎</span>
+            <span class="module-tool">咨询报告</span>
+          </div>
+          <span class="open">打开 <span class="arrow">→</span></span>
+        </div>
+      </a>
+
+      <a href="00-design-system.html" class="module-card foundation">
+        <div class="module-head">
+          <span class="module-id">M00 · BASE</span>
+          <span class="module-status">基础规范</span>
+        </div>
+        <div class="module-icon">范</div>
+        <h4>设计系统规范</h4>
+        <div class="module-en">DESIGN SYSTEM · FOUNDATION</div>
+        <p class="module-desc">色板 · 字体 · 间距 · 组件 · 图表配色 · 动效规范,作为后续 4 个模块的视觉基准。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">Tokens</span>
+            <span class="module-tool">v1.0</span>
+          </div>
+          <span class="open">打开 <span class="arrow">→</span></span>
+        </div>
+      </a>
+
+      <div class="module-card" style="background: var(--bg-2); border-style: dashed; cursor: default;">
+        <div class="module-head">
+          <span class="module-id">M05 · NEXT</span>
+          <span class="module-status" style="background: rgba(180, 157, 216, 0.12); color: var(--purple);">规划中</span>
+        </div>
+        <div class="module-icon" style="color: var(--text-3);">+</div>
+        <h4 style="color: var(--text-2);">数据接入与 Vue 集成</h4>
+        <div class="module-en">DATA INGESTION · VUE 3</div>
+        <p class="module-desc">由潘妙齐负责,后续将本 5 个 HTML 原型迁移至 Vue 3 + Pinia 架构,接入真实研究数据。</p>
+        <div class="module-foot">
+          <div class="module-tools">
+            <span class="module-tool">Vue 3</span>
+            <span class="module-tool">Pinia</span>
+          </div>
+          <span class="open" style="color: var(--text-3);">待启动</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ Data + Roadmap ============ -->
+<section class="block" id="data">
+  <div class="container">
+    <div class="block-eyebrow">DATA & TIMELINE · 数据来源与项目节奏</div>
+    <h2 class="block-title">数据资产与交付路线</h2>
+    <p class="block-lead">系统训练数据覆盖 31 省 13 年的气象、农业、土壤多模态指标,共计 403 个省·年样本。开发节奏按 14 天迭代,目前已完成全部 UI 原型,进入 Vue 集成阶段。</p>
+
+    <div class="data-grid">
+
+      <div class="data-card">
+        <h3>数据来源</h3>
+        <div class="sub">DATA SOURCES · 4 类 · 11 维特征</div>
+        <div class="data-list">
+
+          <div class="data-item">
+            <div class="dot"></div>
+            <div class="data-meta">
+              <div class="name">国家统计局 · 农业经济数据</div>
+              <div class="desc">粮食产量 / 灌溉率 / 化肥施用量 / 农机总动力</div>
+            </div>
+            <div class="data-vol"><span class="v">2011 — 2023</span><br>省级年报</div>
+          </div>
+
+          <div class="data-item amber">
+            <div class="dot"></div>
+            <div class="data-meta">
+              <div class="name">中国气象局 CMA · 气象数据</div>
+              <div class="desc">日均温 / 降水量 / 日照时数 / 极端天气事件</div>
+            </div>
+            <div class="data-vol"><span class="v">2400+</span><br>地面站点</div>
+          </div>
+
+          <div class="data-item blue">
+            <div class="dot"></div>
+            <div class="data-meta">
+              <div class="name">NASA POWER · 遥感数据</div>
+              <div class="desc">SPEI 干旱指数 / NDVI 异常 / 土壤墒情</div>
+            </div>
+            <div class="data-vol"><span class="v">0.5° × 0.5°</span><br>网格再采样</div>
+          </div>
+
+          <div class="data-item purple">
+            <div class="dot"></div>
+            <div class="data-meta">
+              <div class="name">应急管理部 · 灾害数据</div>
+              <div class="desc">洪涝面积 / 干旱面积 / 灾情等级</div>
+            </div>
+            <div class="data-vol"><span class="v">31 省</span><br>年度统计</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="data-card">
+        <h3>开发路线图</h3>
+        <div class="sub">ROADMAP · 14 天 / 5 阶段</div>
+        <div class="roadmap">
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 1</div>
+            <div class="roadmap-content">
+              <div class="title">设计系统基线</div>
+              <div class="desc">DESIGN TOKENS · COMPONENTS</div>
+            </div>
+          </div>
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 2-3</div>
+            <div class="roadmap-content">
+              <div class="title">风险时空地图模块</div>
+              <div class="desc">M01 RISK MAP · ECHARTS GEO</div>
+            </div>
+          </div>
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 4-6</div>
+            <div class="roadmap-content">
+              <div class="title">SHAP 归因看板</div>
+              <div class="desc">M02 SHAP · 4 CHARTS</div>
+            </div>
+          </div>
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 7-8</div>
+            <div class="roadmap-content">
+              <div class="title">参数情景模拟</div>
+              <div class="desc">M03 SIM · LIVE INFERENCE</div>
+            </div>
+          </div>
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 9</div>
+            <div class="roadmap-content">
+              <div class="title">韧性路径推荐</div>
+              <div class="desc">M04 PATH · RULE ENGINE</div>
+            </div>
+          </div>
+          <div class="roadmap-row">
+            <div class="roadmap-day">DAY 10+</div>
+            <div class="roadmap-content">
+              <div class="title">Vue 集成 + 真实数据接入</div>
+              <div class="desc">CURRENT PHASE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ Tech Stack ============ -->
+<section class="block" id="tech">
+  <div class="container">
+    <div class="block-eyebrow">TECH STACK · 技术栈</div>
+    <h2 class="block-title">前端技术选型</h2>
+    <p class="block-lead">UI 原型阶段使用单文件 HTML,便于评审与迁移。所有模块共享同一组 CSS 变量,无外部框架依赖。</p>
+
+    <div class="tech-grid">
+
+      <div class="tech-card">
+        <div class="tech-cat">VISUALIZATION</div>
+        <div class="tech-items">
+          <div class="item"><span class="name">ECharts</span><span class="ver">5.4.3</span></div>
+          <div class="item"><span class="name">GeoJSON · china</span><span class="ver">v4.6</span></div>
+        </div>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-cat">TYPOGRAPHY</div>
+        <div class="tech-items">
+          <div class="item"><span class="name">Noto Serif SC</span><span class="ver">中文标题</span></div>
+          <div class="item"><span class="name">Noto Sans SC</span><span class="ver">中文正文</span></div>
+          <div class="item"><span class="name">JetBrains Mono</span><span class="ver">数据 / 代码</span></div>
+        </div>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-cat">UPCOMING</div>
+        <div class="tech-items">
+          <div class="item"><span class="name">Vue</span><span class="ver">3.4</span></div>
+          <div class="item"><span class="name">Pinia</span><span class="ver">状态管理</span></div>
+          <div class="item"><span class="name">Vite</span><span class="ver">构建</span></div>
+        </div>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-cat">ML BACKEND</div>
+        <div class="tech-items">
+          <div class="item"><span class="name">XGBoost</span><span class="ver">梯度提升</span></div>
+          <div class="item"><span class="name">SHAP</span><span class="ver">可解释 AI</span></div>
+          <div class="item"><span class="name">Python</span><span class="ver">3.11</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ Footer ============ -->
+<footer class="footer">
+  <div class="footer-inner">
+
+    <div class="footer-brand">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="brand-logo" style="width:32px;height:32px;font-size:15px;">粮</div>
+        <h4>极端气候下粮食生产风险智能分析</h4>
+      </div>
+      <p>山西农业大学信息科学与工程学院科研项目 · 基于 SHAP 可解释机器学习的中国粮食生产气候风险评估与决策支持系统。</p>
+    </div>
+
+    <div class="footer-col">
+      <h5>模块</h5>
+      <div class="ls">
+        <a href="01-risk-map.html">M01 风险时空地图</a>
+        <a href="02-shap-dashboard.html">M02 SHAP 归因看板</a>
+        <a href="03-scenario-sim.html">M03 参数情景模拟</a>
+        <a href="04-resilience-pathway.html">M04 韧性路径推荐</a>
+        <a href="00-design-system.html">M00 设计系统</a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h5>团队 / TEAM</h5>
+      <div class="ls">
+        <span style="color: var(--text-2);">周煜楠 · UI / 原型</span>
+        <span style="color: var(--text-2);">潘妙齐 · Vue 集成</span>
+        <span style="color: var(--text-3); font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.3px;">指导:课题组</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 山西农业大学 · 信息科学与工程学院</span>
+    <span><span class="acc">▸</span> v1.0 · LAST UPDATED 2026·05</span>
+  </div>
+</footer>
+
+</body>
+</html>

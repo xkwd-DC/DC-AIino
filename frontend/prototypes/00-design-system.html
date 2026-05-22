@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设计系统规范 · 极端气候下粮食生产风险智能分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* === 背景层级 === */
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+
+  /* === 边框 === */
+  --border: #2A3D38;
+  --border-strong: #44615A;
+
+  /* === 文字层级 === */
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+
+  /* === 主色（暖橄榄系） === */
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+
+  /* === 功能色 === */
+  --red: #B86F4D;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+
+  /* === 间距（8 点网格） === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* === 圆角 === */
+  --r-sm: 3px;
+  --r-md: 4px;
+  --r-lg: 6px;
+  --r-xl: 8px;
+
+  /* === 字体栈 === */
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* === 动效 === */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 450ms;
+  --dur-entrance: 600ms;
+}
+
+/* === 全局动效定义 === */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 6px rgba(160, 183, 133, 0); }
+}
+
+@keyframes thumbBreathe {
+  0%, 100% { box-shadow: 0 0 12px rgba(160, 183, 133, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(160, 183, 133, 0.75); }
+}
+
+@keyframes glowDrift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 25px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes caretBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes scanline {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* === 默认入场:所有 .section 进入视口时触发 === */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--dur-entrance) var(--ease-out),
+              transform var(--dur-entrance) var(--ease-out);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === 尊重 prefers-reduced-motion === */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.75;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(160, 183, 133, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(230, 182, 85, 0.025) 0%, transparent 40%);
+  min-height: 100vh;
+}
+
+/* ===================== Header ===================== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+  color: #0E1A14;
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+
+.brand-logo:hover {
+  transform: rotate(-6deg) scale(1.08);
+  box-shadow: 0 0 24px rgba(160, 183, 133, 0.35);
+}
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.version-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.8px;
+}
+
+.version-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green);
+  animation: pulseDot 2.4s var(--ease-in-out) infinite;
+}
+
+/* ===================== Layout ===================== */
+.layout {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--sp-7);
+  padding: var(--sp-6);
+}
+
+/* ===================== Sidebar ===================== */
+.sidebar {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.sidebar-title {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toc { list-style: none; font-size: 13px; }
+.toc-item { margin-bottom: 2px; }
+
+.toc-item a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  color: var(--text-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all var(--dur-base) var(--ease-out);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  position: relative;
+}
+
+.toc-item a:hover {
+  color: var(--text);
+  background: var(--bg-card);
+  border-left-color: var(--green);
+  transform: translateX(2px);
+}
+
+.toc-item a.active {
+  color: var(--green-bright);
+  background: var(--bg-card);
+  border-left-color: var(--green);
+  font-weight: 500;
+}
+
+.toc-item a.active::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulseDot 2s var(--ease-in-out) infinite;
+}
+
+.toc-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  min-width: 18px;
+}
+
+/* ===================== Main ===================== */
+.main { min-width: 0; max-width: 920px; }
+
+/* ===================== Hero ===================== */
+.hero {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-2));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xl);
+  padding: 48px 40px;
+  margin-bottom: var(--sp-7);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(160, 183, 133, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glowDrift 22s var(--ease-in-out) infinite;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(230, 182, 85, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glowDrift 28s var(--ease-in-out) infinite reverse;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  animation: fadeUp 0.6s var(--ease-out) both;
+  animation-delay: 0.05s;
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.15s;
+}
+
+.hero h1 .accent {
+  background: linear-gradient(135deg, var(--green-bright), var(--green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+  color: var(--text-2);
+  font-size: 14px;
+  margin-bottom: 32px;
+  max-width: 640px;
+  line-height: 1.8;
+  animation: fadeUp 0.7s var(--ease-out) both;
+  animation-delay: 0.28s;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  position: relative;
+}
+
+.hero-stat {
+  padding: 16px 18px;
+  background: rgba(40, 58, 53, 0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  animation: fadeUp 0.6s var(--ease-out) both;
+  transition: border-color var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.hero-stat:nth-child(1) { animation-delay: 0.40s; }
+.hero-stat:nth-child(2) { animation-delay: 0.48s; }
+.hero-stat:nth-child(3) { animation-delay: 0.56s; }
+.hero-stat:nth-child(4) { animation-delay: 0.64s; }
+
+.hero-stat:hover {
+  border-color: var(--green-deep);
+  transform: translateY(-2px);
+}
+
+.hero-stat .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.hero-stat .value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--green-bright);
+  animation: countUp 0.8s var(--ease-out) both;
+  animation-delay: 0.7s;
+}
+
+/* ===================== Sections ===================== */
+.section {
+  margin-bottom: var(--sp-8);
+  scroll-margin-top: 100px;
+}
+
+.section-header {
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px dashed var(--border);
+}
+
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+
+.section h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+
+.section h3 {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  margin: var(--sp-6) 0 14px;
+  letter-spacing: 0.3px;
+}
+
+.section h4 {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  margin: var(--sp-5) 0 var(--sp-3);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.section p {
+  margin-bottom: 14px;
+  color: var(--text-2);
+}
+
+.section p strong { color: var(--text); font-weight: 600; }
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+  margin: var(--sp-7) 0;
+}
+
+/* ===================== Color Palette ===================== */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.swatch {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: all var(--dur-base) var(--ease-out);
+  position: relative;
+}
+
+.swatch:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.swatch-color {
+  height: 80px;
+  width: 100%;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.swatch-color::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.7s var(--ease-out);
+}
+
+.swatch:hover .swatch-color::after {
+  transform: translateX(100%);
+}
+
+.swatch-info { padding: 12px 14px; }
+
+.swatch-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.swatch-hex {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+
+.swatch-token {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--green);
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* ===================== Typography ===================== */
+.type-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--sp-5);
+  align-items: center;
+}
+
+.type-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.8;
+}
+
+.type-meta .name {
+  color: var(--green-bright);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.type-meta .spec { color: var(--text-2); }
+
+.type-sample-serif {
+  font-family: var(--font-serif);
+  color: var(--text);
+}
+
+.type-sample-sans {
+  font-family: var(--font-sans);
+  color: var(--text);
+}
+
+.type-sample-mono {
+  font-family: var(--font-mono);
+  color: var(--green-bright);
+  letter-spacing: 0.5px;
+}
+
+.type-h1 { font-size: 32px; font-weight: 600; line-height: 1.3; }
+.type-h2 { font-size: 24px; font-weight: 600; line-height: 1.35; }
+.type-h3 { font-size: 19px; font-weight: 600; line-height: 1.4; }
+.type-body { font-size: 15px; font-weight: 400; line-height: 1.75; }
+.type-small { font-size: 13px; font-weight: 400; line-height: 1.6; }
+.type-caption { font-size: 11px; font-weight: 500; line-height: 1.5; text-transform: uppercase; letter-spacing: 1px; }
+.type-data { font-size: 22px; font-weight: 600; }
+.type-data-lg { font-size: 36px; font-weight: 600; }
+
+/* ===================== Spacing & Radius ===================== */
+.spacing-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  margin-bottom: var(--sp-4);
+}
+
+.spacing-item { text-align: center; }
+
+.spacing-block {
+  background: linear-gradient(180deg, var(--green), var(--green-deep));
+  border-radius: var(--r-sm);
+  margin: 0 auto 8px;
+  opacity: 0.85;
+  transition: opacity var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.spacing-item:hover .spacing-block {
+  opacity: 1;
+  transform: scaleY(1.05);
+  transform-origin: bottom;
+}
+
+.spacing-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.spacing-label strong {
+  color: var(--green-bright);
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+}
+
+.radius-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.radius-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: var(--sp-5);
+  text-align: center;
+}
+
+.radius-demo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--sp-3);
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+
+.radius-item:hover .radius-demo {
+  transform: rotate(8deg) scale(1.05);
+  box-shadow: 0 8px 24px rgba(160, 183, 133, 0.25);
+}
+
+.radius-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.radius-label strong { color: var(--green-bright); display: block; }
+.radius-label span { color: var(--text-3); font-size: 10px; }
+
+/* ===================== Components ===================== */
+.component-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+
+.component-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px dashed var(--border);
+}
+
+.component-demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease-out);
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: translateY(1px);
+  transition-duration: var(--dur-fast);
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #0E1A14;
+}
+.btn-primary:hover {
+  background: var(--green-bright);
+  box-shadow: 0 4px 16px rgba(160, 183, 133, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover {
+  border-color: var(--green);
+  color: var(--green-bright);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+}
+.btn-ghost:hover { color: var(--text); background: var(--bg-elev); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border-color: rgba(184, 111, 77, 0.3);
+}
+.btn-danger:hover { background: rgba(184, 111, 77, 0.1); }
+
+.btn-sm { padding: 5px 12px; font-size: 11px; }
+
+/* --- Badges --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: transform var(--dur-base) var(--ease-spring);
+  cursor: default;
+}
+
+.badge:hover {
+  transform: scale(1.06);
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  animation: pulseDot 2.4s var(--ease-in-out) infinite;
+}
+
+.badge-green { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
+.badge-green::before { background: var(--green); }
+
+.badge-amber { background: rgba(230, 182, 85, 0.12); color: var(--amber); }
+.badge-amber::before { background: var(--amber); }
+
+.badge-red { background: rgba(184, 111, 77, 0.12); color: var(--red); }
+.badge-red::before { background: var(--red); }
+
+.badge-blue { background: rgba(107, 168, 181, 0.12); color: var(--blue); }
+.badge-blue::before { background: var(--blue); }
+
+.badge-neutral { background: var(--bg-elev); color: var(--text-2); }
+.badge-neutral::before { background: var(--text-3); }
+
+/* --- Cards --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+
+.demo-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  transition: all var(--dur-base) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--green-deep), var(--green-bright));
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+.demo-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.demo-card:hover::before {
+  width: 100%;
+}
+
+.demo-card .card-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.demo-card .card-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--green-bright);
+  margin-bottom: 6px;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.demo-card:hover .card-value {
+  transform: scale(1.05);
+  transform-origin: left;
+}
+
+.demo-card .card-delta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--red);
+}
+
+.demo-card .card-delta.up { color: var(--green); }
+
+/* --- Callouts --- */
+.callout {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  margin: var(--sp-3) 0;
+  font-size: 13px;
+  color: var(--text-2);
+  transition: border-left-width var(--dur-base) var(--ease-out),
+              padding-left var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out);
+}
+
+.callout:hover {
+  border-left-width: 6px;
+  padding-left: 21px;
+  background: var(--bg-elev);
+}
+
+.callout-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green-bright);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.callout-info { border-left-color: var(--blue); }
+.callout-info .callout-title { color: var(--blue); }
+
+.callout-warn { border-left-color: var(--amber); }
+.callout-warn .callout-title { color: var(--amber); }
+
+.callout-danger { border-left-color: var(--red); }
+.callout-danger .callout-title { color: var(--red); }
+
+/* --- Tables --- */
+.demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.demo-table thead {
+  background: var(--bg-elev);
+}
+
+.demo-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-table td {
+  padding: 12px 14px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
+}
+
+.demo-table td.mono {
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.demo-table tbody tr {
+  position: relative;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.demo-table tbody tr:hover td {
+  background: rgba(40, 58, 53, 0.6);
+  color: var(--text);
+}
+
+.demo-table tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+/* --- Form Controls --- */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--sp-4);
+}
+
+.form-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.form-input,
+.form-select {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 9px 13px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  width: 100%;
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out);
+}
+
+.form-input:hover,
+.form-select:hover {
+  border-color: var(--green-deep);
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--green);
+  background: var(--bg-2);
+  box-shadow: 0 0 0 3px rgba(160, 183, 133, 0.15);
+}
+
+.slider-demo {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slider-name {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.slider-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--green-bright);
+}
+
+.slider-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.slider-fill {
+  position: absolute;
+  height: 100%;
+  width: 60%;
+  background: linear-gradient(90deg, var(--green-deep), var(--green));
+  border-radius: 2px;
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+  background-image: linear-gradient(90deg,
+    var(--green-deep) 0%,
+    var(--green) 40%,
+    var(--green-bright) 50%,
+    var(--green) 60%,
+    var(--green-deep) 100%);
+}
+
+.slider-thumb {
+  position: absolute;
+  left: 60%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: var(--green-bright);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px rgba(160, 183, 133, 0.5);
+  animation: thumbBreathe 2.8s var(--ease-in-out) infinite;
+  cursor: grab;
+  transition: width var(--dur-fast) var(--ease-spring),
+              height var(--dur-fast) var(--ease-spring);
+}
+
+.slider-thumb:hover {
+  width: 18px;
+  height: 18px;
+}
+
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+/* --- Chart Color Reference --- */
+.chart-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-3);
+}
+
+.chart-color-item {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chart-color-bar {
+  width: 6px;
+  height: 40px;
+  border-radius: 3px;
+}
+
+.chart-color-info { flex: 1; }
+
+.chart-color-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.chart-color-use {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.chart-color-hex {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* --- Code block --- */
+.code-block {
+  background: #101D18;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin: var(--sp-4) 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.code-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  animation: scanline 5s linear infinite;
+  pointer-events: none;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.code-lang::before {
+  content: '▸ ';
+  animation: caretBlink 1.2s steps(1) infinite;
+}
+
+.code-block pre {
+  padding: var(--sp-4) var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.75;
+  overflow-x: auto;
+}
+
+.code-block pre .key { color: var(--green-bright); }
+.code-block pre .val { color: var(--amber); }
+.code-block pre .com { color: var(--text-3); font-style: italic; }
+
+/* --- Icon set --- */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-3);
+}
+
+.icon-cell {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 8px;
+  text-align: center;
+  transition: all var(--dur-base) var(--ease-out);
+  cursor: default;
+}
+
+.icon-cell:hover {
+  border-color: var(--green-deep);
+  color: var(--green-bright);
+  transform: translateY(-2px);
+}
+
+.icon-glyph {
+  font-size: 20px;
+  color: var(--text);
+  display: block;
+  margin-bottom: 6px;
+  transition: transform var(--dur-base) var(--ease-spring),
+              color var(--dur-base) var(--ease-out);
+}
+
+.icon-cell:hover .icon-glyph {
+  color: var(--green-bright);
+  transform: scale(1.2) rotate(-8deg);
+}
+
+.icon-name {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+/* ===================== Footer ===================== */
+.footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--sp-7) var(--sp-6);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+
+.footer .accent { color: var(--green); }
+
+/* === Print friendly === */
+@media print {
+  .sidebar, .header { display: none; }
+  body { background: white; color: black; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Header ============ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">粮</div>
+      <div class="brand-text">
+        <h1>极端气候下粮食生产风险智能分析</h1>
+        <div class="sub">DESIGN SYSTEM · v1.0</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="version-tag">FOUNDATION</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ Layout ============ -->
+<div class="layout">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-title">目录 · CONTENTS</div>
+    <ul class="toc">
+      <li class="toc-item"><a href="#sec-1" class="active"><span class="toc-num">01</span>设计原则</a></li>
+      <li class="toc-item"><a href="#sec-2"><span class="toc-num">02</span>色彩系统</a></li>
+      <li class="toc-item"><a href="#sec-3"><span class="toc-num">03</span>字体与排版</a></li>
+      <li class="toc-item"><a href="#sec-4"><span class="toc-num">04</span>间距与圆角</a></li>
+      <li class="toc-item"><a href="#sec-5"><span class="toc-num">05</span>按钮与徽章</a></li>
+      <li class="toc-item"><a href="#sec-6"><span class="toc-num">06</span>卡片与容器</a></li>
+      <li class="toc-item"><a href="#sec-7"><span class="toc-num">07</span>提示与通知</a></li>
+      <li class="toc-item"><a href="#sec-8"><span class="toc-num">08</span>表单与控件</a></li>
+      <li class="toc-item"><a href="#sec-9"><span class="toc-num">09</span>数据表格</a></li>
+      <li class="toc-item"><a href="#sec-10"><span class="toc-num">10</span>图表配色</a></li>
+      <li class="toc-item"><a href="#sec-11"><span class="toc-num">11</span>图标符号</a></li>
+      <li class="toc-item"><a href="#sec-motion"><span class="toc-num">12</span>动效规范</a></li>
+      <li class="toc-item"><a href="#sec-12"><span class="toc-num">13</span>使用规范</a></li>
+    </ul>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-eyebrow">DESIGN SYSTEM · FOUNDATION</div>
+      <h1>视觉规范 · <span class="accent">沃土橄榄</span></h1>
+      <p class="hero-sub">
+        本文档定义"极端气候下粮食生产风险智能分析"系统的视觉语言。以低饱和墨绿画布承载严肃议题,以暖橄榄主色呼应"作物与沃土",以衬线中文传递学术分量,以等宽数字突出数据的可信度。后续 4 个模块严格沿用此规范。
+      </p>
+      <div class="hero-grid">
+        <div class="hero-stat">
+          <div class="label">色彩 Token</div>
+          <div class="value">16</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">字体家族</div>
+          <div class="value">3</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">间距阶梯</div>
+          <div class="value">8</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">交付模块</div>
+          <div class="value">04</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Section 1: 设计原则 ============ -->
+    <section class="section" id="sec-1">
+      <div class="section-header">
+        <div class="section-num">SECTION · 01</div>
+        <h2>一、设计原则</h2>
+      </div>
+
+      <h3>三条贯穿全局的原则</h3>
+
+      <div class="callout">
+        <div class="callout-title">★ 原则 1 · 数据先行</div>
+        每一像素都为数据服务。装饰元素永远不能抢走数据图表的焦点;高亮、动效、色彩仅用于强调"读者需要看见的那个数字"。
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">★ 原则 2 · 学术克制</div>
+        这是面向政府/农险/科研机构的工具,不是消费产品。所有视觉元素须传递"严谨、可信、专业"——避免渐变滥用、避免拟物、避免感性辞令。
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">★ 原则 3 · 信息层级清晰</div>
+        每一屏都要有明确的"第一眼/第二眼/第三眼"。用字号、色彩亮度、留白三个维度建立层级,而不是用边框和分隔线堆砌。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 2: 色彩 ============ -->
+    <section class="section" id="sec-2">
+      <div class="section-header">
+        <div class="section-num">SECTION · 02</div>
+        <h2>二、色彩系统</h2>
+      </div>
+
+      <h4>BACKGROUND · 背景层级</h4>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#162520"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Canvas</div>
+            <div class="swatch-hex">#162520</div>
+            <div class="swatch-token">--bg</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#1F2F2A"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Surface</div>
+            <div class="swatch-hex">#1F2F2A</div>
+            <div class="swatch-token">--bg-2</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#283A35"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Card</div>
+            <div class="swatch-hex">#283A35</div>
+            <div class="swatch-token">--bg-card</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#324942"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Elevated</div>
+            <div class="swatch-hex">#324942</div>
+            <div class="swatch-token">--bg-elev</div>
+          </div>
+        </div>
+      </div>
+
+      <h4>TEXT · 文字层级</h4>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8E4D8"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Primary</div>
+            <div class="swatch-hex">#E8E4D8</div>
+            <div class="swatch-token">--text</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#A8B5AC"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Secondary</div>
+            <div class="swatch-hex">#A8B5AC</div>
+            <div class="swatch-token">--text-2</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#6B7A72"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Tertiary</div>
+            <div class="swatch-hex">#6B7A72</div>
+            <div class="swatch-token">--text-3</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:linear-gradient(135deg,#2A3D38,#44615A)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Border</div>
+            <div class="swatch-hex">#2A3D38 / #44615A</div>
+            <div class="swatch-token">--border / strong</div>
+          </div>
+        </div>
+      </div>
+
+      <h4>BRAND · 暖橄榄主色</h4>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#6F8C5C"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Deep</div>
+            <div class="swatch-hex">#6F8C5C</div>
+            <div class="swatch-token">--green-deep</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#A0B785"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Primary</div>
+            <div class="swatch-hex">#A0B785</div>
+            <div class="swatch-token">--green</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#C5D4AF"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Bright</div>
+            <div class="swatch-hex">#C5D4AF</div>
+            <div class="swatch-token">--green-bright</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:linear-gradient(135deg,#6F8C5C,#C5D4AF)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Gradient</div>
+            <div class="swatch-hex">用于 Hero / Logo</div>
+            <div class="swatch-token">deep → bright</div>
+          </div>
+        </div>
+      </div>
+
+      <h4>SEMANTIC · 功能色</h4>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#B86F4D"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Terracotta · 警示</div>
+            <div class="swatch-hex">#B86F4D</div>
+            <div class="swatch-token">--red</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E6B655"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Warning</div>
+            <div class="swatch-hex">#E6B655</div>
+            <div class="swatch-token">--amber</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#6BA8B5"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Info</div>
+            <div class="swatch-hex">#6BA8B5</div>
+            <div class="swatch-token">--blue</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#B49DD8"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Accent</div>
+            <div class="swatch-hex">#B49DD8</div>
+            <div class="swatch-token">--purple</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">语义约定</div>
+        赭石 = 风险 / 损失 / 恶化(用偏暖陶土色取代刺激红,缓和视觉压力);琥珀 = 警示 / 中等风险 / 基线;蓝 = 信息 / 趋势 / 历史;紫 = 次级强调,谨慎使用。橄榄绿保留给"主品牌色 + 改善信号",不要用橄榄绿表达"安全"以外的含义。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 3: 字体 ============ -->
+    <section class="section" id="sec-3">
+      <div class="section-header">
+        <div class="section-num">SECTION · 03</div>
+        <h2>三、字体与排版</h2>
+      </div>
+
+      <p>三套字体各司其职:<strong>衬线显示</strong>用于中文标题与品牌字、<strong>无衬线正文</strong>承载所有阅读文本、<strong>等宽数字</strong>专用于数据、代码、标签。</p>
+
+      <div class="type-block">
+        <div class="type-meta">
+          <div class="name">Noto Serif SC</div>
+          <div class="spec">显示字体 · 中文标题</div>
+          <div class="spec">weights: 400 / 500 / 600 / 700</div>
+        </div>
+        <div>
+          <div class="type-sample-serif type-h1">极端气候下的粮食安全</div>
+          <div class="type-sample-serif type-h2" style="margin-top:8px">风险时空分布特征</div>
+          <div class="type-sample-serif type-h3" style="margin-top:8px;color:var(--text-2)">河南省 · 主产区主导型</div>
+        </div>
+      </div>
+
+      <div class="type-block">
+        <div class="type-meta">
+          <div class="name">Noto Sans SC</div>
+          <div class="spec">正文字体 · 阅读文本</div>
+          <div class="spec">weights: 300 / 400 / 500 / 600 / 700</div>
+        </div>
+        <div>
+          <div class="type-sample-sans type-body">本系统基于 SHAP 可解释机器学习方法,对中国 31 个省级行政区的粮食生产风险进行建模分析。模型整合气象、土壤、灌溉、灾害等多维度数据。</div>
+          <div class="type-sample-sans type-small" style="margin-top:10px;color:var(--text-2)">注:基线风险值采用 2015-2024 年滚动平均;特征重要性按 |SHAP value| 均值排序。</div>
+        </div>
+      </div>
+
+      <div class="type-block">
+        <div class="type-meta">
+          <div class="name">JetBrains Mono</div>
+          <div class="spec">等宽 · 数据 / 标签 / 代码</div>
+          <div class="spec">weights: 400 / 500 / 600</div>
+        </div>
+        <div>
+          <div class="type-sample-mono type-data-lg">0.0235</div>
+          <div class="type-sample-mono type-caption" style="margin-top:8px;color:var(--text-3)">SHAP · E[f(x)] · BASELINE</div>
+          <div class="type-sample-mono type-small" style="margin-top:8px;color:var(--text-2)">2025-11-19 14:32:08 UTC+8</div>
+        </div>
+      </div>
+
+      <h3>类型阶梯</h3>
+      <div class="component-block">
+        <div class="component-label">TYPE SCALE</div>
+        <table class="demo-table">
+          <thead>
+            <tr><th>用途</th><th>字号</th><th>字重</th><th>行高</th><th>字体</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hero 主标题</td><td class="mono">34px</td><td class="mono">600</td><td class="mono">1.3</td><td class="mono">Serif SC</td></tr>
+            <tr><td>Section H2</td><td class="mono">26px</td><td class="mono">600</td><td class="mono">1.3</td><td class="mono">Serif SC</td></tr>
+            <tr><td>子标题 H3</td><td class="mono">19px</td><td class="mono">600</td><td class="mono">1.4</td><td class="mono">Serif SC</td></tr>
+            <tr><td>正文 Body</td><td class="mono">15px</td><td class="mono">400</td><td class="mono">1.75</td><td class="mono">Sans SC</td></tr>
+            <tr><td>说明 Small</td><td class="mono">13px</td><td class="mono">400</td><td class="mono">1.6</td><td class="mono">Sans SC</td></tr>
+            <tr><td>标签 Caption</td><td class="mono">10-11px</td><td class="mono">500</td><td class="mono">1.5</td><td class="mono">Mono</td></tr>
+            <tr><td>数据 Large</td><td class="mono">36px</td><td class="mono">600</td><td class="mono">1.0</td><td class="mono">Mono</td></tr>
+            <tr><td>数据 Medium</td><td class="mono">22px</td><td class="mono">600</td><td class="mono">1.2</td><td class="mono">Mono</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 4: 间距与圆角 ============ -->
+    <section class="section" id="sec-4">
+      <div class="section-header">
+        <div class="section-num">SECTION · 04</div>
+        <h2>四、间距与圆角</h2>
+      </div>
+
+      <h3>间距阶梯 · 8 点网格</h3>
+      <p>全局间距基于 4px 起步、8 点递增。在卡片内部使用小阶 (1-3),在容器之间使用大阶 (5-8)。</p>
+
+      <div class="spacing-row">
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:4px;height:24px"></div>
+          <div class="spacing-label"><strong>sp-1</strong>4px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:8px;height:32px"></div>
+          <div class="spacing-label"><strong>sp-2</strong>8px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:12px;height:40px"></div>
+          <div class="spacing-label"><strong>sp-3</strong>12px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:16px;height:48px"></div>
+          <div class="spacing-label"><strong>sp-4</strong>16px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:24px;height:56px"></div>
+          <div class="spacing-label"><strong>sp-5</strong>24px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:32px;height:64px"></div>
+          <div class="spacing-label"><strong>sp-6</strong>32px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:48px;height:72px"></div>
+          <div class="spacing-label"><strong>sp-7</strong>48px</div>
+        </div>
+        <div class="spacing-item">
+          <div class="spacing-block" style="width:64px;height:80px"></div>
+          <div class="spacing-label"><strong>sp-8</strong>64px</div>
+        </div>
+      </div>
+
+      <h3>圆角层级</h3>
+      <p>整体克制,不超过 8px。圆角分别用于:微元素、卡片、模块、Hero 大容器。</p>
+
+      <div class="radius-row">
+        <div class="radius-item">
+          <div class="radius-demo" style="border-radius:3px"></div>
+          <div class="radius-label"><strong>r-sm</strong><span>3px · 徽章</span></div>
+        </div>
+        <div class="radius-item">
+          <div class="radius-demo" style="border-radius:4px"></div>
+          <div class="radius-label"><strong>r-md</strong><span>4px · 按钮 / 输入</span></div>
+        </div>
+        <div class="radius-item">
+          <div class="radius-demo" style="border-radius:6px"></div>
+          <div class="radius-label"><strong>r-lg</strong><span>6px · 卡片</span></div>
+        </div>
+        <div class="radius-item">
+          <div class="radius-demo" style="border-radius:8px"></div>
+          <div class="radius-label"><strong>r-xl</strong><span>8px · Hero 容器</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 5: 按钮与徽章 ============ -->
+    <section class="section" id="sec-5">
+      <div class="section-header">
+        <div class="section-num">SECTION · 05</div>
+        <h2>五、按钮与徽章</h2>
+      </div>
+
+      <div class="component-block">
+        <div class="component-label">BUTTONS · 按钮</div>
+        <div class="component-demo">
+          <button class="btn btn-primary">主要操作</button>
+          <button class="btn btn-secondary">次要操作</button>
+          <button class="btn btn-ghost">幽灵按钮</button>
+          <button class="btn btn-danger">危险操作</button>
+          <button class="btn btn-primary btn-sm">小型按钮</button>
+          <button class="btn btn-secondary btn-sm">小型次按钮</button>
+        </div>
+      </div>
+
+      <div class="component-block">
+        <div class="component-label">BADGES · 状态徽章</div>
+        <div class="component-demo">
+          <span class="badge badge-green">改善</span>
+          <span class="badge badge-amber">中等风险</span>
+          <span class="badge badge-red">高风险</span>
+          <span class="badge badge-blue">信息</span>
+          <span class="badge badge-neutral">默认</span>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">使用规则</div>
+        每个页面/模块最多只有<strong>一个</strong>主要按钮。次按钮可以多个,但避免一行三个以上。徽章用作"状态标记",不要用作装饰元素。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 6: 卡片 ============ -->
+    <section class="section" id="sec-6">
+      <div class="section-header">
+        <div class="section-num">SECTION · 06</div>
+        <h2>六、卡片与容器</h2>
+      </div>
+
+      <h3>数据指标卡</h3>
+      <div class="card-grid">
+        <div class="demo-card">
+          <div class="card-label">RISK INDEX · 风险指数</div>
+          <div class="card-value">0.0263</div>
+          <div class="card-delta">▲ 较基线 +11.8%</div>
+        </div>
+        <div class="demo-card">
+          <div class="card-label">NATIONAL RANK · 全国排名</div>
+          <div class="card-value">第 12</div>
+          <div class="card-delta up">▼ 较去年 −3 位</div>
+        </div>
+        <div class="demo-card">
+          <div class="card-label">IRRIGATION · 灌溉率</div>
+          <div class="card-value">65.4<span style="font-size:16px;color:var(--text-3)">%</span></div>
+          <div class="card-delta up">▲ 较去年 +2.1pp</div>
+        </div>
+        <div class="demo-card">
+          <div class="card-label">FLOOD SHARE · 洪涝占比</div>
+          <div class="card-value">4.2<span style="font-size:16px;color:var(--text-3)">%</span></div>
+          <div class="card-delta">▲ 较基线 +1.3pp</div>
+        </div>
+      </div>
+
+      <h3>嵌套容器</h3>
+      <div class="component-block">
+        <div class="component-label">CARD · 标准卡片(--bg-card 容器内嵌 --bg-elev 子卡)</div>
+        <p style="color:var(--text-2);font-size:13px">外层使用 <code style="color:var(--green)">--bg-card</code>,内嵌子模块时使用 <code style="color:var(--green)">--bg-elev</code> 形成层级。避免超过 2 层嵌套。</p>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 7: 提示 ============ -->
+    <section class="section" id="sec-7">
+      <div class="section-header">
+        <div class="section-num">SECTION · 07</div>
+        <h2>七、提示与通知</h2>
+      </div>
+
+      <p>四种 callout 共用相同结构,通过左边框颜色区分语义。标题使用 mono 字体小型大写,正文使用 13px 普通正文。</p>
+
+      <div class="callout">
+        <div class="callout-title">★ 默认 · 强调说明</div>
+        用于一般性说明或"模块定位"类介绍。这是项目"可玩性"的亮点,评委会上手操作。
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">i 信息 · INFO</div>
+        用于补充说明、数据来源、技术注解。例如:本图表数据来自 2015-2024 年国家统计局粮食产量年报。
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠ 警示 · WARN</div>
+        用于操作风险、数据异常提示。例如:该省份样本量低于 30,模型置信区间较宽,请结合专家判断使用。
+      </div>
+
+      <div class="callout callout-danger">
+        <div class="callout-title">✕ 危险 · DANGER</div>
+        用于高风险结论或破坏性操作前的警告。例如:该路径推荐将覆盖现有方案,操作不可撤销。
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 8: 表单 ============ -->
+    <section class="section" id="sec-8">
+      <div class="section-header">
+        <div class="section-num">SECTION · 08</div>
+        <h2>八、表单与控件</h2>
+      </div>
+
+      <div class="component-block">
+        <div class="component-label">INPUTS · 输入控件</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div class="form-row">
+            <label class="form-label">省份选择</label>
+            <select class="form-select">
+              <option>河南省</option>
+              <option>山东省</option>
+              <option>黑龙江省</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">情景名称</label>
+            <input class="form-input" type="text" value="2025-Q4 干旱模拟" />
+          </div>
+        </div>
+
+        <div class="slider-demo">
+          <div class="slider-head">
+            <span class="slider-name">灌溉率(IRRIGATION RATE)</span>
+            <span class="slider-value">65.4 %</span>
+          </div>
+          <div class="slider-track">
+            <div class="slider-fill"></div>
+            <div class="slider-thumb"></div>
+          </div>
+          <div class="slider-scale">
+            <span>20 %</span>
+            <span>↑ 越高风险越低</span>
+            <span>120 %</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 9: 表格 ============ -->
+    <section class="section" id="sec-9">
+      <div class="section-header">
+        <div class="section-num">SECTION · 09</div>
+        <h2>九、数据表格</h2>
+      </div>
+
+      <div class="component-block">
+        <div class="component-label">TABLE · 数据表格(2015 — 2024 河南省关键指标)</div>
+        <table class="demo-table">
+          <thead>
+            <tr>
+              <th>年份</th>
+              <th>风险指数</th>
+              <th>灌溉率</th>
+              <th>洪涝占比</th>
+              <th>SPEI</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">2020</td>
+              <td class="mono">0.0218</td>
+              <td class="mono">63.1 %</td>
+              <td class="mono">3.8 %</td>
+              <td class="mono">−0.12</td>
+              <td><span class="badge badge-green">改善</span></td>
+            </tr>
+            <tr>
+              <td class="mono">2021</td>
+              <td class="mono">0.0294</td>
+              <td class="mono">64.0 %</td>
+              <td class="mono">6.9 %</td>
+              <td class="mono">+0.41</td>
+              <td><span class="badge badge-red">高风险</span></td>
+            </tr>
+            <tr>
+              <td class="mono">2022</td>
+              <td class="mono">0.0241</td>
+              <td class="mono">64.8 %</td>
+              <td class="mono">4.1 %</td>
+              <td class="mono">−0.33</td>
+              <td><span class="badge badge-amber">中等</span></td>
+            </tr>
+            <tr>
+              <td class="mono">2023</td>
+              <td class="mono">0.0252</td>
+              <td class="mono">65.1 %</td>
+              <td class="mono">4.5 %</td>
+              <td class="mono">−0.18</td>
+              <td><span class="badge badge-amber">中等</span></td>
+            </tr>
+            <tr>
+              <td class="mono">2024</td>
+              <td class="mono">0.0263</td>
+              <td class="mono">65.4 %</td>
+              <td class="mono">4.2 %</td>
+              <td class="mono">−0.08</td>
+              <td><span class="badge badge-amber">中等</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 10: 图表配色 ============ -->
+    <section class="section" id="sec-10">
+      <div class="section-header">
+        <div class="section-num">SECTION · 10</div>
+        <h2>十、图表配色规范</h2>
+      </div>
+
+      <p>所有 ECharts 图表配色严格走 CSS 变量。下表为各色彩在图表中的<strong>语义约定</strong>。</p>
+
+      <div class="chart-color-grid">
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#A0B785"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--green)">绿 · Brand</div>
+            <div class="chart-color-use">主序列 / 改善 / 已选省份</div>
+          </div>
+          <div class="chart-color-hex">#A0B785</div>
+        </div>
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#B86F4D"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--red)">赭石 · Terracotta</div>
+            <div class="chart-color-use">恶化 / SHAP 正贡献 / 高风险</div>
+          </div>
+          <div class="chart-color-hex">#B86F4D</div>
+        </div>
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#E6B655"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--amber)">琥珀 · Baseline</div>
+            <div class="chart-color-use">基线 / 中等风险 / 仪表盘指针</div>
+          </div>
+          <div class="chart-color-hex">#E6B655</div>
+        </div>
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#6BA8B5"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--blue)">蓝 · Trend</div>
+            <div class="chart-color-use">历史趋势 / 全国均值参考</div>
+          </div>
+          <div class="chart-color-hex">#6BA8B5</div>
+        </div>
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#B49DD8"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--purple)">紫 · Accent</div>
+            <div class="chart-color-use">次级序列 / 对比组</div>
+          </div>
+          <div class="chart-color-hex">#B49DD8</div>
+        </div>
+        <div class="chart-color-item">
+          <div class="chart-color-bar" style="background:#6B7A72"></div>
+          <div class="chart-color-info">
+            <div class="chart-color-name" style="color:var(--text-3)">灰 · Muted</div>
+            <div class="chart-color-use">未选中 / 背景参考线 / 网格</div>
+          </div>
+          <div class="chart-color-hex">#6B7A72</div>
+        </div>
+      </div>
+
+      <h3>ECharts 全局主题片段</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang">JAVASCRIPT</div>
+        </div>
+<pre><span class="com">// 复制到每个 ECharts 实例 init 前</span>
+<span class="key">const</span> theme = {
+  backgroundColor: <span class="val">'transparent'</span>,
+  color: [<span class="val">'#A0B785'</span>, <span class="val">'#B86F4D'</span>, <span class="val">'#E6B655'</span>,
+          <span class="val">'#6BA8B5'</span>, <span class="val">'#B49DD8'</span>],
+  textStyle: {
+    fontFamily: <span class="val">'JetBrains Mono, Noto Sans SC'</span>,
+    color: <span class="val">'#A8B5AC'</span>
+  },
+  title: {
+    textStyle: { color: <span class="val">'#E8E4D8'</span>, fontFamily: <span class="val">'Noto Serif SC'</span> },
+    subtextStyle: { color: <span class="val">'#6B7A72'</span> }
+  },
+  legend: { textStyle: { color: <span class="val">'#A8B5AC'</span> } },
+  grid: { borderColor: <span class="val">'#2A3D38'</span> },
+  categoryAxis: {
+    axisLine: { lineStyle: { color: <span class="val">'#44615A'</span> } },
+    axisLabel: { color: <span class="val">'#A8B5AC'</span> },
+    splitLine: { lineStyle: { color: <span class="val">'#2A3D38'</span>, type: <span class="val">'dashed'</span> } }
+  },
+  valueAxis: {
+    axisLine: { lineStyle: { color: <span class="val">'#44615A'</span> } },
+    axisLabel: { color: <span class="val">'#A8B5AC'</span> },
+    splitLine: { lineStyle: { color: <span class="val">'#2A3D38'</span>, type: <span class="val">'dashed'</span> } }
+  }
+};
+echarts.registerTheme(<span class="val">'grain'</span>, theme);</pre>
+      </div>
+
+      <h3>地图分级色阶(VisualMap)</h3>
+      <p>风险地图采用<strong>琥珀-红</strong>双色阶,从浅到深表示风险等级递增。绿色不用于地图分级,以保留绿色"改善"的语义。</p>
+      <div class="component-block">
+        <div class="component-label">RISK COLOR SCALE</div>
+        <div style="display:flex;height:32px;border-radius:var(--r-md);overflow:hidden;font-family:var(--font-mono);font-size:10px;color:var(--bg);font-weight:600">
+          <div style="flex:1;background:#F2DDB8;display:flex;align-items:center;justify-content:center">&lt; 0.015</div>
+          <div style="flex:1;background:#E6B655;display:flex;align-items:center;justify-content:center">0.015 — 0.022</div>
+          <div style="flex:1;background:#C68552;display:flex;align-items:center;justify-content:center">0.022 — 0.028</div>
+          <div style="flex:1;background:#A56548;display:flex;align-items:center;justify-content:center">0.028 — 0.035</div>
+          <div style="flex:1;background:#7E4530;display:flex;align-items:center;justify-content:center;color:#fff">&gt; 0.035</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section 11: 图标 ============ -->
+    <section class="section" id="sec-11">
+      <div class="section-header">
+        <div class="section-num">SECTION · 11</div>
+        <h2>十一、图标与符号</h2>
+      </div>
+
+      <p>本项目使用<strong>Unicode 符号 + 几何箭头</strong>替代图标库,保持视觉极简。需要 SVG 图标时引入 Lucide,字号 14-16px,颜色继承父级。</p>
+
+      <div class="icon-grid">
+        <div class="icon-cell"><span class="icon-glyph">▸</span><span class="icon-name">forward</span></div>
+        <div class="icon-cell"><span class="icon-glyph">▴</span><span class="icon-name">rise</span></div>
+        <div class="icon-cell"><span class="icon-glyph">▾</span><span class="icon-name">fall</span></div>
+        <div class="icon-cell"><span class="icon-glyph">●</span><span class="icon-name">dot</span></div>
+        <div class="icon-cell"><span class="icon-glyph">◆</span><span class="icon-name">diamond</span></div>
+        <div class="icon-cell"><span class="icon-glyph">★</span><span class="icon-name">star</span></div>
+        <div class="icon-cell"><span class="icon-glyph">⚠</span><span class="icon-name">warn</span></div>
+        <div class="icon-cell"><span class="icon-glyph">✓</span><span class="icon-name">check</span></div>
+        <div class="icon-cell"><span class="icon-glyph">✕</span><span class="icon-name">close</span></div>
+        <div class="icon-cell"><span class="icon-glyph">→</span><span class="icon-name">arrow-r</span></div>
+        <div class="icon-cell"><span class="icon-glyph">↑</span><span class="icon-name">arrow-u</span></div>
+        <div class="icon-cell"><span class="icon-glyph">Δ</span><span class="icon-name">delta</span></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============ Section MOTION: 动效规范 ============ -->
+    <section class="section" id="sec-motion">
+      <div class="section-header">
+        <div class="section-num">SECTION · 12</div>
+        <h2>十二、动效规范</h2>
+      </div>
+
+      <p>动效服从"克制 + 有意义"两条准则。所有动效都为"传递信息"或"引导注意",从不为炫技。后续模块只能从本规范中调用动效,不要自行新增。</p>
+
+      <h3>核心 Token</h3>
+
+      <div class="component-block">
+        <div class="component-label">DURATION · 时长</div>
+        <table class="demo-table">
+          <thead><tr><th>Token</th><th>时长</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">--dur-fast</td><td class="mono">150ms</td><td>点击反馈 / 按下态 / 即时响应</td></tr>
+            <tr><td class="mono">--dur-base</td><td class="mono">250ms</td><td>常规 hover / 颜色过渡 / 默认</td></tr>
+            <tr><td class="mono">--dur-slow</td><td class="mono">450ms</td><td>卡片展开 / 进度条填充</td></tr>
+            <tr><td class="mono">--dur-entrance</td><td class="mono">600ms</td><td>页面/章节入场</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="component-block">
+        <div class="component-label">EASING · 缓动函数</div>
+        <table class="demo-table">
+          <thead><tr><th>Token</th><th>曲线</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">--ease-out</td><td class="mono">cubic-bezier(.22, 1, .36, 1)</td><td>默认 · 元素进入</td></tr>
+            <tr><td class="mono">--ease-in-out</td><td class="mono">cubic-bezier(.65, 0, .35, 1)</td><td>呼吸 / 循环类</td></tr>
+            <tr><td class="mono">--ease-spring</td><td class="mono">cubic-bezier(.34, 1.56, .64, 1)</td><td>弹性反馈 · 按钮 / 数字 / 徽章</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>动效分级</h3>
+
+      <h4 style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:0.8px;text-transform:uppercase">L1 · 入场动效(一次性)</h4>
+      <ul style="color:var(--text-2);padding-left:24px">
+        <li>Hero 内部元素 stagger 出现(eyebrow → h1 → sub → stats),delay 间隔 80-120ms</li>
+        <li>滚动进入视口的 section 整体上移淡入(IntersectionObserver 触发)</li>
+        <li>关键数字 count-up(数据先模糊后清晰)</li>
+      </ul>
+
+      <h4 style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:0.8px;text-transform:uppercase">L2 · 交互反馈(用户触发)</h4>
+      <ul style="color:var(--text-2);padding-left:24px">
+        <li>按钮 hover:上移 1px + 阴影扩大;active:下沉 1px</li>
+        <li>卡片 hover:上移 2-3px + 阴影 + 顶部进度线扫入</li>
+        <li>表格行 hover:背景渐变 + 左侧绿色指示条</li>
+        <li>色卡 hover:光泽扫过(700ms)</li>
+        <li>滑块 thumb hover:放大至 18px</li>
+      </ul>
+
+      <h4 style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:0.8px;text-transform:uppercase">L3 · 环境动效(持续 · 低强度)</h4>
+      <ul style="color:var(--text-2);padding-left:24px">
+        <li>Hero 背景径向光斑缓慢漂移(22-28s 周期)</li>
+        <li>Header 在线状态点呼吸脉冲(2.4s)</li>
+        <li>滑块填充条扫光(4s linear)</li>
+        <li>code block 顶部扫描线(5s linear)</li>
+        <li>code lang 标签的 ▸ 闪烁(模拟终端光标)</li>
+      </ul>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠ 环境动效红线</div>
+        L3 类动效频率必须 ≥ 2 秒,亮度差 ≤ 30%,不能形成视觉脉冲干扰。任何一屏的环境动效不超过 3 个,数据图表周围禁用环境动效。
+      </div>
+
+      <h3>无障碍 · prefers-reduced-motion</h3>
+      <p>本系统已实现媒体查询 <code style="color:var(--green)">@media (prefers-reduced-motion: reduce)</code>:用户在系统中开启"减少动态效果"时,所有动效自动降至 0.01ms。<strong>后续模块必须沿用此机制</strong>,不可硬编码强制动效。</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-lang">CSS · 必备片段</div>
+        </div>
+<pre><span class="key">@media</span> (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: <span class="val">0.01ms</span> !important;
+    animation-iteration-count: <span class="val">1</span> !important;
+    transition-duration: <span class="val">0.01ms</span> !important;
+  }
+}
+
+<span class="com">/* 滚动入场:用 IntersectionObserver 给元素加 .in-view */</span>
+.reveal {
+  opacity: <span class="val">0</span>;
+  transform: <span class="val">translateY(24px)</span>;
+  transition: opacity <span class="val">600ms</span> <span class="key">var</span>(--ease-out),
+              transform <span class="val">600ms</span> <span class="key">var</span>(--ease-out);
+}
+.reveal.in-view {
+  opacity: <span class="val">1</span>;
+  transform: <span class="val">translateY(0)</span>;
+}</pre>
+      </div>
+
+      <div class="callout callout-danger">
+        <div class="callout-title">✕ 动效禁区</div>
+        <ul style="margin-top:8px;padding-left:20px;color:var(--text-2);font-size:13px">
+          <li>不用 bounce / shake / wiggle 这类幼稚动效</li>
+          <li>数据图表本身不加入场动画(ECharts 默认动画足够,不要叠加)</li>
+          <li>不在 hover 上做超过 300ms 的动画(用户会等不及)</li>
+          <li>不用持续旋转的 loading,改用 shimmer 占位</li>
+          <li>不用视差滚动(parallax),严肃报告类应用不需要</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+    <section class="section" id="sec-12">
+      <div class="section-header">
+        <div class="section-num">SECTION · 13</div>
+        <h2>十三、使用规范</h2>
+      </div>
+
+      <h3>给后续 4 个模块的硬性约定</h3>
+
+      <div class="callout">
+        <div class="callout-title">✓ 必做</div>
+        <ul style="margin-top:8px;padding-left:20px;color:var(--text-2);font-size:13px">
+          <li>所有颜色通过 CSS 变量调用,不硬编码 hex</li>
+          <li>所有数字、英文、时间戳使用 JetBrains Mono</li>
+          <li>中文一级/二级标题使用 Noto Serif SC</li>
+          <li>每个模块顶部保留 sticky header + 品牌区</li>
+          <li>每张数据图表必须有标题 + 副标题 + 数据来源</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-danger">
+        <div class="callout-title">✕ 禁用</div>
+        <ul style="margin-top:8px;padding-left:20px;color:var(--text-2);font-size:13px">
+          <li>不用纯黑 (#000) 作背景,使用 --bg</li>
+          <li>不用紫色渐变 / 霓虹色 / 拟态阴影</li>
+          <li>不用 Inter / Roboto / 系统默认字体</li>
+          <li>不用圆角超过 8px(只有 hero 容器允许 8px)</li>
+          <li>不用 emoji 替代图标</li>
+        </ul>
+      </div>
+
+      <h3>跨模块视觉一致性检查清单</h3>
+      <ol style="color:var(--text-2);padding-left:24px;line-height:1.9">
+        <li>4 个模块的 header 高度、品牌区位置是否一致?</li>
+        <li>卡片圆角是否统一为 6px?</li>
+        <li>所有数字字号、字重、颜色是否一致?</li>
+        <li>图表配色是否全部走 CSS 变量?</li>
+        <li>callout / badge / button 是否完全复用本系统?</li>
+        <li>1920×1080 视口下没有水平滚动?</li>
+      </ol>
+
+      <div class="callout callout-info" style="margin-top:24px">
+        <div class="callout-title">交付方式</div>
+        本设计系统作为 Project 知识库附件提供给 Claude,后续每个模块的 prompt 开头都要写"基于设计系统",Claude 会自动沿用本规范。
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  © 2026 山西农业大学信息科学与工程学院 · 极端气候下粮食生产风险智能分析项目组 · <span class="accent">Design System v1.0</span>
+</footer>
+
+<script>
+// 1) 滚动入场:给所有 section 添加 .reveal,使用 IntersectionObserver 触发 .in-view
+const revealTargets = document.querySelectorAll('.section');
+revealTargets.forEach(el => el.classList.add('reveal'));
+
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      io.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+
+revealTargets.forEach(el => io.observe(el));
+
+// 2) Hero 区域可见性立即触发(避免初始加载时已在视口的元素卡住)
+const heroSection = document.querySelector('.hero');
+if (heroSection) {
+  requestAnimationFrame(() => heroSection.classList.add('in-view'));
+}
+
+// 3) Hero stat 数字 count-up(一次性,在 hero 入场后)
+function animateValue(el, end, duration = 1200) {
+  const isInt = Number.isInteger(end);
+  const start = 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const current = start + (end - start) * eased;
+    el.textContent = isInt ? Math.round(current) : current.toFixed(2);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = isInt ? String(end) : (Number.isFinite(end) ? end : el.textContent);
+  }
+  requestAnimationFrame(tick);
+}
+
+// 当用户启用 reduced-motion 时跳过 count-up
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (!reduceMotion) {
+  setTimeout(() => {
+    const statValues = document.querySelectorAll('.hero-stat .value');
+    const targets = [16, 3, 8, 4]; // 与 HTML 中保持一致
+    statValues.forEach((el, idx) => {
+      const target = targets[idx];
+      if (target != null) {
+        const originalText = el.textContent.trim();
+        el.textContent = '0';
+        animateValue(el, target, 900);
+        // 保留可能带的 padding 前缀(如 "04")
+        setTimeout(() => {
+          if (originalText.startsWith('0') && originalText.length === 2) {
+            el.textContent = '0' + target;
+          }
+        }, 950);
+      }
+    });
+  }, 700);
+}
+
+// 4) TOC 滚动高亮(原有逻辑保留 + 平滑)
+const sections = document.querySelectorAll('.section');
+const tocLinks = document.querySelectorAll('.toc a');
+
+function updateActiveTOC() {
+  let current = '';
+  sections.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= 150) current = sec.id;
+  });
+  tocLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateActiveTOC, { passive: true });
+updateActiveTOC();
+</script>
+</body>
+</html>

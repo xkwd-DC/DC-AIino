@@ -1,0 +1,65 @@
+/* 设计 tokens · 从 prototypes/00-design-system.html 提取 */
+:root {
+  /* ============ 色板 · 深绿 + 橄榄 + 琥珀 + 赭石 ============ */
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+
+  --red: #B86F4D;
+  --red-bright: #D8916F;
+  --red-deep: #8E5238;
+
+  --amber: #E6B655;
+  --amber-bright: #F0CB76;
+
+  --blue: #6BA8B5;
+  --blue-bright: #8FC1CC;
+
+  --purple: #B49DD8;
+
+  /* 风险色阶 (M01 地图用) */
+  --risk-1: #F2DDB8;
+  --risk-2: #E6B655;
+  --risk-3: #C68552;
+  --risk-4: #A56548;
+  --risk-5: #7E4530;
+
+  /* ============ 间距 ============ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ============ 圆角 ============ */
+  --r-sm: 3px;
+  --r-md: 4px;
+  --r-lg: 6px;
+  --r-xl: 8px;
+
+  /* ============ 字体 ============ */
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* ============ 动效 ============ */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 450ms;
+}

@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>SHAP 归因看板 · 极端气候下粮食生产风险智能分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+  --red: #B86F4D;
+  --red-bright: #D8916F;
+  --red-deep: #8E5238;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(160, 183, 133, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 5%, rgba(160, 183, 133, 0.04) 0%, transparent 35%),
+    radial-gradient(circle at 90% 95%, rgba(230, 182, 85, 0.03) 0%, transparent 35%);
+}
+
+/* ============ Header (沿用任务2/设计系统) ============ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 17px;
+  color: #0E1A14;
+}
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta { display: flex; align-items: center; gap: 18px; }
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+.breadcrumb .cur { color: var(--green-bright); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 11px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.6px;
+}
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulseDot 2.2s infinite;
+}
+
+/* ============ Page Title ============ */
+.page-title {
+  padding: 24px 32px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.page-title h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.page-title .sub {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.page-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+.page-meta .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+/* ============ Segmented Control ============ */
+.toolbar {
+  padding: 0 32px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.toolbar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 3px;
+  gap: 2px;
+}
+
+.seg-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  padding: 7px 16px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all var(--dur-fast);
+  font-weight: 500;
+}
+
+.seg-btn:hover {
+  color: var(--text);
+}
+
+.seg-btn.active {
+  background: var(--green-deep);
+  color: var(--text);
+}
+
+.seg-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+}
+.seg-meta .v {
+  color: var(--green-bright);
+  font-weight: 600;
+}
+
+/* ============ Main 2x2 Grid ============ */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 460px 460px;
+  gap: 18px;
+  padding: 0 32px 32px;
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.6s var(--ease-out) both;
+}
+.panel:nth-child(1) { animation-delay: 0.05s; }
+.panel:nth-child(2) { animation-delay: 0.13s; }
+.panel:nth-child(3) { animation-delay: 0.21s; }
+.panel:nth-child(4) { animation-delay: 0.29s; }
+
+.panel-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-title { flex: 1; min-width: 0; }
+
+.panel-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.panel-title h3 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.panel-title .sub {
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+
+.panel-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tag.green { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
+.tag.red { background: rgba(184, 111, 77, 0.12); color: var(--red-bright); }
+.tag.amber { background: rgba(230, 182, 85, 0.12); color: var(--amber); }
+.tag.blue { background: rgba(107, 168, 181, 0.12); color: var(--blue); }
+.tag::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+.tag.green::before { background: var(--green); }
+.tag.red::before { background: var(--red); }
+.tag.amber::before { background: var(--amber); }
+.tag.blue::before { background: var(--blue); }
+
+.panel-body {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.chart-canvas { width: 100%; height: 100%; }
+
+/* ============ Panel 4 · Cards ============ */
+.panel-cards {
+  position: absolute;
+  inset: 0;
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel-cards::-webkit-scrollbar { width: 4px; }
+.panel-cards::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.insight-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+  cursor: default;
+}
+.insight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.insight-card.danger { border-left-color: var(--red); }
+.insight-card.interact { border-left-color: var(--purple); }
+
+.insight-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.insight-icon {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green-bright);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(160, 183, 133, 0.15);
+  border-radius: 50%;
+}
+.insight-card.danger .insight-icon {
+  color: var(--red-bright);
+  background: rgba(184, 111, 77, 0.15);
+}
+.insight-card.interact .insight-icon {
+  color: var(--purple);
+  background: rgba(180, 157, 216, 0.15);
+}
+
+.insight-name {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.insight-name .en {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 400;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+}
+
+.insight-headline {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.insight-body {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+
+.insight-body .hl {
+  font-family: var(--font-mono);
+  color: var(--green-bright);
+  font-weight: 500;
+}
+.insight-card.danger .insight-body .hl { color: var(--red-bright); }
+.insight-card.interact .insight-body .hl { color: var(--purple); }
+
+.insight-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.insight-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.insight-stats .lbl {
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.insight-stats .val {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* ============ Footer Hint ============ */
+.footer-hint {
+  text-align: center;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+}
+.footer-hint .acc { color: var(--green); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-logo">粮</div>
+    <div class="brand-text">
+      <h1>极端气候下粮食生产风险智能分析</h1>
+      <div class="sub">SHAP ATTRIBUTION DASHBOARD · M02</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="breadcrumb">
+      <span>首页</span>
+      <span>›</span>
+      <span class="cur">SHAP 归因看板</span>
+    </div>
+    <span class="status-badge">XGBoost-SHAP · v2.1 · n=403</span>
+  </div>
+</header>
+
+<div class="page-title">
+  <div>
+    <h2>SHAP 归因看板</h2>
+    <p class="sub">基于 XGBoost + SHAP 可解释机器学习框架,从全局与局部两个维度拆解 11 个气候/管理特征对粮食单产风险的贡献方向与强度。</p>
+  </div>
+  <div class="page-meta">
+    <span>模型 R² = 0.847</span>
+    <span class="dot"></span>
+    <span>RMSE 0.0062</span>
+    <span class="dot"></span>
+    <span>更新 2026-05</span>
+  </div>
+</div>
+
+<!-- ============ Toolbar ============ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-label">样本子集 · SUBSET</span>
+    <div class="segmented" id="segmented">
+      <button class="seg-btn active" data-key="all">全部样本</button>
+      <button class="seg-btn" data-key="north">仅北方省份</button>
+      <button class="seg-btn" data-key="south">仅南方省份</button>
+      <button class="seg-btn" data-key="major">仅主产区(13省)</button>
+    </div>
+  </div>
+  <div class="seg-meta">
+    当前样本量 <span class="v" id="sample-n">403</span> · 覆盖 <span class="v" id="cover">31</span> 省 · 时间窗 2011–2023
+  </div>
+</div>
+
+<!-- ============ 2x2 Grid ============ -->
+<main class="main">
+
+  <!-- Panel 1: 全局特征重要性 -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="panel-num">M02-A</div>
+        <h3>全局特征重要性 — Mean |SHAP value|</h3>
+        <div class="sub">基于 XGBoost-SHAP 框架,n=403</div>
+      </div>
+      <div class="panel-tools">
+        <span class="tag green">韧性</span>
+        <span class="tag red">致灾</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="chart-importance" class="chart-canvas"></div>
+    </div>
+  </section>
+
+  <!-- Panel 2: Waterfall -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="panel-num">M02-B</div>
+        <h3>单样本预测分解 — 河南省 2022 年度</h3>
+        <div class="sub">SHAP Waterfall · 点击左侧柱条切换特征</div>
+      </div>
+      <div class="panel-tools">
+        <span class="tag amber">E[f(x)] 基线</span>
+        <span class="tag blue">f(x) 预测</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="chart-waterfall" class="chart-canvas"></div>
+    </div>
+  </section>
+
+  <!-- Panel 3: Beeswarm -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="panel-num">M02-C</div>
+        <h3>SHAP 蜂群分布 — Top 5 关键特征</h3>
+        <div class="sub">点位 = 样本 · 点色 = 该样本特征原始值高低</div>
+      </div>
+      <div class="panel-tools">
+        <span class="tag blue">值低</span>
+        <span class="tag red">值高</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="chart-beeswarm" class="chart-canvas"></div>
+    </div>
+  </section>
+
+  <!-- Panel 4: Insight Cards -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="panel-num">M02-D</div>
+        <h3>核心因子自然语言解读</h3>
+        <div class="sub">由 SHAP 贡献量自动生成 · 4 张要点卡</div>
+      </div>
+      <div class="panel-tools">
+        <span class="tag green">AUTO-GEN</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="panel-cards">
+
+        <div class="insight-card">
+          <div class="insight-head">
+            <div class="insight-icon">↓</div>
+            <div class="insight-name">灌溉率<span class="en">Irrigation Rate</span></div>
+            <span class="tag green">韧性</span>
+          </div>
+          <div class="insight-headline">高灌溉率显著负向拉动风险值</div>
+          <div class="insight-body">
+            是抵御极端气候的核心人为调节手段。SHAP 平均贡献 <span class="hl">−0.42</span>,全国均值 <span class="hl">56.7%</span>,提升至 70% 可降低单产风险约 <span class="hl">15%</span>。
+          </div>
+          <div class="insight-stats">
+            <div class="stat"><span class="lbl">|SHAP|</span><span class="val">0.420</span></div>
+            <div class="stat"><span class="lbl">方向</span><span class="val" style="color:var(--green-bright)">−</span></div>
+            <div class="stat"><span class="lbl">敏感度</span><span class="val">★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="insight-card danger">
+          <div class="insight-head">
+            <div class="insight-icon">↑</div>
+            <div class="insight-name">洪涝占比<span class="en">Flood Ratio</span></div>
+            <span class="tag red">致灾</span>
+          </div>
+          <div class="insight-headline">是单一最强的风险推升因子</div>
+          <div class="insight-body">
+            南方主产区 2018 年后均值上升 <span class="hl">3.4 pp</span>。SHAP 平均贡献 <span class="hl">+0.39</span>,洪涝占比每增加 5pp,模型预测风险上升约 <span class="hl">8.7%</span>。
+          </div>
+          <div class="insight-stats">
+            <div class="stat"><span class="lbl">|SHAP|</span><span class="val">0.385</span></div>
+            <div class="stat"><span class="lbl">方向</span><span class="val" style="color:var(--red-bright)">+</span></div>
+            <div class="stat"><span class="lbl">敏感度</span><span class="val">★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-head">
+            <div class="insight-icon">↓</div>
+            <div class="insight-name">日照时数<span class="en">Sunshine Hours</span></div>
+            <span class="tag green">韧性</span>
+          </div>
+          <div class="insight-headline">充足日照与单产稳定性强相关</div>
+          <div class="insight-body">
+            西北高日照省份(青海、新疆)虽风险值较高,但与高灌溉协同后效应反转。SHAP 平均贡献 <span class="hl">−0.31</span>,样本中位 <span class="hl">2160h</span>。
+          </div>
+          <div class="insight-stats">
+            <div class="stat"><span class="lbl">|SHAP|</span><span class="val">0.312</span></div>
+            <div class="stat"><span class="lbl">方向</span><span class="val" style="color:var(--green-bright)">−</span></div>
+            <div class="stat"><span class="lbl">敏感度</span><span class="val">★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="insight-card interact">
+          <div class="insight-head">
+            <div class="insight-icon">×</div>
+            <div class="insight-name">灌溉率 × 气温<span class="en">Interaction</span></div>
+            <span class="tag" style="background:rgba(180,157,216,0.15); color:var(--purple); border:none;">
+              <span style="width:4px;height:4px;border-radius:50%;background:var(--purple);"></span>交互
+            </span>
+          </div>
+          <div class="insight-headline">高温下灌溉的边际收益急剧上升</div>
+          <div class="insight-body">
+            在年均温 &gt; <span class="hl">18°C</span> 的样本中,灌溉率每增加 10pp,单产风险下降 <span class="hl">2.3%</span>(常温样本中为 <span class="hl">0.9%</span>),非线性效应显著。
+          </div>
+          <div class="insight-stats">
+            <div class="stat"><span class="lbl">交互强度</span><span class="val">0.087</span></div>
+            <div class="stat"><span class="lbl">p-value</span><span class="val">&lt; 0.01</span></div>
+            <div class="stat"><span class="lbl">置信</span><span class="val">99%</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="footer-hint">
+  <span class="acc">▸</span> 提示:点击「全局重要性」柱条可切换右上 Waterfall 的特征视角;切换样本子集会同步刷新柱状图与蜂群图
+</div>
+
+<script>
+/* ============================================================
+   1. DATA · 11 个特征的 mean|SHAP| (来自 prompt 真实表格)
+   ============================================================ */
+const FEATURES_ALL = [
+  { name: '灌溉率',      en: 'Irr',     shap: 0.420, dir: 'green' },
+  { name: '洪涝占比',    en: 'Flood_R', shap: 0.385, dir: 'red'   },
+  { name: '日照时数',    en: 'Sun',     shap: 0.312, dir: 'green' },
+  { name: '平均气温',    en: 'Temp',    shap: 0.225, dir: 'red'   },
+  { name: '降水量',      en: 'Prec',    shap: 0.185, dir: 'red'   },
+  { name: '干旱指数',    en: 'SPEI',    shap: 0.162, dir: 'green' },
+  { name: '农机总动力',  en: 'Mech',    shap: 0.124, dir: 'green' },
+  { name: '化肥施用量',  en: 'Fert',    shap: 0.092, dir: 'red'   },
+  { name: '旱灾面积',    en: 'Drou_A',  shap: 0.075, dir: 'red'   },
+  { name: '水灾面积',    en: 'Flood_A', shap: 0.058, dir: 'red'   },
+  { name: 'NDVI 异常',  en: 'NDVI',    shap: 0.034, dir: 'green' },
+];
+
+// 不同样本子集的重要性比例(伪数据,保持现实比例)
+// north: 北方灌溉/旱灾权重↑, 洪涝权重↓
+// south: 洪涝/降水↑, 灌溉↓
+// major: 13个主产省,化肥/农机权重↑
+const SUBSET_MODIFIERS = {
+  all:   { sampleN: 403, cover: 31, mods: {} },
+  north: { sampleN: 169, cover: 14, mods: {
+    '灌溉率': 1.18, '日照时数': 1.22, '干旱指数': 1.35, '旱灾面积': 1.45,
+    '洪涝占比': 0.55, '水灾面积': 0.42, '降水量': 0.78,
+  }},
+  south: { sampleN: 156, cover: 12, mods: {
+    '灌溉率': 0.72, '洪涝占比': 1.32, '水灾面积': 1.55, '降水量': 1.28,
+    '日照时数': 0.85, '干旱指数': 0.42, '旱灾面积': 0.38,
+  }},
+  major: { sampleN: 169, cover: 13, mods: {
+    '灌溉率': 1.08, '化肥施用量': 1.42, '农机总动力': 1.38,
+    '洪涝占比': 1.05, '降水量': 0.92,
+  }},
+};
+
+// 计算指定子集下的特征重要性
+function getFeatures(subsetKey) {
+  const mods = SUBSET_MODIFIERS[subsetKey].mods;
+  return FEATURES_ALL.map(f => ({
+    ...f,
+    shap: +(f.shap * (mods[f.name] || 1)).toFixed(3),
+  })).sort((a, b) => b.shap - a.shap);
+}
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+/* ============================================================
+   2. CHART 1 · 全局特征重要性(横向柱状图)
+   ============================================================ */
+let chartImportance;
+
+function renderImportance(subsetKey = 'all') {
+  if (!chartImportance) {
+    chartImportance = echarts.init(document.getElementById('chart-importance'), null, { renderer: 'canvas' });
+  }
+  const features = getFeatures(subsetKey);
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: 100, right: 60, top: 14, bottom: 28 },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: getCSS('--bg-elev'),
+      borderColor: getCSS('--border-strong'),
+      textStyle: { color: getCSS('--text'), fontSize: 12, fontFamily: 'Noto Sans SC' },
+      extraCssText: 'border-radius: 4px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);',
+      formatter: (p) => {
+        const f = features[features.length - 1 - p.dataIndex];
+        return `
+          <div style="font-family: 'Noto Serif SC'; font-size: 13px; font-weight: 600; margin-bottom: 3px;">${f.name} <span style="font-family: 'JetBrains Mono'; color: ${getCSS('--text-3')}; font-size: 10px;">${f.en}</span></div>
+          <div style="font-family: 'JetBrains Mono'; font-size: 16px; font-weight: 600; color: ${f.dir === 'green' ? getCSS('--green-bright') : getCSS('--red-bright')};">${f.shap.toFixed(3)}</div>
+          <div style="font-size: 11px; color: ${getCSS('--text-2')}; margin-top: 2px;">${f.dir === 'green' ? '韧性因子 · 降风险' : '致灾因子 · 推风险'}</div>
+        `;
+      }
+    },
+    xAxis: {
+      type: 'value',
+      max: 0.55,
+      splitLine: { lineStyle: { color: getCSS('--border'), type: 'dashed' } },
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: { color: getCSS('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10 },
+    },
+    yAxis: {
+      type: 'category',
+      data: features.slice().reverse().map(f => f.name),  // 反转: 上→下=高→低
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: {
+        color: getCSS('--text'),
+        fontFamily: 'Noto Sans SC',
+        fontSize: 12,
+        fontWeight: 500,
+      },
+      axisTick: { show: false },
+    },
+    series: [{
+      type: 'bar',
+      data: features.slice().reverse().map(f => ({
+        value: f.shap,
+        itemStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: f.dir === 'green'
+              ? [{ offset: 0, color: getCSS('--green-deep') }, { offset: 1, color: getCSS('--green-bright') }]
+              : [{ offset: 0, color: getCSS('--red-deep') }, { offset: 1, color: getCSS('--red-bright') }]
+          },
+          borderRadius: [0, 3, 3, 0],
+        }
+      })),
+      barWidth: 18,
+      label: {
+        show: true,
+        position: 'right',
+        color: getCSS('--text'),
+        fontFamily: 'JetBrains Mono',
+        fontSize: 11,
+        fontWeight: 500,
+        formatter: (p) => p.value.toFixed(3),
+      },
+      emphasis: {
+        itemStyle: { opacity: 1, shadowBlur: 8, shadowColor: 'rgba(160,183,133,0.5)' },
+        label: { color: getCSS('--green-bright'), fontWeight: 600 },
+      },
+      animationDuration: 800,
+    }]
+  };
+  chartImportance.setOption(option, true);
+
+  // 点击切换 waterfall(只在大特征上有意义,实际只重渲染)
+  chartImportance.off('click');
+  chartImportance.on('click', (p) => {
+    const f = features[features.length - 1 - p.dataIndex];
+    state.waterfallFocus = f.name;
+    renderWaterfall();
+  });
+}
+
+/* ============================================================
+   3. CHART 2 · Waterfall(单样本预测分解 - 河南省2022)
+   ============================================================ */
+let chartWaterfall;
+
+// 河南省 2022 年的 Waterfall 数据
+const WATERFALL_BASE = 0.0235;  // E[f(x)]
+const WATERFALL_FINAL = 0.0249; // f(x)
+const WATERFALL_STEPS = [
+  { name: '基线 E[f(x)]', val: 0.0235, type: 'baseline' },
+  { name: '洪涝占比 4.2%',     delta: +0.0028, type: 'pos' },
+  { name: '化肥施用量',         delta: +0.0009, type: 'pos' },
+  { name: '平均气温 14.2°C',   delta: +0.0015, type: 'pos' },
+  { name: '灌溉率 65.4%',       delta: -0.0022, type: 'neg' },
+  { name: '日照时数 2240h',     delta: -0.0011, type: 'neg' },
+  { name: '农机总动力',         delta: -0.0005, type: 'neg' },
+  { name: '预测 f(x)',  val: 0.0249, type: 'final' },
+];
+
+function renderWaterfall() {
+  if (!chartWaterfall) {
+    chartWaterfall = echarts.init(document.getElementById('chart-waterfall'), null, { renderer: 'canvas' });
+  }
+
+  // 计算每一步的累积位置(用于堆叠 bar)
+  let cumulative = 0;
+  const placeholder = [];   // 透明占位条
+  const positive = [];      // 红色推升
+  const negative = [];      // 绿色降风险
+  const totalBar = [];      // 基线/终点
+
+  const labels = WATERFALL_STEPS.map((s, i) => s.name);
+
+  WATERFALL_STEPS.forEach((step, i) => {
+    if (step.type === 'baseline') {
+      placeholder.push('-');
+      positive.push('-');
+      negative.push('-');
+      totalBar.push(step.val);
+      cumulative = step.val;
+    } else if (step.type === 'final') {
+      placeholder.push('-');
+      positive.push('-');
+      negative.push('-');
+      totalBar.push(step.val);
+    } else if (step.type === 'pos') {
+      placeholder.push(cumulative);
+      positive.push(step.delta);
+      negative.push('-');
+      totalBar.push('-');
+      cumulative += step.delta;
+    } else {  // neg
+      cumulative += step.delta;  // delta是负的,先减
+      placeholder.push(cumulative);
+      positive.push('-');
+      negative.push(-step.delta);  // 显示为正长度
+      totalBar.push('-');
+    }
+  });
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: 130, right: 50, top: 14, bottom: 68 },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(160,183,133,0.06)' } },
+      backgroundColor: getCSS('--bg-elev'),
+      borderColor: getCSS('--border-strong'),
+      textStyle: { color: getCSS('--text'), fontSize: 12, fontFamily: 'Noto Sans SC' },
+      extraCssText: 'border-radius: 4px; padding: 10px 14px;',
+      formatter: (params) => {
+        const i = params[0].dataIndex;
+        const step = WATERFALL_STEPS[i];
+        if (step.type === 'baseline' || step.type === 'final') {
+          return `<div style="font-family:'Noto Serif SC';font-weight:600;margin-bottom:3px;">${step.name}</div>
+                  <div style="font-family:'JetBrains Mono';font-size:15px;font-weight:600;color:${step.type === 'baseline' ? getCSS('--amber') : getCSS('--blue')}">${step.val.toFixed(4)}</div>`;
+        }
+        const sign = step.delta >= 0 ? '+' : '';
+        const color = step.delta >= 0 ? getCSS('--red-bright') : getCSS('--green-bright');
+        return `<div style="font-family:'Noto Serif SC';font-weight:600;margin-bottom:3px;">${step.name}</div>
+                <div style="font-family:'JetBrains Mono';font-size:15px;font-weight:600;color:${color}">${sign}${step.delta.toFixed(4)}</div>
+                <div style="font-size:11px;color:${getCSS('--text-2')};margin-top:2px;">${step.delta >= 0 ? '推高风险' : '降低风险'}</div>`;
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: {
+        color: getCSS('--text-2'),
+        fontFamily: 'Noto Sans SC',
+        fontSize: 10,
+        interval: 0,
+        rotate: 28,
+      },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      min: 0.020,
+      max: 0.028,
+      splitLine: { lineStyle: { color: getCSS('--border'), type: 'dashed' } },
+      axisLine: { show: false },
+      axisLabel: { color: getCSS('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10, formatter: v => v.toFixed(4) },
+    },
+    series: [
+      // 透明占位
+      {
+        name: 'placeholder',
+        type: 'bar',
+        stack: 'all',
+        data: placeholder,
+        itemStyle: { color: 'transparent' },
+        emphasis: { itemStyle: { color: 'transparent' } },
+        silent: true,
+      },
+      // 正向(推升 - 赭石红)
+      {
+        name: '推升',
+        type: 'bar',
+        stack: 'all',
+        data: positive,
+        itemStyle: {
+          color: getCSS('--red'),
+          borderRadius: 2,
+        },
+        emphasis: { itemStyle: { color: getCSS('--red-bright') } },
+        label: {
+          show: true,
+          position: 'top',
+          color: getCSS('--red-bright'),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 10,
+          fontWeight: 600,
+          formatter: (p) => p.value === '-' ? '' : '+' + p.value.toFixed(4),
+        },
+        barWidth: 26,
+      },
+      // 负向(降低 - 橄榄绿)
+      {
+        name: '降低',
+        type: 'bar',
+        stack: 'all',
+        data: negative,
+        itemStyle: {
+          color: getCSS('--green'),
+          borderRadius: 2,
+        },
+        emphasis: { itemStyle: { color: getCSS('--green-bright') } },
+        label: {
+          show: true,
+          position: 'bottom',
+          color: getCSS('--green-bright'),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 10,
+          fontWeight: 600,
+          formatter: (p) => p.value === '-' ? '' : '−' + p.value.toFixed(4),
+        },
+        barWidth: 26,
+      },
+      // 基线/终点(独立长条)
+      {
+        name: '基线/终点',
+        type: 'bar',
+        data: totalBar.map((v, i) => {
+          if (v === '-') return '-';
+          const isBase = WATERFALL_STEPS[i].type === 'baseline';
+          return {
+            value: v,
+            itemStyle: {
+              color: isBase ? getCSS('--amber') : getCSS('--blue'),
+              borderRadius: 2,
+            }
+          };
+        }),
+        label: {
+          show: true,
+          position: 'top',
+          color: getCSS('--text'),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 11,
+          fontWeight: 600,
+          formatter: (p) => p.value === '-' ? '' : p.value.toFixed(4),
+        },
+        barWidth: 26,
+      }
+    ],
+    animationDuration: 800,
+  };
+
+  chartWaterfall.setOption(option, true);
+}
+
+/* ============================================================
+   4. CHART 3 · Beeswarm(Top5 特征 SHAP 蜂群)
+   ============================================================ */
+let chartBeeswarm;
+
+// 用伪随机生成每个特征下的 60 个点(SHAP 值 + 原始值梯度)
+function seededRandom(seed) {
+  let s = seed;
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+
+function generateBeeswarmData(subsetKey) {
+  // 5 个特征(按子集 modifier 调整 SHAP 离散度)
+  const feats = [
+    { name: '灌溉率', sign: -1, spread: 0.6, rawRange: [25, 110] },
+    { name: '洪涝占比', sign: +1, spread: 0.55, rawRange: [0, 22] },
+    { name: '日照时数', sign: -1, spread: 0.45, rawRange: [1180, 3320] },
+    { name: '平均气温', sign: +1, spread: 0.40, rawRange: [3, 24] },
+    { name: 'SPEI 干旱', sign: -1, spread: 0.35, rawRange: [-2.5, 2.8] },
+  ];
+
+  const mods = SUBSET_MODIFIERS[subsetKey].mods;
+  const allPoints = [];
+  feats.forEach((f, fi) => {
+    const mod = mods[f.name === 'SPEI 干旱' ? '干旱指数' : f.name] || 1;
+    const rng = seededRandom(fi * 1000 + (subsetKey.charCodeAt(0) || 1) * 13);
+
+    const numPoints = 65 + Math.floor(rng() * 15);  // 65-80
+    for (let i = 0; i < numPoints; i++) {
+      // SHAP 值: 倾向于 sign 方向,加噪声
+      const r = rng();
+      const r2 = rng();
+      // box-muller 近似正态分布
+      const u = rng() || 0.0001, v = rng() || 0.0001;
+      const gauss = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+      const shapVal = (f.sign * (0.05 + r * 0.4) + gauss * 0.06) * f.spread * mod;
+
+      // 原始值: SHAP 值和原始值大致正相关(韧性时反相关)
+      // 让"高 SHAP"对应特定的原始值方向
+      const rawNorm = f.sign < 0
+        ? Math.max(0, Math.min(1, 0.5 - shapVal * 1.5 + (rng() - 0.5) * 0.4))  // 韧性:SHAP负=原始值高
+        : Math.max(0, Math.min(1, 0.5 + shapVal * 1.5 + (rng() - 0.5) * 0.4)); // 致灾:SHAP正=原始值高
+
+      const rawVal = f.rawRange[0] + rawNorm * (f.rawRange[1] - f.rawRange[0]);
+
+      // Y 抖动 - 暂存,后面 layout 时调整避免堆叠
+      const jitter = (rng() - 0.5) * 0.62;
+
+      allPoints.push({
+        feature: f.name,
+        fi,
+        shap: shapVal,
+        raw: rawVal,
+        rawNorm,
+        jitter,
+        yPos: fi + jitter,
+      });
+    }
+  });
+
+  return { features: feats.map(f => f.name), points: allPoints };
+}
+
+function renderBeeswarm(subsetKey = 'all') {
+  if (!chartBeeswarm) {
+    chartBeeswarm = echarts.init(document.getElementById('chart-beeswarm'), null, { renderer: 'canvas' });
+  }
+
+  const { features, points } = generateBeeswarmData(subsetKey);
+
+  // 按 feature 分组送数据
+  const seriesData = features.map((fname, fi) => {
+    return points.filter(p => p.fi === fi).map(p => ({
+      value: [p.shap, p.yPos, p.raw, p.rawNorm],
+      itemStyle: {
+        color: rawColor(p.rawNorm),
+        opacity: 0.72,
+      }
+    }));
+  });
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: 92, right: 24, top: 14, bottom: 56 },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: getCSS('--bg-elev'),
+      borderColor: getCSS('--border-strong'),
+      textStyle: { color: getCSS('--text'), fontSize: 12, fontFamily: 'Noto Sans SC' },
+      extraCssText: 'border-radius: 4px; padding: 9px 13px;',
+      formatter: (p) => {
+        const fi = Math.round(p.value[1]);
+        const fname = features[Math.max(0, Math.min(4, fi))];
+        const sign = p.value[0] >= 0 ? '+' : '';
+        const sColor = p.value[0] >= 0 ? getCSS('--red-bright') : getCSS('--green-bright');
+        return `
+          <div style="font-family:'Noto Serif SC';font-weight:600;margin-bottom:3px;">${fname}</div>
+          <div style="font-family:'JetBrains Mono';font-size:14px;color:${sColor};font-weight:600;">SHAP ${sign}${p.value[0].toFixed(3)}</div>
+          <div style="font-size:11px;color:${getCSS('--text-2')};margin-top:2px;">原始值 <span style="font-family:'JetBrains Mono';color:${getCSS('--text')}">${typeof p.value[2] === 'number' ? p.value[2].toFixed(1) : p.value[2]}</span></div>
+        `;
+      }
+    },
+    xAxis: {
+      type: 'value',
+      min: -0.5, max: 0.5,
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: { color: getCSS('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10 },
+      splitLine: { show: false },
+      name: 'SHAP value · ← 减损   增灾 →',
+      nameLocation: 'middle',
+      nameGap: 26,
+      nameTextStyle: {
+        color: getCSS('--text-3'),
+        fontFamily: 'JetBrains Mono',
+        fontSize: 10,
+        fontWeight: 500,
+      }
+    },
+    yAxis: {
+      type: 'value',
+      min: -0.5, max: 4.5,
+      inverse: false,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: getCSS('--border'), type: 'dashed', opacity: 0.5 } },
+      axisLabel: {
+        color: getCSS('--text'),
+        fontFamily: 'Noto Sans SC',
+        fontSize: 11,
+        fontWeight: 500,
+        formatter: (v) => features[v] || '',
+        interval: 0,
+      },
+    },
+    // 中线
+    markLine: {
+      silent: true,
+      symbol: 'none',
+      lineStyle: { color: getCSS('--border-strong'), type: 'solid', width: 1 },
+      data: [{ xAxis: 0 }],
+    },
+    series: features.map((fname, fi) => ({
+      name: fname,
+      type: 'scatter',
+      data: seriesData[fi],
+      symbolSize: 6.5,
+      markLine: fi === 0 ? {
+        silent: true,
+        symbol: 'none',
+        lineStyle: { color: getCSS('--border-strong'), type: 'solid', width: 1 },
+        data: [{ xAxis: 0, label: { show: false } }],
+      } : undefined,
+    })),
+    animationDuration: 600,
+    animationDelay: (idx) => idx * 2,
+  };
+
+  chartBeeswarm.setOption(option, true);
+}
+
+// 原始值 normalized(0-1)→ 蓝→赭石梯度
+function rawColor(t) {
+  // t in [0, 1],0=最蓝(值低), 1=最红(值高)
+  const stops = [
+    [0, [107, 168, 181]],   // --blue
+    [0.5, [200, 175, 130]],
+    [1, [216, 145, 111]],   // --red-bright
+  ];
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i][0]) { lo = stops[i-1]; hi = stops[i]; break; }
+  }
+  const k = (t - lo[0]) / (hi[0] - lo[0] || 1);
+  const r = Math.round(lo[1][0] + (hi[1][0] - lo[1][0]) * k);
+  const g = Math.round(lo[1][1] + (hi[1][1] - lo[1][1]) * k);
+  const b = Math.round(lo[1][2] + (hi[1][2] - lo[1][2]) * k);
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ============================================================
+   5. STATE + INIT
+   ============================================================ */
+const state = {
+  subset: 'all',
+  waterfallFocus: null,
+};
+
+function setSubset(key) {
+  state.subset = key;
+  document.querySelectorAll('.seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.key === key);
+  });
+  const meta = SUBSET_MODIFIERS[key];
+  document.getElementById('sample-n').textContent = meta.sampleN;
+  document.getElementById('cover').textContent = meta.cover;
+  renderImportance(key);
+  renderBeeswarm(key);
+}
+
+document.querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSubset(btn.dataset.key));
+});
+
+window.addEventListener('resize', () => {
+  [chartImportance, chartWaterfall, chartBeeswarm].forEach(c => c && c.resize());
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderImportance('all');
+  renderWaterfall();
+  renderBeeswarm('all');
+});
+</script>
+
+</body>
+</html>

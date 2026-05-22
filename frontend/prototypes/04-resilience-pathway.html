@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>韧性路径推荐 · 极端气候下粮食生产风险智能分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+  --red: #B86F4D;
+  --red-bright: #D8916F;
+  --red-deep: #8E5238;
+  --amber: #E6B655;
+  --amber-bright: #F0CB76;
+  --blue: #6BA8B5;
+  --blue-bright: #8FC1CC;
+  --purple: #B49DD8;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 450ms;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(160, 183, 133, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 5%, rgba(160, 183, 133, 0.04) 0%, transparent 35%),
+    radial-gradient(circle at 90% 95%, rgba(230, 182, 85, 0.03) 0%, transparent 35%);
+}
+
+/* ============ Header ============ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 17px;
+  color: #0E1A14;
+}
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta { display: flex; align-items: center; gap: 18px; }
+.breadcrumb {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+.breadcrumb .cur { color: var(--green-bright); }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 11px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.6px;
+}
+.status-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulseDot 2.2s infinite;
+}
+
+/* ============ Page Title ============ */
+.page-title {
+  padding: 24px 32px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.page-title h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.page-title .sub {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.page-actions { display: flex; gap: 8px; }
+
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+.btn:hover { border-color: var(--green); color: var(--green-bright); transform: translateY(-1px); }
+.btn.primary {
+  background: var(--green);
+  color: #0E1A14;
+  border-color: var(--green);
+}
+.btn.primary:hover { background: var(--green-bright); color: #0E1A14; }
+
+/* ============ Main 1:2 ============ */
+.main {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  padding: 0 32px 32px;
+  align-items: start;
+}
+
+/* ============ Left Sidebar ============ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 80px;
+  animation: fadeUp 0.5s var(--ease-out) both;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-head .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+.card-head h3 {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card-head .tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  text-transform: uppercase;
+}
+.card-head .tag.green { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
+
+.card-body { padding: 16px 18px; }
+
+/* Province Info */
+.prov-name {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+}
+.prov-name .suffix {
+  font-size: 18px;
+  color: var(--text-2);
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+.prov-type {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(230, 182, 85, 0.12);
+  color: var(--amber);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.4px;
+}
+.prov-type::before {
+  content: '⚠';
+  font-size: 11px;
+}
+
+.prov-desc {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.75;
+}
+
+.metrics-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.metric {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+}
+.metric .lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.metric .val {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.metric .delta {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  margin-top: 2px;
+}
+.metric .delta.up { color: var(--red-bright); }
+.metric .delta.dn { color: var(--green-bright); }
+
+/* Province Select */
+.select-wrap {
+  position: relative;
+}
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  pointer-events: none;
+  font-size: 12px;
+}
+.province-select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 10px 32px 10px 14px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color var(--dur-fast);
+}
+.province-select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(160, 183, 133, 0.15);
+}
+
+/* Audience Card */
+.audience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.audience-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--text);
+  transition: all var(--dur-fast);
+  cursor: default;
+}
+.audience-item:hover {
+  border-color: var(--green-deep);
+  transform: translateX(2px);
+}
+
+.audience-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.audience-icon.green { background: rgba(160, 183, 133, 0.15); color: var(--green-bright); }
+.audience-icon.blue { background: rgba(107, 168, 181, 0.15); color: var(--blue-bright); }
+.audience-icon.amber { background: rgba(230, 182, 85, 0.15); color: var(--amber-bright); }
+.audience-icon.purple { background: rgba(180, 157, 216, 0.15); color: var(--purple); }
+
+.audience-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.audience-meta .role {
+  font-size: 11.5px;
+  color: var(--text);
+  font-weight: 500;
+}
+.audience-meta .desc {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  letter-spacing: 0.3px;
+}
+
+/* ============ Right Timeline ============ */
+.timeline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeline-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+}
+.timeline-meta .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.timeline-meta .stats {
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+}
+.timeline-meta .stats .v {
+  color: var(--green-bright);
+  font-weight: 600;
+}
+
+/* Stage Card */
+.stage {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 0 var(--r-xl) var(--r-xl) 0;
+  padding: 20px 24px 24px;
+  animation: fadeUp 0.5s var(--ease-out) both;
+}
+.stage.short { border-left-color: var(--green); }
+.stage.mid { border-left-color: var(--amber); }
+.stage.long { border-left-color: var(--blue); }
+
+.stage-marker {
+  position: absolute;
+  left: -10px;
+  top: 24px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 3px solid var(--green);
+  z-index: 2;
+}
+.stage.short .stage-marker { border-color: var(--green); }
+.stage.mid .stage-marker { border-color: var(--amber); }
+.stage.long .stage-marker { border-color: var(--blue); }
+
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.stage-head h3 {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stage.short .stage-head h3::before { content: '▸'; color: var(--green); font-size: 16px; }
+.stage.mid .stage-head h3::before { content: '▸'; color: var(--amber); font-size: 16px; }
+.stage.long .stage-head h3::before { content: '▸'; color: var(--blue); font-size: 16px; }
+
+.stage-period {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+}
+.stage-period .v {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.stage-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.stage-sub .acc { color: var(--green-bright); }
+.stage.mid .stage-sub .acc { color: var(--amber-bright); }
+.stage.long .stage-sub .acc { color: var(--blue-bright); }
+
+/* Action Items */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 14px;
+  padding: 12px 14px 12px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  transition: all var(--dur-fast);
+  position: relative;
+  cursor: default;
+}
+.action:hover {
+  border-color: var(--border);
+  background: var(--bg-elev);
+}
+.action::before {
+  content: '▸';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--green);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity var(--dur-fast), left var(--dur-fast);
+}
+.action:hover::before {
+  opacity: 1;
+  left: -12px;
+}
+.stage.mid .action::before { color: var(--amber); }
+.stage.long .action::before { color: var(--blue); }
+
+.action-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(160, 183, 133, 0.12);
+  border: 1px solid var(--green-deep);
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+.stage.mid .action-num {
+  background: rgba(230, 182, 85, 0.12);
+  border-color: var(--amber);
+  color: var(--amber-bright);
+}
+.stage.long .action-num {
+  background: rgba(107, 168, 181, 0.12);
+  border-color: var(--blue);
+  color: var(--blue-bright);
+}
+
+.action-body { min-width: 0; }
+
+.action-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+
+.action-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.action-desc .hl {
+  color: var(--text);
+  font-weight: 500;
+}
+.action-desc .num {
+  font-family: var(--font-mono);
+  color: var(--green-bright);
+  font-weight: 600;
+}
+.stage.mid .action-desc .num { color: var(--amber-bright); }
+.stage.long .action-desc .num { color: var(--blue-bright); }
+
+.action-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.action-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 180px;
+}
+.action-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  background: var(--bg-elev);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.action-tag.priority {
+  background: rgba(184, 111, 77, 0.12);
+  color: var(--red-bright);
+}
+
+/* Footer Hint */
+.footer-hint {
+  text-align: center;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+}
+.footer-hint .acc { color: var(--green); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  background: var(--bg-card);
+  border: 1px solid var(--green);
+  color: var(--green-bright);
+  padding: 10px 22px;
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base), transform var(--dur-base) var(--ease-spring);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-logo">粮</div>
+    <div class="brand-text">
+      <h1>极端气候下粮食生产风险智能分析</h1>
+      <div class="sub">RESILIENCE PATHWAY · M04</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="breadcrumb">
+      <span>首页</span>
+      <span>›</span>
+      <span class="cur">韧性路径推荐</span>
+    </div>
+    <span class="status-badge">RULE ENGINE · v2.1</span>
+  </div>
+</header>
+
+<div class="page-title">
+  <div>
+    <h2>韧性路径推荐</h2>
+    <p class="sub">基于省份风险指纹自动生成三阶段(短期 / 中期 / 长期)行动路径,可用于农业农村厅、农险机构、研究单位的政策决策与产品设计参考。</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn" id="btn-share">↗ 分享链接</button>
+    <button class="btn primary" id="btn-export">⬇ 导出 PDF 报告</button>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar">
+
+    <!-- 省份切换 -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="num">M04-A · TARGET</div>
+          <h3>选择省份</h3>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="select-wrap">
+          <select class="province-select" id="province-select"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 省份信息卡 -->
+    <div class="card" id="prov-card">
+      <div class="card-head">
+        <div>
+          <div class="num">M04-B · PROFILE</div>
+          <h3>省份风险画像</h3>
+        </div>
+        <span class="tag green" id="prov-rank-tag">RANK #12</span>
+      </div>
+      <div class="card-body">
+        <div class="prov-name" id="prov-name">河南<span class="suffix">省</span></div>
+        <div class="prov-type" id="prov-type">洪涝主导型 · 主产区</div>
+        <p class="prov-desc" id="prov-desc">河南作为全国粮食主产区,其单产风险主要来自夏季洪涝与汛期降水集中。近 5 年汛期降水变率上升,2021 年"7·20"特大暴雨造成显著减产,显示对极端降水事件的暴露度仍待提升。</p>
+        <div class="metrics-grid" id="metrics-grid"></div>
+      </div>
+    </div>
+
+    <!-- 目标用户卡 -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="num">M04-C · AUDIENCE</div>
+          <h3>面向用户</h3>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="audience-list">
+          <div class="audience-item">
+            <div class="audience-icon green">政</div>
+            <div class="audience-meta">
+              <div class="role">省/市农业农村厅</div>
+              <div class="desc">POLICY · 决策参考</div>
+            </div>
+          </div>
+          <div class="audience-item">
+            <div class="audience-icon blue">险</div>
+            <div class="audience-meta">
+              <div class="role">中国人寿财险等农险机构</div>
+              <div class="desc">INSURANCE · 产品定价</div>
+            </div>
+          </div>
+          <div class="audience-item">
+            <div class="audience-icon amber">研</div>
+            <div class="audience-meta">
+              <div class="role">农科院粮食产业研究机构</div>
+              <div class="desc">RESEARCH · 课题立项</div>
+            </div>
+          </div>
+          <div class="audience-item">
+            <div class="audience-icon purple">储</div>
+            <div class="audience-meta">
+              <div class="role">国家粮食和物资储备局</div>
+              <div class="desc">RESERVE · 储备布局</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ============ Right: Timeline ============ -->
+  <section class="timeline-wrap">
+
+    <div class="timeline-meta">
+      <span class="label">M04-D · PATHWAY</span>
+      <div class="stats">
+        <span>路径长度 <span class="v" id="path-total">11</span> 项</span>
+        <span>预算量级 <span class="v" id="path-budget">¥ 中</span></span>
+        <span>覆盖年限 <span class="v">0 — 5 年</span></span>
+      </div>
+    </div>
+
+    <div id="stages"></div>
+
+  </section>
+
+</main>
+
+<div class="footer-hint">
+  <span class="acc">▸</span> 提示:本推荐由规则引擎基于省份指标自动生成,实际部署需结合当地政策与预算约束 · 切换省份后路径会自动重新生成
+</div>
+
+<div class="toast" id="toast">已导出</div>
+
+<script>
+/* ============================================================
+   1. 31 省基础数据(沿用前 4 个模块)
+   ============================================================ */
+const PROVINCES = [
+  { name: '青海',   rank: 1,  y: 0.040, irr: 28,  flood: 1.2,  sun: 3120, temp: 4.5,  spei: -1.8, type: '高寒旱作型',     desc: '高海拔生态脆弱区,春旱与低温冻害并存,作物生长季短,主要承担青稞、油菜等寒地作物供给。' },
+  { name: '西藏',   rank: 2,  y: 0.038, irr: 25,  flood: 0.8,  sun: 3320, temp: 5.2,  spei: -1.5, type: '高寒旱作型',     desc: '日照充沛但灌溉基础薄弱,雅鲁藏布河谷农区受春旱影响显著,生产恢复成本高。' },
+  { name: '新疆',   rank: 3,  y: 0.036, irr: 110, flood: 0.5,  sun: 3150, temp: 8.6,  spei: -2.3, type: '极端干旱型',     desc: '绿洲农业典型代表,完全依赖灌溉,水资源压力大,极端干旱事件影响兵团粮食生产。' },
+  { name: '甘肃',   rank: 4,  y: 0.034, irr: 65,  flood: 1.5,  sun: 2680, temp: 9.5,  spei: -1.6, type: '半干旱型',       desc: '陇中半干旱区降水年际波动剧烈,旱作小麦受 SPEI 异常影响最为敏感,土壤侵蚀风险较高。' },
+  { name: '宁夏',   rank: 5,  y: 0.032, irr: 88,  flood: 1.1,  sun: 2820, temp: 9.8,  spei: -1.4, type: '半干旱灌溉型',   desc: '黄灌区水资源高度依赖黄河引水,节水改造已成约束粮食安全的核心议题。' },
+  { name: '内蒙古', rank: 6,  y: 0.033, irr: 52,  flood: 2.3,  sun: 2950, temp: 5.8,  spei: -1.2, type: '草原旱作型',     desc: '横跨干湿带,西部沙化退化加剧,东部黑土区降水变率上升,农牧交错带稳定性下降。' },
+  { name: '陕西',   rank: 7,  y: 0.029, irr: 56,  flood: 3.8,  sun: 2200, temp: 13.2, spei: -0.6, type: '半干旱过渡型',   desc: '关中平原与陕北黄土高原并存,北部春旱、南部伏旱叠加,渭河流域局地洪涝时有发生。' },
+  { name: '山西',   rank: 8,  y: 0.028, irr: 48,  flood: 3.2,  sun: 2480, temp: 11.0, spei: -0.9, type: '半干旱过渡型',   desc: '丘陵山地多、灌溉基础薄弱,春季气温回升快易引发墒情不足,小麦扬花期对温度敏感。' },
+  { name: '云南',   rank: 9,  y: 0.027, irr: 38,  flood: 5.2,  sun: 2180, temp: 16.5, spei: -0.5, type: '山地多灾型',     desc: '立体气候明显,坝区与山区风险差异大,春旱与夏涝交替出现,泥石流次生灾害威胁突出。' },
+  { name: '贵州',   rank: 10, y: 0.026, irr: 32,  flood: 6.8,  sun: 1380, temp: 15.4, spei:  0.2, type: '岩溶多雨型',     desc: '岩溶地貌持水能力差,降水虽多但有效利用率低,工程性缺水问题长期存在。' },
+  { name: '广西',   rank: 11, y: 0.027, irr: 62,  flood: 9.5,  sun: 1620, temp: 21.5, spei:  0.6, type: '南方多洪型',     desc: '西江流域汛期长、洪涝高发,珠江-西江经济带粮食生产受洪灾影响显著。' },
+  { name: '河南',   rank: 12, y: 0.026, irr: 65,  flood: 4.2,  sun: 2160, temp: 14.8, spei: -0.1, type: '主产区主导型',   desc: '全国粮食主产区,单产风险主要来自夏季洪涝与汛期降水集中,2021 年"7·20"暴雨造成显著减产。' },
+  { name: '江西',   rank: 13, y: 0.026, irr: 70,  flood: 11.5, sun: 1780, temp: 18.2, spei:  0.5, type: '南方多洪型',     desc: '鄱阳湖流域调蓄能力波动大,梅雨期与台风期叠加,水稻双季种植受连阴雨影响明显。' },
+  { name: '福建',   rank: 14, y: 0.026, irr: 58,  flood: 18.5, sun: 1820, temp: 20.4, spei:  0.6, type: '沿海台风型',     desc: '台风登陆密集,沿海农区每年承受 4-5 次台风影响,海水倒灌威胁低海拔农田。' },
+  { name: '重庆',   rank: 15, y: 0.025, irr: 54,  flood: 7.2,  sun: 1180, temp: 18.2, spei:  0.4, type: '盆地多雨型',     desc: '伏旱与汛期洪涝并存,日照偏少不利水稻灌浆,三峡库区消落带农业受水位调度影响。' },
+  { name: '安徽',   rank: 16, y: 0.025, irr: 75,  flood: 9.2,  sun: 2020, temp: 15.8, spei:  0.2, type: '江淮多洪型',     desc: '江淮分水岭一带洪涝、干旱、连阴雨多发,小麦赤霉病和水稻稻飞虱风险叠加。' },
+  { name: '广东',   rank: 17, y: 0.025, irr: 65,  flood: 14.2, sun: 1880, temp: 22.5, spei:  0.7, type: '沿海台风型',     desc: '热带和亚热带季风气候,台风、暴雨、咸潮多重风险,珠江三角洲受咸潮上溯影响明显。' },
+  { name: '海南',   rank: 18, y: 0.024, irr: 48,  flood: 22.5, sun: 2080, temp: 24.5, spei:  0.8, type: '热带台风型',     desc: '热带季风岛屿气候,台风暴雨频次最高,种业基地建设对气候稳定性要求极高。' },
+  { name: '四川',   rank: 19, y: 0.024, irr: 58,  flood: 5.1,  sun: 1280, temp: 16.8, spei:  0.1, type: '盆地温润型',     desc: '盆地积水易、排水难,川西高原与川东盆地风险类型迥异,日照偏少影响油菜籽产量。' },
+  { name: '湖南',   rank: 20, y: 0.024, irr: 72,  flood: 8.8,  sun: 1620, temp: 17.5, spei:  0.4, type: '中游多雨型',     desc: '洞庭湖区调蓄能力受围垦影响,梅雨期暴雨集中,双季稻区病虫害发生程度上升。' },
+  { name: '湖北',   rank: 21, y: 0.023, irr: 68,  flood: 7.5,  sun: 1820, temp: 16.6, spei:  0.3, type: '中游洪涝型',     desc: '江汉平原圩区密布,汛期内涝是主要风险源,2020 年长江流域大水后排涝能力升级仍待加强。' },
+  { name: '吉林',   rank: 22, y: 0.023, irr: 42,  flood: 2.8,  sun: 2580, temp:  5.6, spei: -0.4, type: '寒地大田型',     desc: '黑土带核心区,玉米单产高但生长季短,初霜冻和春涝是主要的气候致损因子。' },
+  { name: '河北',   rank: 23, y: 0.022, irr: 78,  flood: 3.5,  sun: 2540, temp: 12.5, spei: -0.5, type: '主产区主导型',   desc: '华北平原小麦-玉米轮作核心区,地下水超采严重,夏季干热风威胁灌浆期产量。' },
+  { name: '辽宁',   rank: 24, y: 0.022, irr: 56,  flood: 3.6,  sun: 2420, temp:  8.8, spei: -0.3, type: '东北边缘型',     desc: '辽河平原与辽东丘陵风险结构不同,春旱秋涝时有发生,海水倒灌对辽河口农区构成压力。' },
+  { name: '浙江',   rank: 25, y: 0.022, irr: 62,  flood: 13.8, sun: 1900, temp: 17.6, spei:  0.4, type: '沿海台风型',     desc: '浙东沿海与浙西山区差异大,台风登陆频次高,丘陵地带耕地破碎化降低规模化抗灾能力。' },
+  { name: '山东',   rank: 26, y: 0.021, irr: 82,  flood: 4.1,  sun: 2480, temp: 13.6, spei: -0.3, type: '主产区主导型',   desc: '黄淮海粮仓的重要支撑,设施化程度全国领先,但黄河三角洲盐碱地利用仍是核心议题。' },
+  { name: '江苏',   rank: 27, y: 0.021, irr: 90,  flood: 6.8,  sun: 2120, temp: 15.5, spei:  0.0, type: '主产区主导型',   desc: '苏北与苏南地势平坦,水网密布,排涝条件相对完善,但梅雨期连阴雨与高温胁迫并存。' },
+  { name: '黑龙江', rank: 28, y: 0.020, irr: 35,  flood: 2.5,  sun: 2580, temp:  2.6, spei: -0.6, type: '寒地大田型',     desc: '全国第一商品粮基地,大豆-玉米-水稻三大作物供给重镇,初霜冻提前是单产波动的主因。' },
+  { name: '天津',   rank: 29, y: 0.020, irr: 88,  flood: 3.2,  sun: 2580, temp: 12.8, spei: -0.4, type: '城郊型',         desc: '城郊型农业为主,水资源约束突出,海水倒灌与海平面上升对低海拔农田有长期威胁。' },
+  { name: '上海',   rank: 30, y: 0.019, irr: 95,  flood: 5.5,  sun: 1980, temp: 16.2, spei:  0.1, type: '城郊低风险型',   desc: '高标准农田比例全国领先,设施农业占比高,主要风险来自台风与城市化压力。' },
+  { name: '北京',   rank: 31, y: 0.018, irr: 92,  flood: 2.8,  sun: 2620, temp: 12.6, spei: -0.4, type: '城郊低风险型',   desc: '都市农业为主,生产规模小但科技化水平高,主要任务在于种源安全与示范基地建设。' },
+];
+
+// 按 rank 排序的 lookup
+PROVINCES.sort((a, b) => a.rank - b.rank);
+
+/* ============================================================
+   2. 规则引擎 · 根据省份指标生成行动项
+   ============================================================ */
+
+// 每条规则:trigger 条件 + 三阶段对应的行动项
+// 优先级从高到低,先触发的规则放前面
+const RULES = [
+  // 洪涝主线
+  {
+    id: 'flood',
+    trigger: p => p.flood > 3.5,
+    weight: p => p.flood,
+    short: {
+      title: '建立县域洪涝监测预警网络',
+      desc: '依托现有 <span class="hl">气象站点 + 水文测站 + 高分卫星遥感</span> 数据,在重点县建成 <span class="num">15-20</span> 个加密监测节点,实现 <span class="num">6 小时</span> 内汛情预警,联动农业农村厅与应急管理厅响应机制。',
+      tags: ['监测预警', '气象 / 应急'],
+    },
+    mid: {
+      title: '提升排涝防洪与圩堤标准',
+      desc: '系统提升主产农田的排涝标准至 <span class="num">10 年一遇</span>,重点圩堤段加固至 <span class="num">20 年一遇</span>,配套泵站电力升级。优先治理 SHAP 风险贡献最高的连片低洼区。',
+      tags: ['基建', '水利 / 财政', '⚡ 优先'],
+    },
+    long: {
+      title: '构建流域韧性治理共同体',
+      desc: '推动跨省市流域协同治理机制,纳入气候适应性指标考核,与 <span class="hl">财险机构</span> 联合开发"区域天气指数保险",形成 <span class="num">3 道</span> 防线的韧性体系。',
+      tags: ['制度', '跨部门协同'],
+    },
+  },
+  // 灌溉主线
+  {
+    id: 'irrigation',
+    trigger: p => p.irr < 70,
+    weight: p => 80 - p.irr,
+    short: {
+      title: '部署土壤墒情自动监测站',
+      desc: '在主要农区按 <span class="num">每 5000 公顷 1 站</span> 密度部署土壤墒情监测站,实时上传至农业农村厅决策平台。优先覆盖 SPEI 长期偏负的乡镇。',
+      tags: ['监测', '科技 / 智慧农业'],
+    },
+    mid: {
+      title: '推进高标准农田灌溉升级',
+      desc: '将灌溉率由 <span class="num">当前水平</span> 提升至 <span class="num">75%</span> 以上,优先采用 <span class="hl">滴灌、喷灌</span> 等节水形式,亩均节水 <span class="num">30-40%</span>,模型预测可降低单产风险约 <span class="num">15%</span>。',
+      tags: ['基建', '节水 / 财政', '⚡ 优先'],
+    },
+    long: {
+      title: '建立水权-水价-水量协同制度',
+      desc: '探索建立县域水权交易机制,以经济杠杆引导农业用水结构优化。配套阶梯水价政策,在确保粮食安全的前提下逐步压减低效用水。',
+      tags: ['制度', '水利改革'],
+    },
+  },
+  // 干旱主线
+  {
+    id: 'drought',
+    trigger: p => p.spei < -0.5,
+    weight: p => Math.abs(p.spei),
+    short: {
+      title: '建立 SPEI 滚动评估机制',
+      desc: '联合气象与农业部门,按 <span class="num">月度</span> 更新县域 SPEI,识别连续 <span class="num">3 个月</span> 偏负的高风险区,提前启动抗旱应急储备调度。',
+      tags: ['监测预警'],
+    },
+    mid: {
+      title: '引入耐旱品种与节水栽培技术',
+      desc: '在干旱压力区试点 <span class="hl">耐旱小麦、耐旱玉米</span> 品种,配套地膜覆盖、垄沟集雨等节水栽培技术,试验区单产稳定性提升约 <span class="num">12%</span>。',
+      tags: ['品种 / 技术推广'],
+    },
+    long: {
+      title: '探索可持续水资源利用模式',
+      desc: '在水资源刚性约束下,推进雨水集蓄、再生水农用、人工增雨等多源水利用,长期建立 <span class="hl">"以水定产"</span> 的生产布局。',
+      tags: ['战略', '资源约束'],
+    },
+  },
+  // 高温主线
+  {
+    id: 'heat',
+    trigger: p => p.temp > 18,
+    weight: p => p.temp - 17,
+    short: {
+      title: '建立穗期高温预警与应急喷灌响应',
+      desc: '针对水稻孕穗-抽穗期 <span class="hl">高温热害</span>,联动气象部门提前 <span class="num">72 小时</span> 预警,组织灌区"以水调温"应急响应,减少高温危害。',
+      tags: ['监测预警', '应急'],
+    },
+    mid: {
+      title: '推广耐热品种与种植结构调整',
+      desc: '试验区引入 <span class="hl">中科发系列、华占系列</span> 等耐热水稻品种,推进早籼稻向中晚籼调整,延后扬花期避开极端高温窗口。',
+      tags: ['品种 / 结构调整'],
+    },
+    long: {
+      title: '建立气候适应性育种联合体',
+      desc: '联合中国农科院、地方农科院、种子企业,围绕本省主推品种建立 <span class="hl">气候适应性育种</span> 共建机制,长期培育匹配 <span class="num">+2°C</span> 情景的新品种序列。',
+      tags: ['研究 / 育种'],
+    },
+  },
+  // 日照不足主线
+  {
+    id: 'low_sun',
+    trigger: p => p.sun < 1700,
+    weight: p => (1700 - p.sun) / 100,
+    short: {
+      title: '加强连阴雨季节作物长势监测',
+      desc: '在连阴雨易发期(梅雨/秋绵雨),启动 <span class="num">日度</span> 长势遥感监测,识别光合受抑面积,提前进行肥料补施与病害预防。',
+      tags: ['监测', '农技指导'],
+    },
+    mid: {
+      title: '推广光合补偿型栽培管理',
+      desc: '推广 <span class="hl">光合调控剂、合理密植、宽窄行</span> 等增光技术,改善冠层光分布;同时调整品种比例,引入低光照品种,提升弱光胁迫下的稳产能力。',
+      tags: ['栽培技术'],
+    },
+  },
+  // 极寒主线
+  {
+    id: 'cold',
+    trigger: p => p.temp < 6,
+    weight: p => 7 - p.temp,
+    short: {
+      title: '建立春季低温与初霜冻预警',
+      desc: '联合气象站点开展 <span class="num">逐日</span> 低温过程预报,重点针对玉米拔节期与水稻分蘖期低温冷害,组织覆盖物、烟熏等防御措施。',
+      tags: ['监测预警'],
+    },
+    mid: {
+      title: '推广耐冷早熟品种与农机匹配',
+      desc: '加快 <span class="hl">活动积温 2100°C·d 以下</span> 耐冷早熟玉米/水稻品种推广;农机配套上采用大马力播种机缩短播种窗口,提升积温利用率。',
+      tags: ['品种 / 农机'],
+    },
+  },
+  // 沿海台风主线
+  {
+    id: 'typhoon',
+    trigger: p => p.type.includes('台风') || p.type.includes('热带'),
+    weight: () => 2.0,
+    short: {
+      title: '建立台风路径与农业损失评估快响应机制',
+      desc: '台风预警发布后 <span class="num">12 小时</span> 内,基于路径预报和地块矢量数据,生成县级损失评估初值,推送至农险机构启动核保流程。',
+      tags: ['监测预警', '保险联动'],
+    },
+    mid: {
+      title: '优化滨海农区作物结构与抗倒伏品种',
+      desc: '在台风高发带 <span class="num">3 公里</span> 缓冲区内,推广 <span class="hl">矮秆抗倒伏</span> 品种,推进"水稻-冬种"轮作模式,降低风灾期与抽穗期重叠概率。',
+      tags: ['结构调整', '品种'],
+    },
+    long: {
+      title: '构建沿海农业保险与再保险协同体系',
+      desc: '与 <span class="hl">财险机构、再保险公司</span> 共建沿海农业巨灾保险池,引入参数化保险(降水 / 风速指数),提升农户灾后恢复能力。',
+      tags: ['保险 / 制度'],
+    },
+  },
+  // 寒地主线
+  {
+    id: 'cold_belt',
+    trigger: p => p.type.includes('寒地'),
+    weight: () => 1.5,
+    short: {
+      title: '黑土地保护性耕作监测',
+      desc: '在主产区按 <span class="num">每 1 万亩 1 点</span> 监测黑土有机质、耕层厚度、容重等指标,识别退化风险地块,精准下达保护性耕作补贴。',
+      tags: ['监测', '黑土保护'],
+    },
+    mid: {
+      title: '完善积温利用与轮作休耕协同',
+      desc: '推进玉米-大豆 <span class="hl">"一主两辅"</span> 轮作,扩大大豆面积同时利用根瘤固氮恢复地力,在低积温年份保障稳产。',
+      tags: ['结构调整'],
+    },
+    long: {
+      title: '建设"中国大粮仓"长期稳定性研究平台',
+      desc: '联合农科院与高校,建设黑土区气候适应性长期定位试验,围绕 <span class="num">30-50 年</span> 周期开展土壤-作物-气候耦合研究。',
+      tags: ['研究 / 长期'],
+    },
+  },
+  // 主产区通用主线
+  {
+    id: 'major',
+    trigger: p => p.type.includes('主产区'),
+    weight: () => 1.0,
+    short: {
+      title: '建立主产区单产稳产预警仪表盘',
+      desc: '面向农业农村厅决策层,集成本系统的实时 SHAP 推理结果,形成省级 <span class="hl">"周更新"</span> 单产稳产仪表盘,作为应急储备调度依据。',
+      tags: ['决策支持'],
+    },
+    mid: {
+      title: '推进社会化服务规模化与机械化升级',
+      desc: '通过农机合作社、托管服务、订单农业等方式,在主产县推动 <span class="num">综合机械化率 &gt; 85%</span>,降低劳动力短缺与极端天气下抢收抢种风险。',
+      tags: ['服务 / 农机'],
+    },
+    long: {
+      title: '建设主产区韧性农业示范带',
+      desc: '联动 <span class="hl">农科院、农业农村厅、龙头企业</span> 共建省级韧性农业示范带,集成水利、品种、保险、信息服务于一体,作为全国可复制经验向同类省份输出。',
+      tags: ['战略 / 示范'],
+    },
+  },
+  // 城郊型(北京/上海/天津)— 示范基地与种源安全
+  {
+    id: 'urban',
+    trigger: p => p.type.includes('城郊'),
+    weight: () => 1.2,
+    short: {
+      title: '建设都市农业气候监测示范网',
+      desc: '在城郊农区构建 <span class="hl">气象-土壤-生理</span> 一体化监测示范网络,服务于设施农业、种业基地的精准管理,作为全国可视化窗口对外展示。',
+      tags: ['监测 / 示范'],
+    },
+    mid: {
+      title: '强化种业自主创新与基地保护',
+      desc: '依托 <span class="hl">中国农大、农科院</span> 等科研机构,建设国家级种业创新区与南繁北育协同基地,保障粮食 <span class="num">"种源"</span> 自主可控。',
+      tags: ['种业 / 战略'],
+    },
+    long: {
+      title: '建立都市群粮食协同应急储备',
+      desc: '在京津冀、长三角等都市群尺度建立粮食协同应急储备机制,跨区域调度时间 &lt; <span class="num">24 小时</span>,提升超大城市食品供应链韧性。',
+      tags: ['储备 / 都市群'],
+    },
+  },
+  // 科技+农资主线(常规中等触发,几乎所有省份都需要)
+  {
+    id: 'tech',
+    trigger: p => true,
+    weight: () => 0.7,
+    mid: {
+      title: '建设智慧农业决策中枢平台',
+      desc: '集成卫星遥感、气象、土壤、农情数据,在省级农业农村厅部署 <span class="hl">"数字农业大脑"</span>,实现 <span class="num">乡镇级</span> 风险预测与精准农技推送,模型推理时延 &lt; <span class="num">2 秒</span>。',
+      tags: ['数字化', '智慧农业'],
+    },
+    long: {
+      title: '推动种业振兴与气候适应性育种',
+      desc: '联合 <span class="hl">中国农科院、隆平高科等头部种企</span>,围绕本省主导作物开展 <span class="num">10 年期</span> 气候适应性育种计划,储备应对 <span class="num">+1.5°C ~ +2°C</span> 升温情景的新品种序列。',
+      tags: ['育种 / 战略'],
+    },
+  },
+  // 兜底:所有省份都应该有的"长期-储备布局"
+  {
+    id: 'reserve',
+    trigger: () => true,
+    weight: () => 0.5,
+    long: {
+      title: '优化粮食储备空间布局',
+      desc: '协同 <span class="hl">国家粮食和物资储备局</span>,在跨流域、跨气候带的关键节点城市增设储备库,与本省风险结构形成对冲,提升极端事件下的省际调运效率。',
+      tags: ['储备 / 战略'],
+    },
+  },
+];
+
+// 行动项排序辅助
+function rankFor(stage, item, rules) {
+  return rules.indexOf(item._rule);
+}
+
+// 根据省份计算路径
+function buildPathway(p) {
+  const triggered = RULES.filter(r => r.trigger(p))
+    .map(r => ({ ...r, w: r.weight(p) }))
+    .sort((a, b) => b.w - a.w);
+
+  const short = [], mid = [], long = [];
+
+  for (const rule of triggered) {
+    if (rule.short) short.push({ ...rule.short, _ruleId: rule.id });
+    if (rule.mid) mid.push({ ...rule.mid, _ruleId: rule.id });
+    if (rule.long) long.push({ ...rule.long, _ruleId: rule.id });
+  }
+
+  // 限制每阶段最大数量(可读性)
+  return {
+    short: short.slice(0, 4),
+    mid: mid.slice(0, 4),
+    long: long.slice(0, 4),
+  };
+}
+
+/* ============================================================
+   3. RENDER
+   ============================================================ */
+const state = {
+  provinceIdx: 11, // 河南
+};
+
+function initProvinceSelect() {
+  const sel = document.getElementById('province-select');
+  sel.innerHTML = PROVINCES.map((p, i) =>
+    `<option value="${i}" ${i === 11 ? 'selected' : ''}>${p.name} · ${p.type}</option>`
+  ).join('');
+  sel.addEventListener('change', (e) => {
+    state.provinceIdx = parseInt(e.target.value);
+    renderAll();
+  });
+}
+
+function renderProvinceCard(p) {
+  document.getElementById('prov-name').innerHTML = `${p.name}<span class="suffix">省</span>`;
+  document.getElementById('prov-type').textContent = p.type;
+  document.getElementById('prov-desc').textContent = p.desc;
+  document.getElementById('prov-rank-tag').textContent = 'RANK #' + p.rank;
+
+  const grid = document.getElementById('metrics-grid');
+
+  // 计算简单的相对位置
+  const allY = PROVINCES.map(x => x.y);
+  const allIrr = PROVINCES.map(x => x.irr);
+  const allFlood = PROVINCES.map(x => x.flood);
+  const yMean = allY.reduce((s, v) => s + v, 0) / allY.length;
+  const irrMean = allIrr.reduce((s, v) => s + v, 0) / allIrr.length;
+  const floodMean = allFlood.reduce((s, v) => s + v, 0) / allFlood.length;
+
+  const metrics = [
+    { lbl: '风险指数 Y', val: p.y.toFixed(3), delta: p.y > yMean ? `▲ ${((p.y - yMean) / yMean * 100).toFixed(1)}%` : `▼ ${((yMean - p.y) / yMean * 100).toFixed(1)}%`, deltaCls: p.y > yMean ? 'up' : 'dn' },
+    { lbl: '全国排名', val: '第 ' + p.rank, delta: p.rank <= 10 ? '高风险区' : (p.rank >= 22 ? '低风险区' : '中等风险'), deltaCls: p.rank <= 10 ? 'up' : (p.rank >= 22 ? 'dn' : '') },
+    { lbl: '灌溉率', val: p.irr.toFixed(0) + '%', delta: p.irr < irrMean ? `▼ 低于均值` : `▲ 高于均值`, deltaCls: p.irr < irrMean ? 'up' : 'dn' },
+    { lbl: '洪涝占比', val: p.flood.toFixed(1) + '%', delta: p.flood > floodMean ? `▲ 高于均值` : `▼ 低于均值`, deltaCls: p.flood > floodMean ? 'up' : 'dn' },
+  ];
+  grid.innerHTML = metrics.map(m => `
+    <div class="metric">
+      <div class="lbl">${m.lbl}</div>
+      <div class="val">${m.val}</div>
+      <div class="delta ${m.deltaCls || ''}">${m.delta}</div>
+    </div>
+  `).join('');
+}
+
+function renderTimeline(p) {
+  const path = buildPathway(p);
+  const root = document.getElementById('stages');
+
+  const stages = [
+    { key: 'short', cls: 'short', title: '短期应急', range: '0 — 1 年', sub: '监测', sub2: '预警', sub3: '培训', items: path.short },
+    { key: 'mid', cls: 'mid', title: '中期建设', range: '1 — 3 年', sub: '基础设施', sub2: '品种结构', sub3: '技术推广', items: path.mid },
+    { key: 'long', cls: 'long', title: '长期战略', range: '3 — 5 年', sub: '制度建设', sub2: '产业升级', sub3: '协同治理', items: path.long },
+  ];
+
+  root.innerHTML = stages.map((s, si) => `
+    <div class="stage ${s.cls}" style="margin-bottom: 16px; animation-delay: ${si * 0.1}s;">
+      <div class="stage-marker"></div>
+      <div class="stage-head">
+        <h3>${s.title} <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 6px;">STAGE ${si + 1}</span></h3>
+        <span class="stage-period">PERIOD · <span class="v">${s.range}</span></span>
+      </div>
+      <div class="stage-sub"><span class="acc">${s.sub}</span> · <span class="acc">${s.sub2}</span> · <span class="acc">${s.sub3}</span></div>
+      <div class="actions">
+        ${s.items.length === 0
+          ? `<div style="font-family:var(--font-mono); font-size:11px; color:var(--text-3); padding: 12px 14px;">该省份在此阶段无显著匹配规则,可根据本地实际补充行动项</div>`
+          : s.items.map((it, i) => `
+            <div class="action">
+              <div class="action-num">${String(i + 1).padStart(2, '0')}</div>
+              <div class="action-body">
+                <div class="action-title">${it.title}</div>
+                <div class="action-desc">${it.desc}</div>
+              </div>
+              <div class="action-meta">
+                <div class="action-tags">
+                  ${(it.tags || []).map(t => `<span class="action-tag${t.includes('优先') ? ' priority' : ''}">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>
+  `).join('');
+
+  // 更新顶部统计
+  const total = path.short.length + path.mid.length + path.long.length;
+  document.getElementById('path-total').textContent = total;
+
+  // 预算量级:按总条数估算
+  let budget;
+  if (total >= 10) budget = '¥ 高';
+  else if (total >= 7) budget = '¥ 中';
+  else budget = '¥ 低';
+  document.getElementById('path-budget').textContent = budget;
+}
+
+function renderAll() {
+  const p = PROVINCES[state.provinceIdx];
+  renderProvinceCard(p);
+  renderTimeline(p);
+}
+
+/* ============================================================
+   4. ACTIONS
+   ============================================================ */
+const toast = document.getElementById('toast');
+function showToast(msg) {
+  toast.textContent = '✓ ' + msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  showToast('PDF 报告已开始生成(mock)');
+});
+document.getElementById('btn-share').addEventListener('click', () => {
+  showToast('链接已复制(mock)');
+});
+
+/* ============================================================
+   5. INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initProvinceSelect();
+  renderAll();
+});
+</script>
+
+</body>
+</html>

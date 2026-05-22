@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>参数情景模拟 · 极端气候下粮食生产风险智能分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #162520;
+  --bg-2: #1F2F2A;
+  --bg-card: #283A35;
+  --bg-elev: #324942;
+  --border: #2A3D38;
+  --border-strong: #44615A;
+  --text: #E8E4D8;
+  --text-2: #A8B5AC;
+  --text-3: #6B7A72;
+  --green: #A0B785;
+  --green-bright: #C5D4AF;
+  --green-deep: #6F8C5C;
+  --red: #B86F4D;
+  --red-bright: #D8916F;
+  --red-deep: #8E5238;
+  --amber: #E6B655;
+  --blue: #6BA8B5;
+  --purple: #B49DD8;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 450ms;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(160, 183, 133, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(160, 183, 133, 0); }
+}
+@keyframes flashGold {
+  0% { box-shadow: 0 0 0 0 rgba(230, 182, 85, 0); border-color: var(--border); }
+  20% { box-shadow: 0 0 0 3px rgba(230, 182, 85, 0.35); border-color: var(--amber); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 182, 85, 0); border-color: var(--border); }
+}
+@keyframes drawIn {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 5%, rgba(160, 183, 133, 0.04) 0%, transparent 35%),
+    radial-gradient(circle at 90% 95%, rgba(230, 182, 85, 0.03) 0%, transparent 35%);
+}
+
+/* ============ Header ============ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(22, 37, 32, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 17px;
+  color: #0E1A14;
+}
+
+.brand-text h1 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.brand-text .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-meta { display: flex; align-items: center; gap: 18px; }
+.breadcrumb {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+}
+.breadcrumb .cur { color: var(--green-bright); }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: rgba(160, 183, 133, 0.08);
+  border: 1px solid rgba(160, 183, 133, 0.2);
+  border-radius: var(--r-md);
+  font-size: 11px;
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  letter-spacing: 0.6px;
+}
+.status-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulseDot 2.2s infinite;
+}
+
+/* ============ Page Title ============ */
+.page-title {
+  padding: 24px 32px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.page-title h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.page-title .sub {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+.btn:hover { border-color: var(--green); color: var(--green-bright); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.primary {
+  background: var(--green);
+  color: #0E1A14;
+  border-color: var(--green);
+}
+.btn.primary:hover {
+  background: var(--green-bright);
+  color: #0E1A14;
+}
+
+/* ============ Recent History Bar ============ */
+.history-bar {
+  padding: 0 32px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.history-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.history-pills {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.history-pills::-webkit-scrollbar { height: 0; }
+
+.history-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 5px 12px 5px 5px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.history-pill:hover {
+  border-color: var(--green-deep);
+}
+
+.history-pill .idx {
+  width: 18px; height: 18px;
+  background: var(--bg-elev);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.history-pill .prov { color: var(--text); }
+.history-pill .delta { color: var(--text-2); font-size: 10px; }
+.history-pill .delta.up { color: var(--red-bright); }
+.history-pill .delta.dn { color: var(--green-bright); }
+
+.history-empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* ============ Main: 40 / 60 ============ */
+.main {
+  display: grid;
+  grid-template-columns: 540px 1fr;
+  gap: 20px;
+  padding: 0 32px 32px;
+}
+
+/* ============ Left Panel · Controls ============ */
+.control-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.5s var(--ease-out) both;
+}
+
+.panel-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-head .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+.panel-head h3 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.panel-head-left { flex: 1; }
+
+/* Province Select */
+.province-select-wrap {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.field-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.select-wrap {
+  position: relative;
+}
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.province-select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 10px 32px 10px 14px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color var(--dur-fast);
+}
+.province-select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(160, 183, 133, 0.15);
+}
+
+.province-meta {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+}
+.province-meta .v { color: var(--green-bright); }
+
+/* Sliders */
+.sliders {
+  padding: 16px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+.sliders::-webkit-scrollbar { width: 4px; }
+.sliders::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.slider-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  transition: border-color var(--dur-fast);
+}
+.slider-card.active {
+  animation: flashGold 0.6s ease-out;
+}
+
+.slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.slider-name {
+  font-size: 12px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slider-name .icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+.slider-name .icon.green { background: rgba(160, 183, 133, 0.15); color: var(--green-bright); }
+.slider-name .icon.red { background: rgba(184, 111, 77, 0.15); color: var(--red-bright); }
+.slider-name .icon.blue { background: rgba(107, 168, 181, 0.15); color: var(--blue); }
+.slider-name .icon.amber { background: rgba(230, 182, 85, 0.15); color: var(--amber); }
+.slider-name .icon.purple { background: rgba(180, 157, 216, 0.15); color: var(--purple); }
+
+.slider-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--green-bright);
+  letter-spacing: 0.3px;
+}
+.slider-value .unit {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.slider-track-wrap {
+  position: relative;
+  padding: 6px 0;
+}
+
+.slider-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+}
+
+.slider-baseline {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 10px;
+  background: var(--amber);
+  border-radius: 1px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.slider-fill {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-deep), var(--green));
+  border-radius: 2px;
+  transition: width var(--dur-fast) linear;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: var(--green-bright);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(160, 183, 133, 0.4);
+  pointer-events: none;
+  transition: width var(--dur-fast), height var(--dur-fast);
+}
+
+input[type="range"].native-slider {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+  z-index: 2;
+}
+input[type="range"].native-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px; height: 14px;
+  background: transparent;
+}
+input[type="range"].native-slider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  background: transparent;
+  border: none;
+}
+input[type="range"].native-slider:active ~ .slider-thumb {
+  width: 18px; height: 18px;
+}
+
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 0.3px;
+}
+.slider-scale .hint {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Reset */
+.panel-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+  display: flex;
+  gap: 8px;
+}
+
+/* ============ Right Panel · Results ============ */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.5s var(--ease-out) both;
+  animation-delay: 0.08s;
+}
+
+.result-row-top {
+  display: grid;
+  grid-template-columns: 1fr 280px 1fr;
+  gap: 16px;
+}
+
+.gauge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gauge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.gauge-head .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.gauge-head .tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  text-transform: uppercase;
+  background: rgba(230, 182, 85, 0.12);
+  color: var(--amber);
+}
+.gauge-card.sim .gauge-head .tag {
+  background: rgba(160, 183, 133, 0.12);
+  color: var(--green-bright);
+}
+
+.gauge-canvas {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 4px;
+}
+
+.gauge-foot {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+}
+
+/* Delta Card */
+.delta-card {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-2));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xl);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.delta-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(160, 183, 133, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  transition: background var(--dur-slow);
+}
+.delta-card.worse::before {
+  background: radial-gradient(circle, rgba(184, 111, 77, 0.10) 0%, transparent 70%);
+}
+
+.delta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.delta-label .sym {
+  color: var(--green);
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.delta-value {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--green-bright);
+  line-height: 1;
+  transition: color var(--dur-base);
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  font-variant-numeric: tabular-nums;
+}
+.delta-card.worse .delta-value { color: var(--red-bright); }
+
+/* Odometer · 每位字符独立滚动 */
+.od-char {
+  display: inline-block;
+  width: 23px;
+  text-align: center;
+}
+.od-char.fixed {
+  /* 符号 / 小数点 这类不滚动的字符 */
+  height: 42px;
+  line-height: 42px;
+}
+.od-roller {
+  display: inline-block;
+  height: 42px;
+  overflow: hidden;
+  vertical-align: top;
+  width: 23px;
+}
+.od-roller-inner {
+  display: flex;
+  flex-direction: column;
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.od-roller-inner > span {
+  height: 42px;
+  line-height: 42px;
+  display: block;
+}
+
+.delta-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.delta-sub .pct {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--green-bright);
+}
+.delta-card.worse .delta-sub .pct { color: var(--red-bright); }
+
+.delta-arrow {
+  display: inline-block;
+  margin-right: 3px;
+  font-size: 13px;
+}
+
+/* Contribution Chart */
+.contrib-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 340px;
+}
+
+.contrib-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contrib-head .left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.contrib-head .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+.contrib-head h3 {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.contrib-legend {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+}
+.contrib-legend .item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.contrib-legend .swatch {
+  width: 10px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.contrib-body {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+.contrib-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============ Save Dialog ============ */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base);
+}
+.dialog-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.dialog {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xl);
+  width: 460px;
+  max-width: calc(100vw - 64px);
+  overflow: hidden;
+  transform: scale(0.94);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.dialog-backdrop.open .dialog {
+  transform: scale(1);
+}
+
+.dialog-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dialog-head h3 {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dialog-close {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.dialog-close:hover { color: var(--text); background: var(--bg-elev); }
+
+.dialog-body { padding: 18px 20px; }
+
+.dialog-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.dialog-input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(160, 183, 133, 0.15);
+}
+
+.dialog-summary {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+.dialog-summary .v { color: var(--green-bright); }
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+/* ============ Toast ============ */
+.toast {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  background: var(--bg-card);
+  border: 1px solid var(--green);
+  color: var(--green-bright);
+  padding: 10px 22px;
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base), transform var(--dur-base) var(--ease-spring);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast::before {
+  content: '✓ ';
+  margin-right: 4px;
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-logo">粮</div>
+    <div class="brand-text">
+      <h1>极端气候下粮食生产风险智能分析</h1>
+      <div class="sub">SCENARIO SIMULATION · M03</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="breadcrumb">
+      <span>首页</span>
+      <span>›</span>
+      <span class="cur">参数情景模拟</span>
+    </div>
+    <span class="status-badge">XGBoost-SHAP · 实时推理</span>
+  </div>
+</header>
+
+<div class="page-title">
+  <div>
+    <h2>参数情景模拟</h2>
+    <p class="sub">调节 5 个关键气候 / 管理参数,实时观察对单产风险预测值的影响。底层公式来自 SHAP 线性近似,可用于政策情景推演与"What-If"分析。</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn" id="btn-export">📋 导出结果</button>
+    <button class="btn primary" id="btn-save">+ 另存为情景</button>
+  </div>
+</div>
+
+<!-- Recent History -->
+<div class="history-bar">
+  <span class="history-label">RECENT · 近期模拟</span>
+  <div class="history-pills" id="history-pills">
+    <span class="history-empty">尚无历史记录 · 调节参数后将自动保存最近 5 条</span>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ============ LEFT: Control Panel ============ -->
+  <section class="control-panel">
+    <div class="panel-head">
+      <div class="panel-head-left">
+        <div class="num">M03-A · INPUT</div>
+        <h3>参数控制台</h3>
+      </div>
+    </div>
+
+    <div class="province-select-wrap">
+      <div class="field-label">省份 · PROVINCE</div>
+      <div class="select-wrap">
+        <select class="province-select" id="province-select"></select>
+      </div>
+      <div class="province-meta">
+        <span>基线风险 Y · <span class="v" id="base-y">0.0260</span></span>
+        <span>风险类型 · <span class="v" id="base-type">主产区主导型</span></span>
+      </div>
+    </div>
+
+    <div class="sliders" id="sliders"></div>
+
+    <div class="panel-foot">
+      <button class="btn" id="btn-reset" style="flex:1">⟲ 重置为省份基线值</button>
+    </div>
+  </section>
+
+  <!-- ============ RIGHT: Results ============ -->
+  <section class="results">
+
+    <!-- Top row: Gauges + Delta -->
+    <div class="result-row-top">
+
+      <div class="gauge-card">
+        <div class="gauge-head">
+          <span class="label">M03-B · 基线风险</span>
+          <span class="tag">BASELINE</span>
+        </div>
+        <div class="gauge-canvas" id="gauge-base"></div>
+        <div class="gauge-foot">省份历史均值参考点</div>
+      </div>
+
+      <div class="delta-card" id="delta-card">
+        <div class="delta-label">风险变化 <span class="sym">Δ</span></div>
+        <div class="delta-value" id="delta-value"></div>
+        <div class="delta-sub">较基线风险 <span class="delta-arrow" id="delta-arrow">▼</span><span class="pct" id="delta-pct">11.8%</span></div>
+      </div>
+
+      <div class="gauge-card sim">
+        <div class="gauge-head">
+          <span class="label">M03-C · 模拟风险</span>
+          <span class="tag" id="sim-tag">SIMULATED</span>
+        </div>
+        <div class="gauge-canvas" id="gauge-sim"></div>
+        <div class="gauge-foot">参数实时计算结果</div>
+      </div>
+
+    </div>
+
+    <!-- Contribution Chart -->
+    <div class="contrib-card">
+      <div class="contrib-head">
+        <div class="left">
+          <div class="num">M03-D · CONTRIBUTION</div>
+          <h3>5 因子贡献分解 — 当前情景</h3>
+        </div>
+        <div class="contrib-legend">
+          <div class="item"><span class="swatch" style="background: var(--green)"></span>降风险</div>
+          <div class="item"><span class="swatch" style="background: var(--red)"></span>推风险</div>
+          <div class="item"><span class="swatch" style="background: var(--amber)"></span>当前调节</div>
+        </div>
+      </div>
+      <div class="contrib-body">
+        <div class="contrib-canvas" id="chart-contrib"></div>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- Save Dialog -->
+<div class="dialog-backdrop" id="dialog-backdrop">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h3>另存为情景</h3>
+      <button class="dialog-close" id="dialog-close">✕</button>
+    </div>
+    <div class="dialog-body">
+      <div class="field-label" style="margin-bottom: 8px;">情景名称 · SCENARIO NAME</div>
+      <input type="text" class="dialog-input" id="dialog-name" placeholder="如:河南 2030 提灌至 75%" maxlength="40">
+
+      <div class="field-label" style="margin-bottom: 8px;">当前参数快照</div>
+      <div class="dialog-summary" id="dialog-summary"></div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" id="dialog-cancel">取消</button>
+      <button class="btn primary" id="dialog-confirm">✓ 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">情景已保存</div>
+
+<script>
+/* ============================================================
+   1. CONST · 31 省基线数据
+   ============================================================ */
+// 字段一致沿用任务2/3,挑选关键值
+const PROVINCES = [
+  { name: '青海',   y: 0.040, irr: 28,  flood: 1.2,  sun: 3120, temp: 4.5,  spei: -1.8, type: '高寒旱作型' },
+  { name: '西藏',   y: 0.038, irr: 25,  flood: 0.8,  sun: 3320, temp: 5.2,  spei: -1.5, type: '高寒旱作型' },
+  { name: '新疆',   y: 0.036, irr: 110, flood: 0.5,  sun: 3150, temp: 8.6,  spei: -2.3, type: '极端干旱型' },
+  { name: '甘肃',   y: 0.034, irr: 65,  flood: 1.5,  sun: 2680, temp: 9.5,  spei: -1.6, type: '半干旱型' },
+  { name: '宁夏',   y: 0.032, irr: 88,  flood: 1.1,  sun: 2820, temp: 9.8,  spei: -1.4, type: '半干旱灌溉型' },
+  { name: '内蒙古', y: 0.033, irr: 52,  flood: 2.3,  sun: 2950, temp: 5.8,  spei: -1.2, type: '草原旱作型' },
+  { name: '陕西',   y: 0.029, irr: 56,  flood: 3.8,  sun: 2200, temp: 13.2, spei: -0.6, type: '半干旱过渡型' },
+  { name: '山西',   y: 0.028, irr: 48,  flood: 3.2,  sun: 2480, temp: 11.0, spei: -0.9, type: '半干旱过渡型' },
+  { name: '云南',   y: 0.027, irr: 38,  flood: 5.2,  sun: 2180, temp: 16.5, spei: -0.5, type: '山地多灾型' },
+  { name: '贵州',   y: 0.026, irr: 32,  flood: 6.8,  sun: 1380, temp: 15.4, spei:  0.2, type: '岩溶多雨型' },
+  { name: '四川',   y: 0.024, irr: 58,  flood: 5.1,  sun: 1280, temp: 16.8, spei:  0.1, type: '盆地温润型' },
+  { name: '重庆',   y: 0.025, irr: 54,  flood: 7.2,  sun: 1180, temp: 18.2, spei:  0.4, type: '盆地多雨型' },
+  { name: '广西',   y: 0.027, irr: 62,  flood: 9.5,  sun: 1620, temp: 21.5, spei:  0.6, type: '南方多洪型' },
+  { name: '河南',   y: 0.026, irr: 65,  flood: 4.2,  sun: 2160, temp: 14.8, spei: -0.1, type: '主产区主导型' },
+  { name: '湖北',   y: 0.023, irr: 68,  flood: 7.5,  sun: 1820, temp: 16.6, spei:  0.3, type: '中游洪涝型' },
+  { name: '湖南',   y: 0.024, irr: 72,  flood: 8.8,  sun: 1620, temp: 17.5, spei:  0.4, type: '中游多雨型' },
+  { name: '安徽',   y: 0.025, irr: 75,  flood: 9.2,  sun: 2020, temp: 15.8, spei:  0.2, type: '江淮多洪型' },
+  { name: '江西',   y: 0.026, irr: 70,  flood: 11.5, sun: 1780, temp: 18.2, spei:  0.5, type: '南方多洪型' },
+  { name: '广东',   y: 0.025, irr: 65,  flood: 14.2, sun: 1880, temp: 22.5, spei:  0.7, type: '沿海台风型' },
+  { name: '福建',   y: 0.026, irr: 58,  flood: 18.5, sun: 1820, temp: 20.4, spei:  0.6, type: '沿海台风型' },
+  { name: '浙江',   y: 0.022, irr: 62,  flood: 13.8, sun: 1900, temp: 17.6, spei:  0.4, type: '沿海台风型' },
+  { name: '海南',   y: 0.024, irr: 48,  flood: 22.5, sun: 2080, temp: 24.5, spei:  0.8, type: '热带台风型' },
+  { name: '河北',   y: 0.022, irr: 78,  flood: 3.5,  sun: 2540, temp: 12.5, spei: -0.5, type: '主产区主导型' },
+  { name: '山东',   y: 0.021, irr: 82,  flood: 4.1,  sun: 2480, temp: 13.6, spei: -0.3, type: '主产区主导型' },
+  { name: '天津',   y: 0.020, irr: 88,  flood: 3.2,  sun: 2580, temp: 12.8, spei: -0.4, type: '城郊型' },
+  { name: '江苏',   y: 0.021, irr: 90,  flood: 6.8,  sun: 2120, temp: 15.5, spei:  0.0, type: '主产区主导型' },
+  { name: '北京',   y: 0.018, irr: 92,  flood: 2.8,  sun: 2620, temp: 12.6, spei: -0.4, type: '城郊低风险型' },
+  { name: '上海',   y: 0.019, irr: 95,  flood: 5.5,  sun: 1980, temp: 16.2, spei:  0.1, type: '城郊低风险型' },
+  { name: '黑龙江', y: 0.020, irr: 35,  flood: 2.5,  sun: 2580, temp:  2.6, spei: -0.6, type: '寒地大田型' },
+  { name: '吉林',   y: 0.023, irr: 42,  flood: 2.8,  sun: 2580, temp:  5.6, spei: -0.4, type: '寒地大田型' },
+  { name: '辽宁',   y: 0.022, irr: 56,  flood: 3.6,  sun: 2420, temp:  8.8, spei: -0.3, type: '东北边缘型' },
+];
+
+const SLIDER_DEFS = [
+  { key: 'irr',   label: '灌溉率',     icon: '灌', iconClass: 'green', unit: '%',   min: 20,   max: 120,  step: 0.5, dir: -1, hint: '↑ 越高风险越低' },
+  { key: 'flood', label: '洪涝占比',   icon: '洪', iconClass: 'red',   unit: '%',   min: 0,    max: 24,   step: 0.1, dir: +1, hint: '↑ 越高风险越高' },
+  { key: 'sun',   label: '日照时数',   icon: '日', iconClass: 'amber', unit: 'h',   min: 970,  max: 3350, step: 5,   dir: -1, hint: '↑ 越高风险越低' },
+  { key: 'temp',  label: '平均气温',   icon: '温', iconClass: 'red',   unit: '°C',  min: 2,    max: 26,   step: 0.1, dir: +1, hint: '↑ 越高风险越高' },
+  { key: 'spei',  label: 'SPEI 干旱',  icon: 'D',  iconClass: 'purple',unit: '',    min: -3,   max: 3,    step: 0.05,dir: -1, hint: '↑ 越湿润风险越低' },
+];
+
+const FORMULA_BASE = 0.0235;  // E[f(x)]
+const FORMULA_MEANS = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 };
+const FORMULA_WEIGHTS = {
+  irr:   -0.000115,
+  flood:  0.000420,
+  sun:   -0.0000023,
+  temp:   0.000180,
+  spei:  -0.000310,
+};
+
+function calcEffect(key, val) {
+  return (val - FORMULA_MEANS[key]) * FORMULA_WEIGHTS[key];
+}
+
+function calcSimRisk(params) {
+  let r = FORMULA_BASE;
+  for (const k of Object.keys(FORMULA_WEIGHTS)) {
+    r += calcEffect(k, params[k]);
+  }
+  return r;
+}
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+const state = {
+  provinceIdx: 13,  // 默认河南
+  params: {},       // 当前 5 个滑块值
+  baselineParams: {},  // 切换省份时的基线
+  history: [],
+  gaugeBase: null,
+  gaugeSim: null,
+  chartContrib: null,
+  lastDelta: 0,
+  // 用于数字 count-up
+  countUpRAF: null,
+};
+
+/* ============================================================
+   3. PROVINCE SELECT
+   ============================================================ */
+function initProvinceSelect() {
+  const sel = document.getElementById('province-select');
+  sel.innerHTML = PROVINCES.map((p, i) =>
+    `<option value="${i}" ${i === 13 ? 'selected' : ''}>${p.name} · ${p.type}</option>`
+  ).join('');
+  sel.addEventListener('change', (e) => {
+    state.provinceIdx = parseInt(e.target.value);
+    resetToBaseline();
+  });
+}
+
+function getCurrentProvince() {
+  return PROVINCES[state.provinceIdx];
+}
+
+function resetToBaseline() {
+  const p = getCurrentProvince();
+  state.baselineParams = { irr: p.irr, flood: p.flood, sun: p.sun, temp: p.temp, spei: p.spei };
+  state.params = { ...state.baselineParams };
+  document.getElementById('base-y').textContent = p.y.toFixed(4);
+  document.getElementById('base-type').textContent = p.type;
+  renderSliders();
+  updateAll(/* skipHistory */ true);
+}
+
+/* ============================================================
+   4. SLIDERS
+   ============================================================ */
+function renderSliders() {
+  const root = document.getElementById('sliders');
+  root.innerHTML = SLIDER_DEFS.map(def => {
+    const val = state.params[def.key];
+    const baseline = state.baselineParams[def.key];
+    return `
+      <div class="slider-card" data-key="${def.key}">
+        <div class="slider-head">
+          <div class="slider-name">
+            <span class="icon ${def.iconClass}">${def.icon}</span>
+            <span>${def.label} <span style="font-family: var(--font-mono); color: var(--text-3); font-size: 10px;">${def.key.toUpperCase()}</span></span>
+          </div>
+          <span class="slider-value" data-key="${def.key}">${formatValue(def.key, val)}<span class="unit">${def.unit}</span></span>
+        </div>
+        <div class="slider-track-wrap">
+          <div class="slider-track">
+            <div class="slider-baseline" style="left:${pctOf(baseline, def)}%"></div>
+            <div class="slider-fill" style="width:${pctOf(val, def)}%"></div>
+            <div class="slider-thumb" style="left:${pctOf(val, def)}%"></div>
+          </div>
+          <input type="range" class="native-slider"
+            min="${def.min}" max="${def.max}" step="${def.step}" value="${val}"
+            data-key="${def.key}">
+        </div>
+        <div class="slider-scale">
+          <span>${formatScale(def.key, def.min)}</span>
+          <span class="hint">${def.hint}</span>
+          <span>${formatScale(def.key, def.max)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 绑定事件
+  root.querySelectorAll('input.native-slider').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const key = e.target.dataset.key;
+      const val = parseFloat(e.target.value);
+      state.params[key] = val;
+      updateSliderVisual(key, val);
+      updateAll();
+      flashSlider(key);
+    });
+  });
+}
+
+function formatValue(key, val) {
+  if (key === 'irr' || key === 'flood') return val.toFixed(1);
+  if (key === 'sun') return Math.round(val);
+  if (key === 'temp') return val.toFixed(1);
+  if (key === 'spei') return val.toFixed(2);
+  return val.toFixed(2);
+}
+
+function formatScale(key, val) {
+  if (key === 'sun') return Math.round(val);
+  if (key === 'spei') return val.toFixed(1);
+  return Math.round(val);
+}
+
+function pctOf(val, def) {
+  return ((val - def.min) / (def.max - def.min)) * 100;
+}
+
+function updateSliderVisual(key, val) {
+  const def = SLIDER_DEFS.find(d => d.key === key);
+  const pct = pctOf(val, def);
+  const card = document.querySelector(`.slider-card[data-key="${key}"]`);
+  if (!card) return;
+  card.querySelector('.slider-fill').style.width = pct + '%';
+  card.querySelector('.slider-thumb').style.left = pct + '%';
+  card.querySelector('.slider-value').firstChild.nodeValue = formatValue(key, val);
+}
+
+let flashTimers = {};
+function flashSlider(key) {
+  const card = document.querySelector(`.slider-card[data-key="${key}"]`);
+  if (!card) return;
+  card.classList.remove('active');
+  void card.offsetWidth;  // restart anim
+  card.classList.add('active');
+  clearTimeout(flashTimers[key]);
+  flashTimers[key] = setTimeout(() => card.classList.remove('active'), 600);
+
+  // contrib 图上对应的条也高亮
+  highlightContribBar(key);
+}
+
+/* ============================================================
+   5. GAUGES (ECharts)
+   ============================================================ */
+function initGauges() {
+  state.gaugeBase = echarts.init(document.getElementById('gauge-base'), null, { renderer: 'canvas' });
+  state.gaugeSim = echarts.init(document.getElementById('gauge-sim'), null, { renderer: 'canvas' });
+}
+
+function gaugeOption(value, mode, pointerColor) {
+  const min = 0.005, max = 0.055;
+  return {
+    backgroundColor: 'transparent',
+    series: [{
+      type: 'gauge',
+      min, max,
+      startAngle: 200,
+      endAngle: -20,
+      radius: '95%',
+      center: ['50%', '62%'],
+      progress: { show: false },
+      axisLine: {
+        lineStyle: {
+          width: 12,
+          color: [
+            [0.30, getCSS('--green')],
+            [0.55, getCSS('--amber')],
+            [0.80, getCSS('--red')],
+            [1.00, getCSS('--red-deep')],
+          ]
+        }
+      },
+      pointer: {
+        icon: 'path://M2,0 L-2,0 L0,-65 Z',
+        length: '70%',
+        offsetCenter: [0, 0],
+        itemStyle: { color: pointerColor },
+        width: 4,
+      },
+      anchor: {
+        show: true,
+        showAbove: true,
+        size: 10,
+        itemStyle: {
+          color: getCSS('--bg'),
+          borderColor: pointerColor,
+          borderWidth: 2,
+        }
+      },
+      axisTick: { length: 5, lineStyle: { color: getCSS('--text-3'), width: 1 } },
+      splitLine: { length: 9, lineStyle: { color: getCSS('--text-2'), width: 2 } },
+      axisLabel: {
+        distance: -16,
+        color: getCSS('--text-3'),
+        fontSize: 8,
+        fontFamily: 'JetBrains Mono',
+        formatter: (v) => v < 0.01 ? '' : (v.toFixed(2)),
+      },
+      title: {
+        offsetCenter: [0, '32%'],
+        color: getCSS('--text-3'),
+        fontSize: 10,
+        fontFamily: 'JetBrains Mono',
+      },
+      detail: {
+        valueAnimation: true,
+        offsetCenter: [0, '15%'],
+        formatter: (v) => v.toFixed(4),
+        color: pointerColor,
+        fontSize: 22,
+        fontFamily: 'JetBrains Mono',
+        fontWeight: 600,
+      },
+      data: [{ value, name: mode }],
+      animationDuration: 600,
+      animationEasing: 'cubicOut',
+    }]
+  };
+}
+
+function renderGauges() {
+  const p = getCurrentProvince();
+  const baseY = p.y;
+  const simY = calcSimRisk(state.params);
+
+  state.gaugeBase.setOption(gaugeOption(baseY, '基线 BASE', getCSS('--amber')));
+
+  // 模拟指针:改善=绿,恶化=赭石
+  const isWorse = simY > baseY;
+  const simColor = isWorse ? getCSS('--red-bright') : getCSS('--green-bright');
+  state.gaugeSim.setOption(gaugeOption(simY, isWorse ? '模拟 ↑ WORSE' : '模拟 ↓ BETTER', simColor));
+
+  document.getElementById('sim-tag').textContent = isWorse ? 'WORSE' : 'BETTER';
+  document.getElementById('sim-tag').style.background = isWorse ? 'rgba(184,111,77,0.12)' : 'rgba(160,183,133,0.12)';
+  document.getElementById('sim-tag').style.color = isWorse ? getCSS('--red-bright') : getCSS('--green-bright');
+}
+
+/* ============================================================
+   6. DELTA CARD (count-up)
+   ============================================================ */
+function renderDelta() {
+  const p = getCurrentProvince();
+  const baseY = p.y;
+  const simY = calcSimRisk(state.params);
+  const delta = simY - baseY;
+  const pctVal = (delta / baseY) * 100;
+
+  const card = document.getElementById('delta-card');
+  const valueEl = document.getElementById('delta-value');
+  const arrowEl = document.getElementById('delta-arrow');
+  const pctEl = document.getElementById('delta-pct');
+
+  // 颜色态
+  const isWorse = delta > 0;
+  card.classList.toggle('worse', isWorse);
+
+  arrowEl.textContent = isWorse ? '▲' : (delta < 0 ? '▼' : '−');
+  pctEl.textContent = Math.abs(pctVal).toFixed(1) + '%';
+
+  // 格式化:" −0.0028"  (前面留一个字符给符号/空格)
+  const sign = delta > 0 ? '+' : (delta < 0 ? '−' : ' ');
+  const absStr = Math.abs(delta).toFixed(4);  // "0.0028"
+  const newStr = sign + absStr;                // "−0.0028"
+
+  renderOdometer(valueEl, newStr);
+  state.lastDelta = delta;
+}
+
+/* ============================================================
+   6b. ODOMETER · 数字字符独立上下滚动
+   ============================================================ */
+// 给指定容器渲染一个字符串。等长字符串切换时,数字位会上下滚动;
+// 非数字字符(符号/小数点)保持静止。
+function renderOdometer(container, newStr) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prev = container.dataset.odoValue || '';
+  const sameLen = prev.length === newStr.length && prev.length > 0;
+
+  // 初始化 / 长度变化时,重建整个 DOM
+  if (!sameLen) {
+    container.innerHTML = '';
+    for (const ch of newStr) {
+      if (/\d/.test(ch)) {
+        const roller = document.createElement('span');
+        roller.className = 'od-roller';
+        const inner = document.createElement('span');
+        inner.className = 'od-roller-inner';
+        // 0-9 一列
+        for (let d = 0; d <= 9; d++) {
+          const s = document.createElement('span');
+          s.textContent = d;
+          inner.appendChild(s);
+        }
+        roller.appendChild(inner);
+        // 立即定位到目标数字(不滚)
+        inner.style.transition = 'none';
+        inner.style.transform = `translateY(-${parseInt(ch) * 42}px)`;
+        // 强制 reflow 后恢复 transition
+        void inner.offsetHeight;
+        inner.style.transition = '';
+        container.appendChild(roller);
+      } else {
+        const fixed = document.createElement('span');
+        fixed.className = 'od-char fixed';
+        fixed.textContent = ch;
+        container.appendChild(fixed);
+      }
+    }
+  } else {
+    // 等长情况:只更新需要变化的位
+    const rollers = container.querySelectorAll('.od-roller');
+    const fixedChars = container.querySelectorAll('.od-char.fixed');
+    let rollerIdx = 0, fixedIdx = 0;
+    for (let i = 0; i < newStr.length; i++) {
+      const ch = newStr[i];
+      const prevCh = prev[i];
+      if (/\d/.test(ch)) {
+        const roller = rollers[rollerIdx++];
+        if (!roller) continue;
+        const inner = roller.querySelector('.od-roller-inner');
+        if (ch !== prevCh || !inner) {
+          if (reduce) {
+            inner.style.transition = 'none';
+            inner.style.transform = `translateY(-${parseInt(ch) * 42}px)`;
+            void inner.offsetHeight;
+            inner.style.transition = '';
+          } else {
+            inner.style.transform = `translateY(-${parseInt(ch) * 42}px)`;
+          }
+        }
+      } else {
+        const fixedEl = fixedChars[fixedIdx++];
+        if (fixedEl && fixedEl.textContent !== ch) {
+          fixedEl.textContent = ch;
+        }
+      }
+    }
+  }
+  container.dataset.odoValue = newStr;
+}
+
+/* ============================================================
+   7. CONTRIBUTION CHART
+   ============================================================ */
+function initContrib() {
+  state.chartContrib = echarts.init(document.getElementById('chart-contrib'), null, { renderer: 'canvas' });
+}
+
+let lastHighlightKey = null;
+
+function highlightContribBar(key) {
+  lastHighlightKey = key;
+  renderContrib();
+  setTimeout(() => {
+    if (lastHighlightKey === key) {
+      lastHighlightKey = null;
+      renderContrib();
+    }
+  }, 400);
+}
+
+function renderContrib() {
+  const effects = SLIDER_DEFS.map(def => ({
+    key: def.key,
+    name: def.label,
+    value: calcEffect(def.key, state.params[def.key]),
+  }));
+
+  // 按绝对值降序排
+  effects.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+
+  const yData = effects.map(e => e.name);
+  const xData = effects.map(e => e.value);
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: 88, right: 80, top: 14, bottom: 28 },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: getCSS('--bg-elev'),
+      borderColor: getCSS('--border-strong'),
+      textStyle: { color: getCSS('--text'), fontSize: 12, fontFamily: 'Noto Sans SC' },
+      extraCssText: 'border-radius: 4px; padding: 10px 14px;',
+      formatter: (p) => {
+        const e = effects[effects.length - 1 - p.dataIndex];
+        const def = SLIDER_DEFS.find(d => d.key === e.key);
+        const cur = state.params[e.key];
+        const mean = FORMULA_MEANS[e.key];
+        return `
+          <div style="font-family:'Noto Serif SC';font-weight:600;margin-bottom:3px;">${e.name}</div>
+          <div style="font-family:'JetBrains Mono';font-size:14px;color:${e.value > 0 ? getCSS('--red-bright') : getCSS('--green-bright')};font-weight:600;">${e.value > 0 ? '+' : ''}${e.value.toFixed(4)}</div>
+          <div style="font-size:11px;color:${getCSS('--text-2')};margin-top:4px;line-height:1.6;">
+            当前值 <span style="font-family:'JetBrains Mono';color:${getCSS('--text')}">${formatValue(e.key, cur)}${def.unit}</span><br>
+            样本均值 <span style="font-family:'JetBrains Mono';color:${getCSS('--text-3')}">${formatValue(e.key, mean)}${def.unit}</span>
+          </div>
+        `;
+      }
+    },
+    xAxis: {
+      type: 'value',
+      max: 0.008,
+      min: -0.008,
+      splitLine: { lineStyle: { color: getCSS('--border'), type: 'dashed' } },
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: { color: getCSS('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10, formatter: v => v.toFixed(3) },
+    },
+    yAxis: {
+      type: 'category',
+      data: yData.slice().reverse(),  // 上→下=高→低
+      axisLine: { lineStyle: { color: getCSS('--border-strong') } },
+      axisLabel: { color: getCSS('--text'), fontFamily: 'Noto Sans SC', fontSize: 12, fontWeight: 500 },
+      axisTick: { show: false },
+    },
+    series: [{
+      type: 'bar',
+      data: xData.slice().reverse().map((v, i) => {
+        const def = effects[effects.length - 1 - i];
+        const isHighlight = lastHighlightKey === def.key;
+        return {
+          value: v,
+          itemStyle: {
+            color: v > 0 ? getCSS('--red') : getCSS('--green'),
+            borderRadius: v > 0 ? [0, 3, 3, 0] : [3, 0, 0, 3],
+            borderColor: isHighlight ? getCSS('--amber') : 'transparent',
+            borderWidth: isHighlight ? 2 : 0,
+            shadowColor: isHighlight ? 'rgba(230, 182, 85, 0.6)' : 'transparent',
+            shadowBlur: isHighlight ? 10 : 0,
+          }
+        };
+      }),
+      barWidth: 22,
+      label: {
+        show: true,
+        position: (params) => params.value > 0 ? 'right' : 'left',
+        color: getCSS('--text'),
+        fontFamily: 'JetBrains Mono',
+        fontSize: 11,
+        fontWeight: 500,
+        formatter: (p) => (p.value > 0 ? '+' : '') + p.value.toFixed(4),
+      },
+      animationDuration: 400,
+      animationDurationUpdate: 250,
+    }]
+  };
+
+  state.chartContrib.setOption(option, true);
+}
+
+/* ============================================================
+   8. HISTORY
+   ============================================================ */
+let historyTimer = null;
+
+function pushHistory() {
+  // 防抖:连续滑动停止 800ms 后才记一条
+  clearTimeout(historyTimer);
+  historyTimer = setTimeout(() => {
+    const p = getCurrentProvince();
+    const simY = calcSimRisk(state.params);
+    const delta = simY - p.y;
+    state.history.unshift({
+      ts: Date.now(),
+      province: p.name,
+      params: { ...state.params },
+      simY,
+      delta,
+    });
+    state.history = state.history.slice(0, 5);
+    renderHistory();
+  }, 800);
+}
+
+function renderHistory() {
+  const pills = document.getElementById('history-pills');
+  if (state.history.length === 0) {
+    pills.innerHTML = '<span class="history-empty">尚无历史记录 · 调节参数后将自动保存最近 5 条</span>';
+    return;
+  }
+  pills.innerHTML = state.history.map((h, i) => {
+    const cls = h.delta > 0 ? 'up' : 'dn';
+    const arrow = h.delta > 0 ? '▲' : '▼';
+    return `
+      <div class="history-pill" data-idx="${i}">
+        <span class="idx">${i + 1}</span>
+        <span class="prov">${h.province}</span>
+        <span class="delta ${cls}">${arrow} ${Math.abs(h.delta).toFixed(4)}</span>
+      </div>
+    `;
+  }).join('');
+
+  // 点击 history pill 复原参数
+  pills.querySelectorAll('.history-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      const idx = parseInt(p.dataset.idx);
+      const h = state.history[idx];
+      const provIdx = PROVINCES.findIndex(pp => pp.name === h.province);
+      if (provIdx >= 0) {
+        state.provinceIdx = provIdx;
+        document.getElementById('province-select').value = provIdx;
+        const pr = getCurrentProvince();
+        state.baselineParams = { irr: pr.irr, flood: pr.flood, sun: pr.sun, temp: pr.temp, spei: pr.spei };
+        state.params = { ...h.params };
+        document.getElementById('base-y').textContent = pr.y.toFixed(4);
+        document.getElementById('base-type').textContent = pr.type;
+        renderSliders();
+        updateAll(true);
+      }
+    });
+  });
+}
+
+/* ============================================================
+   9. SAVE DIALOG
+   ============================================================ */
+const backdrop = document.getElementById('dialog-backdrop');
+const dialogName = document.getElementById('dialog-name');
+const dialogSummary = document.getElementById('dialog-summary');
+const toast = document.getElementById('toast');
+
+function openSaveDialog() {
+  const p = getCurrentProvince();
+  const simY = calcSimRisk(state.params);
+  dialogName.value = `${p.name} · ${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}`;
+  dialogSummary.innerHTML = `
+    省份 <span class="v">${p.name} · ${p.type}</span><br>
+    灌溉率 <span class="v">${state.params.irr.toFixed(1)}%</span> · 洪涝 <span class="v">${state.params.flood.toFixed(1)}%</span> · 日照 <span class="v">${Math.round(state.params.sun)}h</span><br>
+    气温 <span class="v">${state.params.temp.toFixed(1)}°C</span> · SPEI <span class="v">${state.params.spei.toFixed(2)}</span><br>
+    <br>模拟风险 Y <span class="v">${simY.toFixed(4)}</span> · 较基线 <span class="v">${((simY - p.y) / p.y * 100).toFixed(1)}%</span>
+  `;
+  backdrop.classList.add('open');
+  setTimeout(() => dialogName.focus(), 100);
+}
+
+function closeSaveDialog() {
+  backdrop.classList.remove('open');
+}
+
+function showToast(msg) {
+  toast.textContent = '✓ ' + msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+document.getElementById('btn-save').addEventListener('click', openSaveDialog);
+document.getElementById('dialog-close').addEventListener('click', closeSaveDialog);
+document.getElementById('dialog-cancel').addEventListener('click', closeSaveDialog);
+document.getElementById('dialog-confirm').addEventListener('click', () => {
+  const name = dialogName.value.trim() || '未命名情景';
+  closeSaveDialog();
+  showToast(`已保存:${name}`);
+});
+backdrop.addEventListener('click', (e) => {
+  if (e.target === backdrop) closeSaveDialog();
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  showToast('已复制 JSON 到剪贴板(mock)');
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  resetToBaseline();
+  showToast('已重置为省份基线值');
+});
+
+/* ============================================================
+   10. UPDATE ALL
+   ============================================================ */
+function updateAll(skipHistory = false) {
+  renderGauges();
+  renderDelta();
+  renderContrib();
+  if (!skipHistory) pushHistory();
+}
+
+/* ============================================================
+   11. INIT
+   ============================================================ */
+window.addEventListener('resize', () => {
+  [state.gaugeBase, state.gaugeSim, state.chartContrib].forEach(c => c && c.resize());
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initProvinceSelect();
+  initGauges();
+  initContrib();
+  resetToBaseline();
+});
+</script>
+
+</body>
+</html>
