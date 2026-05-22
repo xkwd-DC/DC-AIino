@@ -53,7 +53,14 @@ plt.rcParams["axes.unicode_minus"] = False
 
 FEATS = ["Irr", "Flood_R", "Sun", "Temp", "SPEI", "Prec",
          "Mech", "Fert", "Drou_A", "Flood_A", "NDVI"]
-LOWER = [c.lower() for c in FEATS]
+# parquet 列名约定：单词全小写；Flood_R 对应 `flood`（无 _R 后缀），其余去掉首字母大写即可。
+# 该映射与 backend/services/inference.py 的 API_TO_TRAINING 反向对应。
+TRAINING_TO_PARQUET = {
+    "Irr": "irr", "Flood_R": "flood", "Sun": "sun", "Temp": "temp",
+    "SPEI": "spei", "Prec": "prec", "Mech": "mech", "Fert": "fert",
+    "Drou_A": "drou_a", "Flood_A": "flood_a", "NDVI": "ndvi",
+}
+LOWER = [TRAINING_TO_PARQUET[f] for f in FEATS]
 
 
 def load_xgb():
@@ -121,7 +128,8 @@ def plot_attention(X):
     xs = MODELS / "att_lstm_x_scaler.pkl"
     if h5.exists() and xs.exists():
         from tensorflow import keras
-        model = keras.models.load_model(h5)
+        # compile=False 跳过训练配置反序列化（Keras 3 + h5 saved-with-loss-fn 兼容问题）
+        model = keras.models.load_model(h5, compile=False)
         sub = keras.Model(
             inputs=model.inputs,
             outputs=model.get_layer("feature_attention").output,
