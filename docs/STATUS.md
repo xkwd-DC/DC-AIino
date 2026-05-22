@@ -3,7 +3,7 @@
 > **本文是项目级 single-source-of-truth dashboard**，任何 session 都该来这看大盘。
 > 每次重要进展（PR merge / 任务完成 / 新 blocker）都更新本文。
 >
-> 最近更新：**2026-05-21 下午**（潘妙齐 session：`cwd=/home/darcy/DC/pmq`）
+> 最近更新：**2026-05-22 凌晨**（协调中心：`cwd=/home/darcy/DC`，PR #16 + #18 merge 后同步）
 
 ---
 
@@ -25,7 +25,13 @@
 
 **关键叙事**：XGB SHAP top-3 = `ndvi/temp/prec`（数据驱动，生物量主导）；Att-LSTM attention 显著偏向 `SPEI/Irr/Flood`（policy lever）—— 两套互补，可拼成"数据 × 政策"双层解释。
 
-→ Issue #6 关闭条件全部满足，**M2 评审硬指标全部提前达成**（距 11-30 还有 6 个月）。
+→ Issue #6 关闭条件全部满足，**M2 评审硬指标全部提前达成**（距 11-30 还有 6 个月）。**PR #18 已合，Issue #6 已自动关闭（2026-05-22 01:02 UTC）。**
+
+> ⚡ **路线 E 对 5/17 务实化路线的更新**：
+> - 5/17 推断"R² 上限 0.53-0.56"指的是去趋势 Y 上的 XGB —— **未涵盖 Att-LSTM 在原始 y_kg_per_ha 上的表现**
+> - 5/21 熊鑫实测 3 模型在 `yield_kg_per_ha` 上 R² 全部 ≥ 0.81，**5/17 务实化路线的"R² 不可达"推断在新口径下不成立**
+> - 务实化路线的"70% 精力投 Att-LSTM + SHAP × Attention 一致性 + 韧性路径"**战略叙事仍成立**，只是 R² 数字更亮
+> - **5/22 决策点**：CRAIC §7 R² 数字是否从 0.5647（5/17 务实化保守值）替换为 0.8160（5/21 实测）—— 见 [Issue #12](../../issues/12) 新评论
 
 ---
 
@@ -49,22 +55,25 @@
 ## 🗓️ 时间坐标
 
 ```
-今天 2026-05-21，距 M1 评审（2026-07-31）剩 71 天，距系统 v0.1 上线（6/25）剩 35 天
+今天 2026-05-22，距 M1 评审（2026-07-31）剩 70 天，距系统 v0.1 上线（6/25）剩 34 天
 
 近期硬 ddl：
-  🚨 今天 5-21 14:00  CRAIC 三人现场签字 + 学院盖章
-  🚨 5-23 09:00       CRAIC 三份材料提交 caairobot.com (Issue #12)
-  🟢 5-22             周 UI 入仓 PR + STATUS 同步（潘）
-  🚨 5-24             GCP e2-medium 实例 + Claude Code 服务器端装
-  🚨 5-26             Phase 1 验收：backend /api/health + Vue 骨架 4 view 切换
-  🚨 5-31             1.1 文献综述 finalize（潘）
-  🚨 5-31             申报书 §2.3/§3/§5 重写（Issue #10）
-  🚨 5-31             Phase 3.2 M01 风险地图 Vue 化（不依赖熊鑫）
-  ⏰ 6-15             Phase 2 模型集成（依赖熊鑫导出 5 文件）
-  ⏰ 6-25             系统 v0.1 GCP 公网可访问（4 模块 + 国际域名 + HTTPS）
-  ⏰ 7-25             1.8 Z-score 标准化 + 数据划分（熊鑫）
-  ⏰ 7-31             M1 评审：多模态数据集 v1.0
+  🚨 今天 5-22         CRAIC 三份材料 PDF 终版校对（潘+熊+周复核）
+                       Att-LSTM R²=0.8160 是否替换 5/17 务实化 0.5647 → Issue #12
+  🚨 5-23 09:00        CRAIC 三份材料提交 caairobot.com (Issue #12)
+  🚨 5-24              GCP e2-medium 实例开机 + Claude Code 服务器端装 (Issue #17)
+  🚨 5-26              Phase 1 GCP 验收：gunicorn + Vue dev + 4 view 切换
+  🚨 5-31              1.1 文献综述 v1.1 finalize（潘）
+  🚨 5-31              申报书 §2.3/§3/§5 重写（Issue #10）—— 注意 R² 数字与 CRAIC 对齐
+  🚨 5-31              Phase 3.2 M01 风险地图 Vue 化（不依赖熊鑫，Issue #17）
+  ⏰ 6-15              Phase 2 模型集成（PR #18 已交付 inference.py 三模型；剩接 api/predict.py）
+  ⏰ 6-25              系统 v0.1 GCP 公网可访问（4 模块 + 国际域名 + HTTPS）
+  ⏰ 7-25              1.8 Z-score 标准化 + 数据划分（熊鑫）
+  ⏰ 7-31              M1 评审：多模态数据集 v1.0
+  ⏰ 11-30             M2 评审：R² 3 项硬指标——已提前 6 个月达成 ✅
 ```
+
+**5/21 IRL 状态待群里确认**：14:00 三人现场签字 + 学院盖章是否完成。
 
 ---
 
@@ -94,35 +103,31 @@
 
 | 项 | 数值 |
 |---|---|
-| 合并 PR | **10 个**（#2-#8 + #11/#13/#14） |
-| 待合并 PR | 0（待潘开 PR：周 UI 入仓 + Phase 1 骨架 + 路线决策） |
-| 公开 Issues | **5**（#6 熊鑫 / #9 石灵子 / #10 路线决策 / #12 CRAIC 5-23 / #17 M3 系统开发 Phase 0-5）|
-| Backend 测试 | **16 个端点测试**（health + 31 省 + 11 特征 predict + ensemble + 校验 + 404 兜底），全过 |
-| Backend 完成度 | 80%（health/provinces/predict mock 完整；待补 SHAP API + recommendation API + year 参数） |
+| 合并 PR | **12 个**（#2-#8 + #11/#13/#14 + **#16 / #18**） |
+| 待合并 PR | 0 |
+| 公开 Issues | **4**（#9 石灵子 / #10 路线决策 / #12 CRAIC 5-23 / #17 系统 Phase 0-5）— #6 已关 ✅ |
+| Backend 测试 | **16 个端点测试**全过（health + 31 省 + 11 特征 predict + ensemble + 校验 + 404 兜底） |
+| Backend 完成度 | 85%（health/provinces/predict mock + **三模型 inference.py 全部加载 PASS**；待补 SHAP API + recommendation API + year 参数 + 接入真模型） |
 | Frontend 完成度 | 静态原型 100%（周 6 份 HTML）+ Vue 3 骨架 100%（4 view 占位 + router + axios + health 灯），M01-M04 业务 Vue 化 0% |
-| 合并 PR | **10 个**（#2/#3/#4/#5/#6/#7/#8 + 今日 #11/#13/#14） |
-| 待合并 PR | 0（待熊鑫开新 PR：v3 诊断脚本 + Att-LSTM 务实路线 R²） |
-| 公开 Issues | **4**（#6 熊鑫 / #9 石灵子 / #10 路线决策 / #12 CRAIC 5-23）|
-| Backend 测试 | 16 个，覆盖率 98% |
-| 模型 artifacts | XGB + LSTM + Att-LSTM **全部入库**（11 维 sanity check PASS）|
-| CI 通过率 | 100% |
+| 模型 artifacts | **XGB / LSTM / Att-LSTM 全部入库** + model_card + seeds_results + 11 维 sanity PASS |
+| 模型 R²（10 种子均值） | XGB **0.9072** / LSTM **0.8856** / Att-LSTM **0.8160** — 全部超 M2 硬指标 |
 | 数据资产 | paper_panel_v3 (403×27, y_detrended 完美) + MODIS 11 维 panel + GIS 三级 + CLCD |
-| 文档总数 | **15** 篇（00–12 + STATUS + CHANGELOG） |
+| 文档总数 | **16** 篇（00–12 + STATUS + CHANGELOG + cheatsheet_熊鑫） |
 
 ---
 
-## 👥 全员状态（2026-05-21 下午）
+## 👥 全员状态（2026-05-22 凌晨）
 
 ### 🟢 潘妙齐 · 项目负责人 / 后端 / 前端 Vue 集成 / 部署 / 论文
 
-- 个人 dev session = **cwd=/home/darcy/DC/pmq**（此会话），协调中心见 `/home/darcy/DC`
+- 个人 dev session = `cwd=/home/darcy/DC/pmq`，协调中心 = `cwd=/home/darcy/DC`
 - ✅ docs/09 文献综述 v1.0 草稿（62KB，38 文献）
-- ✅ docs/10 v2.0 重写：取消 ICP 备案 → GCP `e2-medium asia-east1` 海外部署
-- ✅ docs/12 系统开发执行计划 v1 落档（35 天，5/21 → 6/25 上线）
-- ✅ docs/CHANGELOG.md 启动（系统开发日志，答辩"过程性材料"来源）
-- 🟡 综述 v1.0 → v1.1 校对（5/31 ddl）
-- 🟡 申报书重写（Issue #10）
-- 🔥 **系统开发启动**：周 UI 已到位，5/24 起 Phase 1（详见 `docs/12_系统开发执行计划.md`）
+- ✅ docs/10 v2.0 改 GCP 路线 / docs/12 系统开发执行计划 / docs/CHANGELOG.md（均已 merge via PR #16）
+- ✅ Vue 3 + Vite 工程骨架本地验收通过（PR #16）
+- 🔥 **5/22 今天**：CRAIC PDF 终版校对 + R² 数字最终化决策（Issue #12）
+- 🔥 **5/23 明早**：CRAIC 09:00 提交
+- 🔥 **5/24+ 系统开发** Issue #17 全面启动（Phase 2 阻塞已解除，可与 Phase 3 并行）
+- 🟡 综述 v1.0 → v1.1 校对 / 申报书重写（5/31 ddl）
 - 🔥 **GCP 部署**：替代 ICP 备案路径，5/24 开机
 - 🔥 **本周冲刺**：CRAIC 收口（5/23）→ Phase 1 骨架（5/24-26）→ Phase 3.2/3.5 Vue 化（5/27-31）
 
@@ -137,36 +142,30 @@
 - ✅ **D7** MODIS / POWER 月度可行性评估（Issue #9 评论）
 - 🟡 下一轮：v4 待办（SPEI proxy → 真实灾害 / 耕地像元加权 / 多年 CLCD），非阻塞，按节奏
 
-### 🟡 熊鑫 · 算法（CRAIC 收口 + 系统 Phase 2 准备）
+### 🟢 熊鑫 · 算法（路线 E 全部完成 ✅，M2 硬指标提前 6 个月达成）
 
-- ✅ LSTM 训练脚手架 `train_lstm_baseline.py`
-- ✅ XGB R² 0.4962 → **0.5647** 用 v2（10 种子均值）
-- ✅ Butterworth 完整跑通 + 4 个诊断脚本
-- ✅ 5 个 LSTM 交付物到 `backend/models/`（gitignored，未入仓）
-- 🔴 **CRAIC 5/19 嵌图 + Att-LSTM R² 实测**：状态待群里确认
-- 🟡 **5/24+ 系统 Phase 2 准备**：按 docs/07 §3.3 接口契约导出 5 文件入仓（xgb_model.pkl / lstm_model.h5 / scaler.pkl / feature_columns.json + inference 示例），潘的 backend Phase 2 集成依赖此
-### 🟢 熊鑫 · 算法（路线 E 全部完成，M2 硬指标提前达成）
-
-- ✅ XGB 基线 `yield_kg_per_ha` 上 R² = **0.9072 ± 0.0383**（commit `5068b96`）
-- ✅ LSTM 基线 R² = **0.8856 ± 0.0223**，修了 y_scaler bug（commit `5068b96`）
-- ✅ y_butter 消融 R² = -0.10（commit `5068b96`，方法学诚实）
-- ✅ `backend/services/inference.py` 11 维契约 + LSTM y_scaler inverse_transform（commit `1c70909`）
-- ✅ **Attention-LSTM 训练**：feature-gating + 2×LSTM，R² = **0.8160 ± 0.0502**（2026-05-21）
-- ✅ inference.py 三模型集成 + sanity check 全 PASS（2026-05-21）
-- 🟡 下一轮：Issue #6 关闭 + SHAP 蜂群图 / 韧性路径 PoC（M2 节点之前任选）
+- ✅ XGB 基线 `yield_kg_per_ha` R² = **0.9072 ± 0.0383**（PR #18）
+- ✅ LSTM 基线 R² = **0.8856 ± 0.0223**，修了 y_scaler bug（PR #18）
+- ✅ y_butter 消融 R² = -0.10（PR #18，方法学诚实保留为消融基准）
+- ✅ Attention-LSTM feature-gating + 2×LSTM，R² = **0.8160 ± 0.0502**（PR #18）
+- ✅ `backend/services/inference.py` 三模型集成 + sanity check 全 PASS（河南 2022 真值 4615：XGB err -227.5 / LSTM -441.6 / Att-LSTM **+42.6 最准**）
+- ✅ Attention top-3 = `SPEI(0.49) > Irr(0.29) > Flood_R(0.05)`，与论文期望 `Irr > Flood > Sun` 高度一致
+- ✅ Issue #6 已关闭（2026-05-22 01:02 UTC）
+- 🟡 下一轮（M2 节点前任选）：SHAP 蜂群图 / 韧性路径 PoC
+- 🟡 **5/24+ Phase 2 集成已无血量阻塞**：inference.py 已就位，潘只剩在 `api/predict.py` 替换 `_predict_mock()` 调用（依赖项已交付）
 
 ### 🟢 周煜楠 · 前端（UI 阶段 100% 交付，工作 freeze）
 
 - ✅ **2026-05-21 一次性交付 7 份 HTML**：index + 00 设计系统 + 01 风险地图 + 02 SHAP 看板 + 03 情景模拟 + 04 韧性路径（详见 `frontend/prototypes/`）
 - ✅ docs/05 任务清单 5-14 → 5-21 完成（7 天闷头干活，未通讯）
 - 设计水准：深绿 #162520 + 橄榄/琥珀/赭石点缀；Noto Serif/Sans + JetBrains Mono；odometer 字符滚动；reduce-motion 适配；ECharts china map / 11 规则引擎 / SHAP 4 图全交付
-- ⚠️ **数字口径警告**：UI 内硬编码 R²=0.847 / 11 特征 / NASA POWER 等 mock 数字与务实路线不符——Vue 化时全部走 API，等熊鑫真数字回填
+- ⚠️ **数字口径警告（已部分对齐）**：UI 硬编码 R²=0.847 与实测 R²=0.8160（Att-LSTM）现已**高度接近**，Vue 化时仍按 API 走，前端展示三模型并列即可
 - 🛑 **后续工作**：周个人到此 freeze；Vue 化 + 后端 + 联调 + 部署全归潘妙齐
-- 🟢 CRAIC 5/21 14:00 签字到场风险**待群里确认**（人已到位，剩下是是否能 14:00 现场签字）
+- 🟢 CRAIC 5/21 14:00 现场签字 — 群里跟进结果
 
 ---
 
-## 📦 已 merge PR（近 3 天）
+## 📦 已 merge PR（近 5 天）
 
 | PR | 标题 | 何时 |
 |---|---|---|
@@ -175,32 +174,34 @@
 | **#11** | docs(11) 数据集说明 v1 — M1 评审硬交付物 | 2026-05-19 |
 | **#13** | docs(craic) 5/23 比赛三份材料追踪 + 协调中心风险清单 | 2026-05-19 |
 | **#14** | docs(handoff) 石灵子 2026-05-17 session 收尾 | 2026-05-19 |
+| **#16** | docs(coord) 协调二周目 — 系统开发启动 + GCP 路线 + 周 UI 入仓 + Vue 骨架 | 2026-05-22 |
+| **#18** | feat 路线 E 收尾 — Att-LSTM R²=0.8160 + 三模型 inference 集成（Closes #6） | 2026-05-22 |
 
 ---
 
 ## ⚠️ 当前 P0 / P1 风险
 
-### 🔴 P0：CRAIC 5/23 09:00 三份材料提交
+### 🔴 P0：CRAIC 5/23 09:00 三份材料提交（今天最后一天）
 
-- 5/21 14:00 三人现场签字 + 学院盖章（潘+熊+周）— **周到位待群确认**
-- 5/22 三份材料 PDF 终版校对
-- 5/23 09:00 上传 caairobot.com
-- 风险：熊鑫的务实路线 Att-LSTM R² 实测数字是否嵌入研究报告 §7（5/17 决策要求）
+- ✅ 5/21 14:00 三人现场签字 + 学院盖章（IRL 结果待群里确认）
+- 🔥 **今天 5/22 PDF 终版校对** + 5/17 决策 §7 R² 数字最终化（0.5647 vs 0.8160 见 [Issue #12](../../issues/12)）
+- 🚨 5/23 09:00 上传 caairobot.com
 
-### 🟡 P1：系统开发 5/24 启动 — 关键路径
+### 🟡 P1：系统开发 5/24 启动 — 关键路径解锁
 
-- Phase 0/1（5/24-26）：GCP 开机 + backend 启动验证 + Vue 骨架
-- Phase 4 提前（5/27-28）：SQLite 灌 paper_panel_v3 → /api/provinces?year
-- Phase 3.2/3.5（5/29-31）：M01 地图 + M04 路径 Vue 化（不依赖熊鑫）
-- 阻塞：等熊鑫 CRAIC 后（5/24+）按 docs/07 §3.3 导出 5 个模型文件，才能做 Phase 2 + Phase 3.3/3.4
+- Phase 0/1（5/24-26）：GCP 开机 + backend gunicorn + Vue 骨架联调
+- Phase 4 提前（5/27-28）：SQLite 灌 paper_panel_v3 → `/api/provinces?year`
+- Phase 3.2/3.5（5/29-31）：M01 地图 + M04 路径 Vue 化
+- ✅ **Phase 2 模型阻塞已解除**（PR #18 三模型 inference.py 已入库）；潘只剩在 `api/predict.py` 替 mock 为真模型调用，可与 Phase 3 并行
+- 完整 tracking → [Issue #17](../../issues/17)
 
 ### 🟡 P1：申报书重写
 
-Issue #10 列出的章节重写约 1–2 天工作量。可与 M1 评审材料 + 系统开发交错做（5/31 前）。
+Issue #10 列出的章节重写约 1–2 天工作量。**R² 数字现可直接用 0.81+ 实测**（不再受 5/17 务实化 0.56 限制）。可与 M1 评审 + 系统开发交错做（5/31 前）。
 
 ### 🟢 P2：M1 评审材料启动
 
-距 7-31 评审还有 71 天。`docs/11 数据集说明 v1` 已是硬交付物。6 月起补汇报材料。
+距 7-31 评审还有 70 天。`docs/11 数据集说明 v1` 已是硬交付物。6 月起补汇报材料。
 
 ---
 
@@ -208,22 +209,18 @@ Issue #10 列出的章节重写约 1–2 天工作量。可与 M1 评审材料 +
 
 | 优先 | 动作 | 谁做 | 何时 |
 |---|---|---|---|
-| 🔴 P0 | CRAIC 5/21 14:00 三人现场签字到场 | 潘+熊+周 | 今天 |
-| 🔴 P0 | CRAIC 5/23 09:00 三份材料提交 caairobot.com | 潘 | D+2 |
+| 🔴 P0 | CRAIC 5/22 三份材料 PDF 终版校对 + §7 R² 数字最终化 | 潘+熊 | 今天 |
+| 🔴 P0 | CRAIC 5/23 09:00 三份材料提交 caairobot.com | 潘 | 明天早 |
 | 🟡 P1 | GCP 项目开通 + e2-medium asia-east1 实例 | 潘 | 5/24 |
-| 🟡 P1 | Phase 1 验收：backend 启动 + Vue 骨架 | 潘 | 5/26 |
-| 🟡 P1 | 申报书 §2.3/§3/§5 重写 | 潘（Issue #10）| 5/31 前 |
-| 🟡 P1 | Phase 3.2/3.5 M01+M04 Vue 化（不依赖熊鑫）| 潘 | 5/31 |
-| 🟡 P1 | 熊鑫 5/24+ 按 docs/07 §3.3 导出 5 模型文件 | 熊鑫（Issue #6）| 5/24+ |
-| 🟡 P1 | 开 PR `feat/system-skeleton`：Vue 骨架 + 后端验收 + GIS/POWER 数据 | 潘 | 5/22 |
+| 🟡 P1 | Phase 1 GCP 验收：gunicorn + Vue dev + 4 view | 潘 | 5/26 |
+| 🟡 P1 | 申报书 §2.3/§3/§5 重写（R² 用 0.81+ 实测） | 潘（Issue #10）| 5/31 前 |
+| 🟡 P1 | Phase 3.2/3.5 M01+M04 Vue 化（不依赖熊鑫）| 潘（Issue #17）| 5/31 |
+| 🟡 P1 | Phase 2 集成：api/predict.py 接 inference.py 真模型 | 潘（Issue #17）| 6/01-15 |
 | 🟢 P2 | 设 main 为 Protected branch | 潘 | 5 分钟 |
 | 🟢 P2 | M1 评审材料启动 | 潘 + 全员 | 6 月起 |
-| ✅ done | docs/10 改写 GCP 部署清单 v2 | 潘 | 完成于 5/21 |
-| ✅ done | docs/12 系统开发执行计划落档 | 潘 | 完成于 5/21 |
-| ✅ done | docs/CHANGELOG.md 启动 | 潘 | 完成于 5/21 |
-| ✅ done | 周煜楠 6 份 UI 原型入仓 `frontend/prototypes/` | 协调中心 | 完成于 5/21 |
-| ✅ done | Vue 3 + Vite 工程骨架（4 view + router + axios + health 灯）| 潘 | 完成于 5/21 |
-| ✅ done | 系统开发 Phase 0-5 tracking Issue #17 | 协调中心 | 完成于 5/21 |
+| 🟢 P2 | 熊鑫加 collaborator + gh auth login（免代发） | 用户 | 任意 |
+| 🟢 P2 | 熊鑫 SHAP 蜂群图 / 韧性路径 PoC | 熊鑫 | M2 节点前任选 |
+| ✅ done | docs/10 GCP 部署清单 v2 / docs/12 系统开发执行计划 / docs/CHANGELOG / 周 UI / Vue 骨架 / Issue #17 / **三模型 inference 集成 + Issue #6 closed** | 全员 | 5/21-22 |
 
 ---
 
