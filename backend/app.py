@@ -59,4 +59,10 @@ def not_found(_):
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # SECURITY: debug 默认 OFF。Werkzeug debugger 在公网暴露 = 潜在 RCE。
+    # 本地开发需要 reloader/traceback 时显式 `FLASK_DEBUG=1 python app.py`。
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    # SECURITY: host 默认 127.0.0.1。需要公网/局域网访问由 reverse proxy（Nginx）转发，
+    # 或显式 `FLASK_HOST=0.0.0.0 python app.py`（不推荐直接对公网）。
+    host = os.getenv("FLASK_HOST", "127.0.0.1")
+    app.run(host=host, port=port, debug=debug)
