@@ -1,7 +1,7 @@
 """Flask 入口：健康检查 + 31 省 mock 数据 + CORS。
 
 开发：  python app.py
-生产：  gunicorn -w 4 -b 0.0.0.0:5000 app:app
+生产：  gunicorn -w 4 -b 127.0.0.1:5000 app:app  # 必须通过 nginx 反代,勿用 0.0.0.0
 """
 import json
 import os
@@ -14,6 +14,7 @@ from flask_cors import CORS
 
 from api import envelope
 from api.predict import predict_bp
+from limiter import limiter
 
 load_dotenv()
 
@@ -33,6 +34,9 @@ cors_origins = "*" if cors_env.strip() == "*" else [o.strip() for o in cors_env.
 CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 app.register_blueprint(predict_bp)
+
+# Rate limiting — flask-limiter 真装时启用,缺失时 no-op (见 limiter.py)
+limiter.init_app(app)
 
 
 @app.get("/api/health")
