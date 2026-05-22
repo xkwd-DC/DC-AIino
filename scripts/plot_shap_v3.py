@@ -48,7 +48,7 @@ MODELS = ROOT / "backend/models"
 FIG = ROOT / "docs/figures"
 FIG.mkdir(parents=True, exist_ok=True)
 
-plt.rcParams["font.family"] = ["Noto Sans CJK SC", "WenQuanYi Zen Hei", "DejaVu Sans"]
+plt.rcParams["font.family"] = ["DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 FEATS = ["Irr", "Flood_R", "Sun", "Temp", "SPEI", "Prec",
@@ -94,14 +94,14 @@ def plot_xgb_shap(model, scaler, X):
 
     shap.summary_plot(shap_vals, Xs, feature_names=FEATS,
                       plot_type="bar", show=False, max_display=11)
-    plt.title("图 4 XGBoost-SHAP 全局重要性（v3 / 11 维）")
+    plt.title("Figure 4 XGBoost-SHAP Global Importance (v3 / 11 features)")
     plt.tight_layout()
     plt.savefig(FIG / "fig4_shap_bar.png", dpi=200)
     plt.close()
 
     shap.summary_plot(shap_vals, X, feature_names=FEATS,
                       show=False, max_display=11)
-    plt.title("图 5 SHAP 蜂群图：各因子贡献分布")
+    plt.title("Figure 5 SHAP Beeswarm: Per-feature Contribution Distribution")
     plt.tight_layout()
     plt.savefig(FIG / "fig5_shap_beeswarm.png", dpi=200)
     plt.close()
@@ -114,7 +114,7 @@ def plot_xgb_shap(model, scaler, X):
         FEATS[i], shap_vals, X, feature_names=FEATS,
         interaction_index=FEATS[j], show=False,
     )
-    plt.title(f"图 6 {FEATS[i]} 与 {FEATS[j]} 的 SHAP 交互效应")
+    plt.title(f"Figure 6 SHAP Interaction: {FEATS[i]} x {FEATS[j]}")
     plt.tight_layout()
     plt.savefig(FIG / "fig6_shap_interaction.png", dpi=200)
     plt.close()
@@ -137,17 +137,17 @@ def plot_attention(X):
         scaler = joblib.load(xs)
         Xs = scaler.transform(X).reshape(-1, 1, 11)
         weights = sub.predict(Xs, verbose=0).reshape(-1, 11).mean(axis=0)
-        source = "实测（att_lstm_model.h5）"
+        source = "measured: att_lstm_model.h5"
     else:
         weights = np.array([0.0733, 0.0869, 0.0901, 0.1022, 0.0819, 0.0847,
                             0.1030, 0.0841, 0.0889, 0.1038, 0.1012])
-        source = "att_lstm_model_card.md 10 种子均值（fallback）"
+        source = "fallback: att_lstm_model_card.md 10-seed mean"
 
     order = np.argsort(weights)[::-1]
     plt.figure(figsize=(8, 5))
     plt.barh([FEATS[i] for i in order][::-1], weights[order][::-1], color="#456B5D")
-    plt.xlabel(f"Attention 权重（{source}，∑=1）")
-    plt.title("图 9 Attention-LSTM 各特征注意力权重")
+    plt.xlabel(f"Attention weight ({source}, sum=1)")
+    plt.title("Figure 9 Attention-LSTM Feature Attention Weights")
     plt.tight_layout()
     plt.savefig(FIG / "fig9_attlstm_attention.png", dpi=200)
     plt.close()
@@ -162,11 +162,11 @@ def plot_consistency(xgb_imp, att_w):
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     axes[0].barh([n for n, _ in xgb_pairs][::-1],
                  [v for _, v in xgb_pairs][::-1], color="#7B5E3B")
-    axes[0].set_title("XGBoost-SHAP（mean |SHAP|，边际贡献）")
+    axes[0].set_title("XGBoost-SHAP (mean |SHAP|, marginal contribution)")
     axes[1].barh([n for n, _ in att_pairs][::-1],
                  [v for _, v in att_pairs][::-1], color="#456B5D")
-    axes[1].set_title("Attention-LSTM（注意力权重，特征门控）")
-    plt.suptitle("双模型可解释性对照：两类归因机制 → 一致的因子层级")
+    axes[1].set_title("Attention-LSTM (attention weight, feature gating)")
+    plt.suptitle("Two-Model Interpretability Comparison: SHAP vs Attention")
     plt.tight_layout()
     plt.savefig(FIG / "fig_consistency.png", dpi=200)
     plt.close()
