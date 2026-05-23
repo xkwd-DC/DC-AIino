@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import DOMPurify from 'dompurify'
 import {
   PROVINCES_PROFILE,
   buildPathway,
   estimateBudget,
   type ActionItem,
-  type ProvinceProfile,
 } from '@/data/recommendation'
+import { useProvinceStore } from '@/stores/useProvinceStore'
 
 // SECURITY: 所有 v-html 渲染必须经此 sanitize。
 // 当前 desc 来自 recommendation.ts 内部硬编码，目前安全；
@@ -21,9 +22,9 @@ function sanitizeDesc(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })
 }
 
-const selectedIdx = ref(PROVINCES_PROFILE.findIndex((p) => p.name === '河南'))
-
-const selected = computed<ProvinceProfile>(() => PROVINCES_PROFILE[selectedIdx.value])
+// HIGH#8: Pinia store 共享省份选择 — ScenarioSim.vue 同步切换。
+const provinceStore = useProvinceStore()
+const { selectedIdx, selected } = storeToRefs(provinceStore)
 
 const pathway = computed(() => buildPathway(selected.value))
 
