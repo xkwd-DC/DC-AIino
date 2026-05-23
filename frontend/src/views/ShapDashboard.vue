@@ -52,12 +52,13 @@ const features = computed<Feature[]>(() => {
 })
 
 // Waterfall 河南 2022 单样本数据（与 prototype 一致）
-interface WaterfallStep {
-  name: string
-  val?: number
-  delta?: number
-  type: 'baseline' | 'pos' | 'neg' | 'final'
-}
+// HIGH#6: 拆成 discriminated union，TS 在每个 type 分支自动 narrow val/delta，
+// 去掉所有 `step.val!` / `step.delta!` 非空强断言。
+type WaterfallBaseline = { name: string; type: 'baseline'; val: number }
+type WaterfallFinal = { name: string; type: 'final'; val: number }
+type WaterfallPos = { name: string; type: 'pos'; delta: number }
+type WaterfallNeg = { name: string; type: 'neg'; delta: number }
+type WaterfallStep = WaterfallBaseline | WaterfallFinal | WaterfallPos | WaterfallNeg
 
 const WATERFALL_STEPS: WaterfallStep[] = [
   { name: '基线 E[f(x)]', val: 0.0235, type: 'baseline' },
@@ -69,6 +70,10 @@ const WATERFALL_STEPS: WaterfallStep[] = [
   { name: '农机总动力', delta: -0.0005, type: 'neg' },
   { name: '预测 f(x)', val: 0.0249, type: 'final' },
 ]
+
+// 模板里 E[f(x)] / f(x) 两端 readout 用得到 — 类型已知，免去模板里强断言。
+const WATERFALL_BASELINE = WATERFALL_STEPS[0] as WaterfallBaseline
+const WATERFALL_FINAL = WATERFALL_STEPS[WATERFALL_STEPS.length - 1] as WaterfallFinal
 
 // 伪随机 beeswarm 数据生成
 function seededRandom(seed: number): () => number {
@@ -222,17 +227,17 @@ function renderWaterfall() {
   WATERFALL_STEPS.forEach((step) => {
     if (step.type === 'baseline') {
       placeholder.push('-'); positive.push('-'); negative.push('-')
-      totalBar.push({ value: step.val!, itemStyle: { color: getCSSVar('--amber'), borderRadius: 2 } })
-      cumulative = step.val!
+      totalBar.push({ value: step.val, itemStyle: { color: getCSSVar('--amber'), borderRadius: 2 } })
+      cumulative = step.val
     } else if (step.type === 'final') {
       placeholder.push('-'); positive.push('-'); negative.push('-')
-      totalBar.push({ value: step.val!, itemStyle: { color: getCSSVar('--blue'), borderRadius: 2 } })
+      totalBar.push({ value: step.val, itemStyle: { color: getCSSVar('--blue'), borderRadius: 2 } })
     } else if (step.type === 'pos') {
-      placeholder.push(cumulative); positive.push(step.delta!); negative.push('-'); totalBar.push('-')
-      cumulative += step.delta!
+      placeholder.push(cumulative); positive.push(step.delta); negative.push('-'); totalBar.push('-')
+      cumulative += step.delta
     } else {
-      cumulative += step.delta!
-      placeholder.push(cumulative); positive.push('-'); negative.push(-step.delta!); totalBar.push('-')
+      cumulative += step.delta
+      placeholder.push(cumulative); positive.push('-'); negative.push(-step.delta); totalBar.push('-')
     }
   })
 
@@ -250,12 +255,13 @@ function renderWaterfall() {
           const step = WATERFALL_STEPS[params[0].dataIndex]
           if (step.type === 'baseline' || step.type === 'final') {
             const c = step.type === 'baseline' ? getCSSVar('--amber') : getCSSVar('--blue')
-            return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${c};">${step.val!.toFixed(4)}</span>`
+            return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${c};">${step.val.toFixed(4)}</span>`
           }
-          const sign = step.delta! >= 0 ? '+' : ''
-          const color = step.delta! >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
-          return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${color};">${sign}${step.delta!.toFixed(4)}</span><br/>
-            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${step.delta! >= 0 ? '推高风险' : '降低风险'}</span>`
+          // step.type narrowed to 'pos' | 'neg', both carry numeric delta.
+          const sign = step.delta >= 0 ? '+' : ''
+          const color = step.delta >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
+          return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${color};">${sign}${step.delta.toFixed(4)}</span><br/>
+            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${step.delta >= 0 ? '推高风险' : '降低风险'}</span>`
         },
       },
       xAxis: {
@@ -491,7 +497,7 @@ onBeforeUnmount(() => {
             <div class="num">M02-B · WATERFALL · 河南 2022</div>
             <h3>单样本预测分解</h3>
           </div>
-          <span class="hint">E[f(x)] = {{ WATERFALL_STEPS[0].val }} → f(x) = {{ WATERFALL_STEPS[WATERFALL_STEPS.length - 1].val }}</span>
+          <span class="hint">E[f(x)] = {{ WATERFALL_BASELINE.val }} → f(x) = {{ WATERFALL_FINAL.val }}</span>
         </div>
         <div ref="waterfallEl" class="chart-canvas"></div>
       </div>

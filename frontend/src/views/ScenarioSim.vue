@@ -1,8 +1,20 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import * as echarts from 'echarts'
-import { PROVINCES_PROFILE, type ProvinceProfile } from '@/data/recommendation'
+import { PROVINCES_PROFILE } from '@/data/recommendation'
+import { useProvinceStore } from '@/stores/useProvinceStore'
 import { getCSSVar } from '@/data/mockProvinces'
+
+// HIGH#7: 200ms 防抖避免快拖滑块时 ECharts setOption 抖动 / stale render。
+// 单文件极轻量实现，避免引入 lodash 整包。
+function debounce<F extends (...args: never[]) => void>(fn: F, ms: number): F {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  return ((...args: Parameters<F>) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }) as F
+}
 
 interface SliderDef {
   key: 'irr' | 'flood' | 'sun' | 'temp' | 'spei'
@@ -48,8 +60,9 @@ function calcSimRisk(params: Record<SliderDef['key'], number>): number {
   return Math.max(0.005, Math.min(0.055, r))
 }
 
-const selectedIdx = ref(PROVINCES_PROFILE.findIndex((p) => p.name === '河南'))
-const selected = computed<ProvinceProfile>(() => PROVINCES_PROFILE[selectedIdx.value])
+// HIGH#8: 改用 Pinia store 共享省份选择 — ResiliencePath.vue 同步切换。
+const provinceStore = useProvinceStore()
+const { selectedIdx, selected } = storeToRefs(provinceStore)
 
 const baseline = computed(() => ({
   irr: selected.value.irr,
@@ -227,7 +240,10 @@ function rerender() {
   renderContrib()
 }
 
-watch([params, selected], rerender, { deep: true })
+// HIGH#7: 滑块快速拖拽时合并多次 watch trigger，flush:'post' 等 DOM 同步后再调
+// ECharts setOption，避免 canvas 在 micro-tick 期间被多次重绘 / stale。
+const debouncedRerender = debounce(rerender, 200)
+watch([params, selected], debouncedRerender, { deep: true, flush: 'post' })
 
 function pctOf(val: number, def: SliderDef): number {
   return ((val - def.min) / (def.max - def.min)) * 100

@@ -15,7 +15,9 @@ import {
   type ProvinceSnapshot,
 } from '@/data/mockProvinces'
 
-const CHINA_MAP_URL = 'https://cdn.jsdelivr.net/gh/apache/echarts@4.6.0/map/json/china.json'
+// HIGH#3: 走自托管 /maps/china.json (PR #34 入仓的 61KB GeoJSON)，
+// 消除 CDN 单点故障 + 8s timeout 风险。SHA-256 记录见 frontend/public/maps/README.md。
+const CHINA_MAP_URL = '/maps/china.json'
 
 const mapEl = ref<HTMLDivElement | null>(null)
 const miniEl = ref<HTMLDivElement | null>(null)
@@ -207,7 +209,7 @@ async function loadMap() {
     clearTimeout(timer)
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     const geoJson = await resp.json()
-    echarts.registerMap('china', geoJson as never)
+    echarts.registerMap('china', geoJson as Parameters<typeof echarts.registerMap>[1])
     mapChart = echarts.init(mapEl.value, undefined, { renderer: 'canvas' })
     renderMap()
     mapLoading.value = false
@@ -223,7 +225,11 @@ async function loadMap() {
     resizeObserver = new ResizeObserver(() => mapChart?.resize())
     resizeObserver.observe(mapEl.value)
   } catch (e) {
-    console.error('[risk-map] geoJson load failed', e)
+    // HIGH#4: 仅 dev 输出到 console，production 仅走 UI mapError 状态展示。
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error('[risk-map] geoJson load failed', e)
+    }
     mapError.value = (e as Error).message || 'network error'
     mapLoading.value = false
   }
