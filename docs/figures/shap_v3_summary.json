@@ -1,0 +1,21 @@
+{
+  "data": "data/interim/paper_panel_v3.parquet",
+  "n_features": 11,
+  "xgb_shap_top3": [
+    "NDVI",
+    "Prec",
+    "Temp"
+  ],
+  "att_lstm_attention_top3": [
+    "Drou_A",
+    "SPEI",
+    "Temp"
+  ],
+  "figures": [
+    "fig4_shap_bar.png",
+    "fig5_shap_beeswarm.png",
+    "fig6_shap_interaction.png",
+    "fig9_attlstm_attention.png",
+    "fig_consistency.png"
+  ]
+}
