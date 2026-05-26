@@ -1,0 +1,8 @@
+# reports/ — retrain 输出目录
+#
+# 由 scripts/retrain_all.sh 写入：
+#   - seeds_results.csv          —— 3 模型 × 10 种子的 R² / RMSE 汇总（脚本聚合）
+#   - retrain_<timestamp>.log    —— 每次重训完整 stdout（grep "te_R²" 拿单种子结果）
+#
+# 训练 artifact 本身落到 backend/models/（脚本 train_*.py 自动写）。
+# 本目录不入大文件；只承载文本汇总，配合 docs/15_训练复现指南.md §3 一键 retrain 流程。

@@ -29,3 +29,30 @@ shap~=0.46.0
 # --- API 限速 (生产必备, Issue #26 HIGH#3) ---
 # in-memory 后端默认;多 worker 部署需配 RATELIMIT_STORAGE_URI=redis://...
 flask-limiter~=3.8.0
+
+# --- Parquet 引擎 (训练 / 推理读 paper_panel_v3.parquet 必需) ---
+# pandas 默认尝试 pyarrow → fastparquet,二者皆缺则 read_parquet 抛 ImportError。
+# 训练时 train_*.py 直接 pd.read_parquet,生产部署里 services.inference 不读 parquet,
+# 但启动 sanity / smoke check 仍可能需要,所以入 requirements。
+pyarrow~=17.0
+
+# ──────────────────────────────────────────────────────────────────────────
+# Frozen reference set (已验证生成 backend/models/ 全部 8 个 artifact,2026-05-22)
+# 详见 docs/15_训练复现指南.md §1 + §4。
+# 如复现失败,先 pip install --upgrade 到下列精确版本再 retry。
+#   python==3.10.20
+#   numpy==1.26.4
+#   pandas==2.3.3
+#   scikit-learn==1.5.2
+#   xgboost==2.1.4
+#   shap==0.46.0           # 训练落 SHAP top-5;若本环境装不上可临时 skip,不影响 R²
+#   joblib==1.5.3
+#   tensorflow-cpu==2.19.1
+#   keras==3.12.2          # 注意:训练 artifact 由 keras 3.14 保存,加载兼容补丁见 backend/api/predict.py:_apply_keras_compat_shim
+#   flask==3.0.3
+#   flask-cors==5.0.1
+#   flask-limiter==3.8.0
+#   gunicorn==23.0.0
+#   python-dotenv==1.0.1
+#   pyarrow==17.0.0
+# ──────────────────────────────────────────────────────────────────────────
