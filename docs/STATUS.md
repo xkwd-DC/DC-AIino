@@ -3,11 +3,33 @@
 > **本文是项目级 single-source-of-truth dashboard**，任何 session 都该来这看大盘。
 > 每次重要进展（PR merge / 任务完成 / 新 blocker）都更新本文。
 >
-> 最近更新：**2026-05-26 晚间**（🎉 项目升级国家级;#38 #10 #39 三件套闭环 push 上 main;follow-up #40-#43 派出去;AGENT_BRIEFING.md 上线）
+> 最近更新：**2026-05-26 深夜**（🚀 docs/13 国家级执行规划 v1 落定 + v6 叙事基线化 + T6/T7/T2 三 agent 战果 push;邮件汇报 + T8 onboarding + 教务处咨询邮件草稿已就位)
 
 ---
 
 ## 🚨 关键路线决策
+
+### 🚀 2026-05-26 深夜 · T1-T8 执行规划落定 + 3 agent 战果
+
+- **`docs/13_国家级升级执行规划_2026-05-26.md` v1 落定**:三主线(论文主推 / 软著同步 / AI 大赛 upside)+ 12 月时间表 + 8 件本周事 + GCP 5 步详细
+- **v6 叙事基线化**:`_craic/04_*.md` header 从"草稿"升级"叙事基线(已批准)";`docs/03` 加 banner 指向 v6 基线(**已交版 v5 保留快照, 不动**)
+- **`docs/00_项目执行计划.md` v2 同步**(T2,commit `a9e355a`):1 万经费 + 4 人队 + 三模型互补 + GCP/SQLite + §5 三主线
+- **3 个 opus agent 并发完成 + push main**:
+
+  | Agent | commit | 主产出 |
+  |---|---|---|
+  | T7 论文 outline | `a6f3680` | `docs/papers/v1_outline.md`(278 行)— §3/§5/§6/§7 outline + 5 期刊候选 + 投稿优先级 |
+  | T2 执行计划 v2 | `a9e355a` | `docs/00` 全文同步(+284/-165) |
+  | T6 训练复现指南 | `abc8e76` | `docs/15`(539 行)+ `scripts/retrain_all.sh`(192 行)+ requirements frozen + `.python-version` |
+
+- **叙事 spot check**:3 个新 doc 中"禁用叙事"关键词出现 8 处, **全部为反向引用**(❌ 不写 X / 主动反驳 X), 无 1 处实际使用;"leave-province / -16.83" 出现 24 次, 诚实披露到位
+- **决策同步**(用户 5/26 晚拍板):
+  - ✅ 主推:论文 + 软著同步, AI 大赛 in 准备
+  - ✅ 不延期(12 月不变)
+  - ✅ 经费 1 万维持,不申请追加,选低版面费期刊
+  - ✅ 申报书 v5 已交不动, v6 仅作后续材料基线
+- **邮件汇报**:T6+T7+T2 战果 + T8 石灵子 onboarding prompt 已通过 msmtp 发到 `sakura93777@163.com`(2026-05-26 09:42 UTC,smtpstatus=250)
+- **教务处咨询邮件草稿**:`docs/coord/2026-05-26_教务处咨询邮件草稿.md` 已起(中检 / 经费 / 结题硬指标 3 问),等用户补收件人后发
 
 ### 🎉 2026-05-26 · 项目升级国家级大创
 
