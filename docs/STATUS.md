@@ -9,6 +9,38 @@
 
 ## 🚨 关键路线决策
 
+### 🌅 2026-05-27 早 · Wave 2 + 3 + 4 战果 + Issue burndown(9 → 3 OPEN)
+
+**Wave 2**(代码层修复,不依赖 GCP 实例):
+- `35da332` feat(security): **#26 ✅ closed** — rate-limit + 6 个安全头 + docstring + .env(`backend/app.py` + 新建 `security_headers.py` + `requirements.txt` + `.env.example`)
+- `92d2825` fix(a11y): **#25 ✅ closed** — WCAG 2.2 AA,CRITICAL 5/5 + HIGH 10/10,7 个 frontend 文件改 + 新建 `a11y.ts`;`npm run build` 通过
+- `afa131e` feat(frontend): **#45 ✅ closed**(顺手 manual)— 前端 ScenarioSim + ShapDashboard 切真 `/api/predict`(用户 session 干)
+
+**Wave 3**(论文初稿 + 研究报告 §7.5 sync):
+- `66a171b` docs(craic): 研究报告 §7.5 sync(Refs #40 Y)— `_craic/03_研究报告_nature_v2.md` §7.5 从 600 字扩到 6.9KB,拆 4 子节
+- `5d216c8` docs(paper): **#40 ✅ closed** — 论文 §3/§5/§6/§7 正文初稿(`docs/papers/v1_draft.md`,478 行 / 12K 中文字符,守门 spot check 43 处诚实披露 vs 2 处反向禁词引用)
+
+**Wave 4**(研究报告 §7 全面 sync + 全文清扫):
+- `f703701` docs(craic): **#24 ✅ closed** — §1 摘要 / §2 / §3.3 / §4.1-§4.2 / §5.4-§5.5 / §6 / §7.1-§7.4 / §8 全面 sync(+102 / -81 行;最终禁词 grep 7 处全部反向引用 / disclaimer)
+
+**Issue burndown 一晚累计 close 7 个**:#10 + #24 + #25 + #26 + #40 + #41 + #43 + #45(实际 8 个,含 #45 manual)
+- 剩 OPEN 3 个:**#9**(石灵子 M1)/ **#17**(M3 GCP,需实例)/ **#42**(熊鑫 PoC 跑)
+
+**v6 叙事三层全 sync**:
+- 申报书 v6 基线 `_craic/04_*.md` §2.3/§3/§5 + 局限段
+- 研究报告 `_craic/03_..._nature_v2.md` §1-§8 全面 sync
+- 论文 `docs/papers/v1_draft.md` §3/§5/§6/§7 正文初稿
+- 三 doc 同声主张:**决策系统是核心交付,模型作为引擎,价值不依赖空间外推**
+
+**等用户拍板/做**(早安邮件已列):
+1. 教务处咨询邮件 `docs/coord/2026-05-26_教务处咨询邮件草稿.md` — 你补对接人发出
+2. GCP 账号付费激活 → #17 M3 可启动
+3. 邱东芳 vs 徐苗 谁主导师
+4. AI 大赛具体赛项 + deadline
+5. 论文初稿 `5d216c8` 看一遍给反馈
+
+---
+
 ### 🌙 2026-05-27 凌晨 · Wave 1 收尾(Issue #41 + #43 closed)
 
 - **#41 ✅ closed** by `c9ae2de` — `docs/17_韧性规则引擎说明.md` (93 行)。**关键发现**:frontend 实测 **12 条** 规则(不是申报书/outline 写的 11 条 — doc-comment 滞后),已透明披露口径差异。后端 `_recommendations` 是另一套 11 因子 SHAP top-2 动作目录,以前端为主权威源
