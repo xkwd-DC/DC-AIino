@@ -52,7 +52,7 @@ def test_predict_happy_path_full_11_features(client):
     assert data["model"] == "ensemble"
     assert 0.005 <= data["risk_score"] <= 0.055
     assert data["delta"] == round(data["risk_score"] - data["baseline"], 6)
-    assert data["_mock"] is True
+    assert data["_mock"] is False  # Issue #39: 真模型已上线
     assert data["params_filled_from_baseline"] == []
 
 
@@ -98,14 +98,19 @@ def test_predict_single_model_no_dual_breakdown(client):
     assert "consensus" not in data
 
 
-def test_predict_shap_top_includes_new_features(client):
-    """高 NDVI 异常时，NDVI 应进入 SHAP top。"""
-    params = {**VALID_5, "ndvi": -1.5}
+def test_predict_shap_top_responds_to_high_impact_feature(client):
+    """大幅偏离 baseline 的强影响因子应进入 shap_top。
+
+    注意:Issue #39 真模型上线后,XGB 对 NDVI 在 baseline 附近基本不敏感
+    (符合 ndvi_ablation_v3 结论:移除 NDVI 仅丢 R² 0.003)。改用 flood_a 这种
+    XGB 训练集学到的强响应特征 — 河南 baseline 3.8,推到 30 模型应显著反应。
+    """
+    params = {**VALID_5, "flood_a": 30.0}
     res = client.post("/api/predict", json={"province": "河南", "params": params})
 
     shap = res.get_json()["data"]["shap_top"]
     features = [s["feature"] for s in shap]
-    assert "NDVI 异常" in features
+    assert "水灾面积" in features
 
 
 def test_predict_clamps_to_max_with_extreme_input(client):

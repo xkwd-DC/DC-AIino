@@ -13,7 +13,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from api import envelope
-from api.predict import predict_bp
+from api.predict import predict_bp, run_startup_smoke_check
 from limiter import limiter
 from services import panel_repo
 
@@ -50,6 +50,11 @@ app.register_blueprint(predict_bp)
 
 # Rate limiting — flask-limiter 真装时启用,缺失时 no-op (见 limiter.py)
 limiter.init_app(app)
+
+# Issue #39: 启动期模型 smoke check (Henan 2022 XGB yield ≈ 4615 ± 1370)。
+# 失败 → raise → fail-fast,绝不静默 fallback 到 mock。
+# 测试场景设 DC_SKIP_MODEL_SMOKE=1 跳过(see conftest.py)。
+run_startup_smoke_check()
 
 
 @app.get("/api/health")
