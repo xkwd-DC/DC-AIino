@@ -65,6 +65,11 @@ models/runs/
 *.onnx
 mlruns/
 
+# backend/models/ 的训练 artifact 显式入仓(总计 ~1.7MB,Issue #38)
+# inference._REQUIRED 依赖这些文件存在
+!backend/models/*.pkl
+!backend/models/*.h5
+
 # SQLite 持久层(从 paper_panel_v3.parquet 衍生,可重建)
 backend/data/*.db
 backend/data/*.db-journal
