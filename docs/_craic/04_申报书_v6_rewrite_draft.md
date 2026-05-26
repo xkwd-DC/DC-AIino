@@ -122,8 +122,8 @@
 
 本项目同时部署 **XGBoost-SHAP + 基线 LSTM + Attention-LSTM** 三类原理完全不同的模型，**核心创新不在于得到一致结论，而在于诚实呈现方法论分歧、并将分歧本身作为科学产出**。
 
-- **XGB-SHAP**：从边际贡献维度识别核心因子，2026-05-22 实测 Top-3 = `NDVI > Temp > Prec`（NDVI 主导，因 NDVI 是省域生物量代理）。
-- **Attention-LSTM**：从模型内部 gating 偏好识别"模型主动关注"的因子，2026-05-22 实测 Top-3 = `Flood_A > Mech > Temp`（灾害稀疏信号 + 韧性因子主导）。
+- **XGB-SHAP**：从边际贡献维度识别核心因子，2026-05-22 实测 Top-3 = `NDVI > Prec > Temp`（NDVI 主导，因 NDVI 是省域生物量代理；来源 `backend/models/rank_corr_v3_card.md`，mean|SHAP| 口径）。
+- **Attention-LSTM**：从模型内部 gating 偏好识别"模型主动关注"的因子，2026-05-22 实测 Top-3 = `Drou_A > SPEI > Temp`（旱灾稀疏信号主导；来源 `backend/models/rank_corr_v3_card.md`，mean softmax attention 口径）。
 - **互补量化**：两组排名 Spearman ρ = **-0.055**，**接近 0** ——这一数字本身即说明两类方法捕捉到的是数据中不同维度的信号，方法论上**互相独立**。
 
 **为什么这是创新点**：现有可解释 AI 文献多数主张"多模型一致性等于结果可信"。本项目实证证明这种主张在小样本（N=403）面板上不稳健。我们提出更负责任的叙事是：**先承认两类方法回答不同的科学问题，再把对照本身作为研究产出**——这给后续做粮食风险归因的同行提供了一个可复用的方法论标尺。
@@ -279,15 +279,15 @@ $$y_{it} = \alpha_i + \beta X_{it} + \epsilon_{it}$$
 | **XGBoost R²**（random 8:2，10 种子均值）| **0.907 ± 0.038** | `backend/models/model_card.md` |
 | **LSTM R²**（random 8:2，10 种子均值）| **0.886 ± 0.022** | `backend/models/lstm_model_card.md` |
 | **Att-LSTM R²**（random 8:2，10 种子均值）| **0.816 ± 0.050** | `backend/models/att_lstm_model_card.md` |
-| Att-LSTM Top-3 Attention | Flood_A > Mech > Temp | `backend/models/att_lstm_model_card.md` |
-| XGB-SHAP Top-3 | NDVI > Temp > Prec | `backend/models/model_card.md` |
-| **SHAP × Attention Spearman ρ** | **-0.055** | STATUS.md 2026-05-22 凌晨同步 |
+| Att-LSTM Top-3 Attention | **Drou_A > SPEI > Temp** | `backend/models/rank_corr_v3_card.md`（mean softmax attention）|
+| XGB-SHAP Top-3 | **NDVI > Prec > Temp** | `backend/models/rank_corr_v3_card.md`（mean\|SHAP\|）|
+| **SHAP × Attention Spearman ρ** | **-0.055**（p=0.873）| `backend/models/rank_corr_v3_card.md` |
 | **y_butter ablation test R²** | **-0.10 ± 0.28** | `backend/models/xgb_y_butter_ablation_card.md` |
-| **leave-province-out 中位 R²** | **-16.83**（31 省仅 1 省 R² > 0）| `docs/_craic/robustness_summary_2026-05-22.md`（待 merge）* |
-| leave-year-out R² | ~ 0.89 | 同上 |
-| NDVI ablation R² 损失 | ≤ 5 个百分点 | 同上 |
+| **leave-province-out 中位 R²** | **-16.83**（31 省仅 1 省 R² > 0）| `backend/models/strict_cv_v3_card.md` + `docs/_craic/robustness_summary_2026-05-22.md` |
+| leave-year-out R² | **0.894 ± 0.10** | `backend/models/strict_cv_v3_card.md` |
+| NDVI ablation R² 损失 | **+0.003**（11 维 0.907 → 10 维 0.904）| `backend/models/ndvi_ablation_v3_card.md` |
 
-\* 注：robustness_summary_2026-05-22.md 在本 worktree 未发现源文件，关键数字依据用户在 Issue #10 重写任务简报中给定的口径采用。如有偏差需在合入主干前与算法团队（熊鑫）核对。
+> 数字一致性说明：本草稿 Top-3 / Spearman ρ 数字以 `rank_corr_v3_card.md`（5/22 专项 SHAP×Attention 对比）为权威口径，与 `model_card.md` / `att_lstm_model_card.md` 中的早期 Top-3 列表存在差异（口径未标注 → 不采用）。
 
 ## 附录 B：与 Issue #10 行动清单的对照
 
