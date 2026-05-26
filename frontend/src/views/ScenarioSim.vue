@@ -5,6 +5,9 @@ import * as echarts from 'echarts'
 import { PROVINCES_PROFILE } from '@/data/recommendation'
 import { useProvinceStore } from '@/stores/useProvinceStore'
 import { getCSSVar } from '@/data/mockProvinces'
+import { postPredictDebounced, type PredictData } from '@/api/predict'
+// a11y: ECharts 动画绕过 CSS prefers-reduced-motion
+import { motionDuration } from '@/data/a11y'
 
 // HIGH#7: 200ms 防抖避免快拖滑块时 ECharts setOption 抖动 / stale render。
 // 单文件极轻量实现，避免引入 lodash 整包。
@@ -74,14 +77,56 @@ const baseline = computed(() => ({
 
 const params = ref<Record<SliderDef['key'], number>>({ ...baseline.value })
 
-watch(selected, () => {
-  params.value = { ...baseline.value }
-})
+// ── 前端公式：实时（拖滑块立即响应，无网络延迟）──────────────────────────
+const frontendRisk = computed(() => calcSimRisk(params.value))
 
-const simRisk = computed(() => calcSimRisk(params.value))
+// ── 后端真值状态 ─────────────────────────────────────────────────────────
+const backendRisk = ref<number | null>(null)   // null = 尚未拿到 / 后端不可用
+const isLoadingBackend = ref(false)
+const backendUnavailable = ref(false)           // 超时 / 网络错误后 fallback
+
+/** 展示用风险值：有后端返回用真值，否则用前端公式（标注 estimate）*/
+const simRisk = computed(() =>
+  backendRisk.value !== null ? backendRisk.value : frontendRisk.value,
+)
+const isEstimate = computed(() => backendRisk.value === null)
+
 const delta = computed(() => simRisk.value - selected.value.y)
 const deltaPct = computed(() => (delta.value / selected.value.y) * 100)
 const isWorse = computed(() => delta.value > 0)
+
+// ── 调用后端（200ms 防抖，来自 api/predict.ts）───────────────────────────
+function fetchBackendRisk() {
+  isLoadingBackend.value = true
+  postPredictDebounced(
+    selected.value.name,
+    {
+      irr: params.value.irr,
+      flood: params.value.flood,
+      sun: params.value.sun,
+      temp: params.value.temp,
+      spei: params.value.spei,
+    },
+    'ensemble',
+    (data: PredictData) => {
+      backendRisk.value = data.risk_score
+      backendUnavailable.value = false
+      isLoadingBackend.value = false
+    },
+    (_err: unknown) => {
+      backendUnavailable.value = true
+      backendRisk.value = null
+      isLoadingBackend.value = false
+    },
+  )
+}
+
+// 省份切换时重置后端结果
+watch(selected, () => {
+  params.value = { ...baseline.value }
+  backendRisk.value = null
+  backendUnavailable.value = false
+})
 
 const gaugeBaseEl = ref<HTMLDivElement | null>(null)
 const gaugeSimEl = ref<HTMLDivElement | null>(null)
@@ -140,7 +185,8 @@ function gaugeOption(value: number, label: string, pointerColor: string) {
         },
         title: { offsetCenter: [0, '32%'], color: getCSSVar('--text-3'), fontSize: 10, fontFamily: 'JetBrains Mono' },
         detail: {
-          valueAnimation: true,
+          // a11y SC 2.3.3:reduced-motion 关闭数字滚动动画
+          valueAnimation: motionDuration(600) > 0,
           offsetCenter: [0, '15%'],
           formatter: (v: number) => v.toFixed(4),
           color: pointerColor,
@@ -149,7 +195,7 @@ function gaugeOption(value: number, label: string, pointerColor: string) {
           fontWeight: 600,
         },
         data: [{ value, name: label }],
-        animationDuration: 600,
+        animationDuration: motionDuration(600),
         animationEasing: 'cubicOut',
       },
     ],
@@ -226,8 +272,8 @@ function renderContrib() {
             fontWeight: 500,
             formatter: (p: { value: number }) => (p.value > 0 ? '+' : '') + p.value.toFixed(4),
           },
-          animationDuration: 400,
-          animationDurationUpdate: 250,
+          animationDuration: motionDuration(400),
+          animationDurationUpdate: motionDuration(250),
         },
       ],
     },
@@ -243,7 +289,20 @@ function rerender() {
 // HIGH#7: 滑块快速拖拽时合并多次 watch trigger，flush:'post' 等 DOM 同步后再调
 // ECharts setOption，避免 canvas 在 micro-tick 期间被多次重绘 / stale。
 const debouncedRerender = debounce(rerender, 200)
-watch([params, selected], debouncedRerender, { deep: true, flush: 'post' })
+
+// params 变化时：立即用前端公式重绘（无延迟），同时触发后端防抖请求
+watch(params, () => {
+  debouncedRerender()
+  fetchBackendRisk()
+}, { deep: true, flush: 'post' })
+
+// backendRisk 变化时（后端返回真值）：刷新图表
+watch(backendRisk, () => {
+  debouncedRerender()
+}, { flush: 'post' })
+
+// 仅在 selected 变化时重绘（params 已在 watch(selected) 里重置）
+watch(selected, debouncedRerender, { flush: 'post' })
 
 function pctOf(val: number, def: SliderDef): number {
   return ((val - def.min) / (def.max - def.min)) * 100
@@ -294,16 +353,28 @@ onBeforeUnmount(() => {
 
     <div class="grid">
       <!-- 左：省份 + sliders -->
-      <aside class="left-col">
+      <aside class="left-col" aria-label="情景参数控制区">
         <div class="card">
           <div class="card-head">
             <div>
               <div class="num">M03-A · TARGET</div>
-              <h3>选择省份</h3>
+              <h3 id="scenario-target-heading">选择省份</h3>
             </div>
-            <button class="reset-btn" @click="resetToBaseline">↺ 重置基线</button>
+            <button
+              class="reset-btn"
+              type="button"
+              aria-label="将所有干预参数重置回省份基线值"
+              @click="resetToBaseline"
+            >↺ 重置基线</button>
           </div>
-          <select v-model.number="selectedIdx" class="province-select">
+          <!-- a11y SC 1.3.1 / 4.1.2:select 加 aria-label 显式关联 -->
+          <label class="sr-only" for="province-select-scenario">目标省份选择器</label>
+          <select
+            id="province-select-scenario"
+            v-model.number="selectedIdx"
+            class="province-select"
+            aria-labelledby="scenario-target-heading"
+          >
             <option v-for="(p, i) in PROVINCES_PROFILE" :key="p.name" :value="i">
               {{ p.name }} · {{ p.type }}
             </option>
@@ -311,7 +382,7 @@ onBeforeUnmount(() => {
           <div class="baseline-info">
             <span>基线 Y</span>
             <span class="v">{{ selected.y.toFixed(4) }}</span>
-            <span class="dot">·</span>
+            <span class="dot" aria-hidden="true">·</span>
             <span>{{ selected.type }}</span>
           </div>
         </div>
@@ -378,9 +449,14 @@ onBeforeUnmount(() => {
                 <div class="num">M03-D · SIMULATED</div>
                 <h3>模拟风险 Y</h3>
               </div>
-              <span class="sim-tag" :class="{ worse: isWorse, better: !isWorse }">
-                {{ isWorse ? 'WORSE' : 'BETTER' }}
-              </span>
+              <div class="sim-head-right">
+                <span v-if="isLoadingBackend" class="backend-tag loading">COMPUTING…</span>
+                <span v-else-if="backendUnavailable" class="backend-tag fallback">ESTIMATE</span>
+                <span v-else-if="!isEstimate" class="backend-tag real">MODEL</span>
+                <span class="sim-tag" :class="{ worse: isWorse, better: !isWorse }">
+                  {{ isWorse ? 'WORSE' : 'BETTER' }}
+                </span>
+              </div>
             </div>
             <div ref="gaugeSimEl" class="gauge-canvas"></div>
           </div>
@@ -400,6 +476,7 @@ onBeforeUnmount(() => {
               较基线 <span class="pct">{{ isWorse ? '+' : '−' }}{{ Math.abs(deltaPct).toFixed(1) }}%</span>
               <span class="dot">·</span>
               {{ isWorse ? '风险上升，建议复核干预方向' : '风险下降，韧性提升' }}
+              <span v-if="backendUnavailable" class="fallback-note">（线性近似 estimate · 后端不可用）</span>
             </div>
           </div>
         </div>
@@ -422,7 +499,9 @@ onBeforeUnmount(() => {
 
     <footer class="page-foot">
       <a href="/prototypes/03-scenario-sim.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">前端公式与 <code>backend/api/predict.py _COEFS</code> 对齐；Phase 2 (6/01-15) 切真模型后改 POST</span>
+      <span class="note">
+        滑块实时使用前端线性公式；200ms 防抖后由 POST <code>/api/predict</code> 真模型覆盖（Issue #45）
+      </span>
     </footer>
   </section>
 </template>
@@ -584,6 +663,14 @@ onBeforeUnmount(() => {
 .gauge-card { display: flex; flex-direction: column; }
 .gauge-canvas { height: 220px; }
 
+.sim-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .sim-tag {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -593,6 +680,24 @@ onBeforeUnmount(() => {
 }
 .sim-tag.worse { background: rgba(184, 111, 77, 0.12); color: var(--risk-4); }
 .sim-tag.better { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
+
+.backend-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+.backend-tag.loading { background: rgba(230, 182, 85, 0.12); color: var(--amber); }
+.backend-tag.fallback { background: rgba(180, 157, 216, 0.12); color: var(--purple); }
+.backend-tag.real { background: rgba(100, 180, 200, 0.12); color: var(--blue, #6ab4c8); }
+
+.fallback-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--purple, #b49dd8);
+  margin-left: 4px;
+}
 
 /* ============ delta ============ */
 .delta-card { padding: 18px 20px; }

@@ -2,6 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { getCSSVar } from '@/data/mockProvinces'
+import { postPredict, type ShapContrib } from '@/api/predict'
+import { useProvinceStore } from '@/stores/useProvinceStore'
+import { storeToRefs } from 'pinia'
+// a11y: ECharts 动画绕过 CSS prefers-reduced-motion,JS 探测后传 0
+import { motionDuration } from '@/data/a11y'
 
 interface Feature {
   name: string
@@ -10,7 +15,8 @@ interface Feature {
   dir: 'green' | 'red'
 }
 
-const FEATURES_ALL: Feature[] = [
+// Mock baseline: fallback when backend unavailable
+const FEATURES_MOCK: Feature[] = [
   { name: '灌溉率', en: 'Irr', shap: 0.420, dir: 'green' },
   { name: '洪涝占比', en: 'Flood_R', shap: 0.385, dir: 'red' },
   { name: '日照时数', en: 'Sun', shap: 0.312, dir: 'green' },
@@ -23,6 +29,72 @@ const FEATURES_ALL: Feature[] = [
   { name: '水灾面积', en: 'Flood_A', shap: 0.058, dir: 'red' },
   { name: 'NDVI 异常', en: 'NDVI', shap: 0.034, dir: 'green' },
 ]
+
+// ── 后端 SHAP top-5 状态 ──────────────────────────────────────────────────
+const backendContribs = ref<ShapContrib[] | null>(null)
+const isLoadingShap = ref(false)
+const shapUnavailable = ref(false)
+
+const provinceStore = useProvinceStore()
+const { selected: selectedProvince } = storeToRefs(provinceStore)
+
+/** 将 API shap_top 数据融合进 FEATURES_MOCK：top-5 用真值，其余保留 mock */
+function mergeShapData(contribs: ShapContrib[]): Feature[] {
+  // Build lookup by feature name (中文)
+  const lookup = new Map<string, ShapContrib>()
+  for (const c of contribs) {
+    lookup.set(c.feature, c)
+  }
+  return FEATURES_MOCK.map((f) => {
+    const hit = lookup.get(f.name)
+    if (!hit) return f
+    return {
+      ...f,
+      shap: Math.abs(hit.value),
+      dir: hit.direction === 'harm' ? 'red' : 'green',
+    }
+  })
+}
+
+/** 当前特征重要性数组：有后端真值用真值，否则 mock */
+const FEATURES_ALL = computed<Feature[]>(() =>
+  backendContribs.value ? mergeShapData(backendContribs.value) : FEATURES_MOCK,
+)
+
+const shapDataSource = computed(() =>
+  shapUnavailable.value ? 'mock' : backendContribs.value ? 'model' : 'loading',
+)
+
+async function fetchShapData() {
+  isLoadingShap.value = true
+  try {
+    const data = await postPredict(
+      selectedProvince.value.name,
+      {
+        irr: selectedProvince.value.irr,
+        flood: selectedProvince.value.flood,
+        sun: selectedProvince.value.sun,
+        temp: selectedProvince.value.temp,
+        spei: selectedProvince.value.spei,
+      },
+      'xgboost', // use xgboost for SHAP attribution (lighter + XGB has SHAP support)
+    )
+    backendContribs.value = data.shap_top
+    shapUnavailable.value = false
+  } catch (_err: unknown) {
+    shapUnavailable.value = true
+    backendContribs.value = null
+  } finally {
+    isLoadingShap.value = false
+  }
+}
+
+// Re-fetch when province changes
+watch(selectedProvince, () => {
+  backendContribs.value = null
+  shapUnavailable.value = false
+  fetchShapData()
+})
 
 type SubsetKey = 'all' | 'north' | 'south' | 'major'
 
@@ -46,7 +118,7 @@ const currentSubset = computed(() => SUBSETS.find((s) => s.key === subset.value)
 
 const features = computed<Feature[]>(() => {
   const mods = currentSubset.value.mods
-  return FEATURES_ALL.map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(3) })).sort(
+  return FEATURES_ALL.value.map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(3) })).sort(
     (a, b) => b.shap - a.shap,
   )
 })
@@ -206,7 +278,7 @@ function renderImportance() {
             fontWeight: 500,
             formatter: (p: { value: number }) => p.value.toFixed(3),
           },
-          animationDuration: 800,
+          animationDuration: motionDuration(800),
         },
       ],
     },
@@ -331,7 +403,7 @@ function renderWaterfall() {
           barWidth: 22,
         },
       ],
-      animationDuration: 800,
+      animationDuration: motionDuration(800),
     },
     true,
   )
@@ -402,8 +474,8 @@ function renderBeeswarm() {
           ? { silent: true, symbol: 'none', lineStyle: { color: getCSSVar('--border-strong'), type: 'solid', width: 1 }, data: [{ xAxis: 0, label: { show: false } }] }
           : undefined,
       })),
-      animationDuration: 600,
-      animationDelay: (idx: number) => idx * 2,
+      animationDuration: motionDuration(600),
+      animationDelay: (idx: number) => motionDuration(idx * 2),
     },
     true,
   )
@@ -420,11 +492,18 @@ watch(subset, () => {
   renderBeeswarm()
 })
 
+// 后端数据到达时刷新重要性图
+watch(backendContribs, () => {
+  renderImportance()
+}, { flush: 'post' })
+
 onMounted(() => {
   if (importanceEl.value) importanceChart = echarts.init(importanceEl.value, undefined, { renderer: 'canvas' })
   if (waterfallEl.value) waterfallChart = echarts.init(waterfallEl.value, undefined, { renderer: 'canvas' })
   if (beeswarmEl.value) beeswarmChart = echarts.init(beeswarmEl.value, undefined, { renderer: 'canvas' })
   rerenderAll()
+  // 挂载后拉取后端 SHAP 数据
+  fetchShapData()
   resizeHandler = () => {
     importanceChart?.resize()
     waterfallChart?.resize()
@@ -448,8 +527,11 @@ onBeforeUnmount(() => {
       <h2>SHAP 归因看板</h2>
       <p class="lead">
         XGBoost-SHAP 三维度可解释性归因：全局重要性 / 单样本预测分解 / 蜂群分布。
-        本视图为 mock 数据演示（Phase 2 后接入 <code>backend/models/xgb_model.pkl</code> 真 SHAP 值，
-        熊鑫 5/26 上传 .pkl/.h5 后由 <code>/api/shap/*</code> 提供）。
+        全局重要性图已接入 <code>POST /api/predict</code> 真模型 top-5 贡献度（Issue #45）；
+        单样本 Waterfall 与 Beeswarm 保留 mock 参考数据。
+        <span v-if="isLoadingShap" class="shap-status loading">· 加载模型数据…</span>
+        <span v-else-if="shapUnavailable" class="shap-status fallback">· 后端不可用，显示参考 mock 数据</span>
+        <span v-else-if="shapDataSource === 'model'" class="shap-status real">· 真模型数据</span>
       </p>
     </header>
 
@@ -458,19 +540,24 @@ onBeforeUnmount(() => {
       <div class="subset-head">
         <div>
           <div class="num">M02-0 · SUBSET</div>
-          <h3>样本子集切换</h3>
+          <h3 id="subset-heading">样本子集切换</h3>
         </div>
         <div class="meta">
           <span>样本 N <span class="v">{{ currentSubset.sampleN }}</span></span>
           <span>覆盖 <span class="v">{{ currentSubset.cover }}</span> 省</span>
         </div>
       </div>
-      <div class="seg">
+      <!-- a11y SC 4.1.2 + WAI-ARIA Tabs Pattern:tablist / tab + aria-selected -->
+      <div class="seg" role="tablist" aria-labelledby="subset-heading">
         <button
           v-for="s in SUBSETS"
           :key="s.key"
           class="seg-btn"
           :class="{ active: subset === s.key }"
+          role="tab"
+          :aria-selected="subset === s.key"
+          :aria-label="`切换至 ${s.label} 样本子集`"
+          :tabindex="subset === s.key ? 0 : -1"
           @click="subset = s.key"
         >
           {{ s.label }}
@@ -479,7 +566,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- 主 grid 3 chart -->
-    <div class="grid">
+    <div class="grid" role="region" aria-label="SHAP 归因图表区">
       <div class="card chart-card">
         <div class="card-head">
           <div>
@@ -488,7 +575,14 @@ onBeforeUnmount(() => {
           </div>
           <span class="hint">绿色 = 韧性因子，赭石 = 致灾因子</span>
         </div>
-        <div ref="importanceEl" class="chart-canvas"></div>
+        <!-- a11y SC 1.1.1:ECharts canvas 加 role/aria-label 文本替代 -->
+        <div
+          ref="importanceEl"
+          class="chart-canvas"
+          role="img"
+          aria-label="全局特征重要性条形图:11 个变量按 mean(|SHAP|) 排序,绿色条为韧性因子降低风险,赭石色条为致灾因子推高风险"
+          tabindex="0"
+        ></div>
       </div>
 
       <div class="card chart-card">
@@ -499,7 +593,13 @@ onBeforeUnmount(() => {
           </div>
           <span class="hint">E[f(x)] = {{ WATERFALL_BASELINE.val }} → f(x) = {{ WATERFALL_FINAL.val }}</span>
         </div>
-        <div ref="waterfallEl" class="chart-canvas"></div>
+        <div
+          ref="waterfallEl"
+          class="chart-canvas"
+          role="img"
+          :aria-label="`河南 2022 年单样本预测分解 Waterfall 图:从基线 ${WATERFALL_BASELINE.val} 经 7 个特征贡献逐步演变到最终预测 ${WATERFALL_FINAL.val}`"
+          tabindex="0"
+        ></div>
       </div>
 
       <div class="card chart-card full">
@@ -510,13 +610,22 @@ onBeforeUnmount(() => {
           </div>
           <span class="hint">点色 = 原始值（蓝低 → 赭石高）&nbsp;·&nbsp;X = SHAP 值</span>
         </div>
-        <div ref="beeswarmEl" class="chart-canvas"></div>
+        <div
+          ref="beeswarmEl"
+          class="chart-canvas"
+          role="img"
+          aria-label="Top 5 特征 SHAP 蜂群分布散点图:每个点代表一个样本,横轴为 SHAP 值,点色由蓝到赭石映射原始值由低到高"
+          tabindex="0"
+        ></div>
       </div>
     </div>
 
     <footer class="page-foot">
       <a href="/prototypes/02-shap-dashboard.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">11 特征 mean(|SHAP|) 来自 prototype mock；Phase 2 接入熊鑫 .pkl 真模型 + shap 库</span>
+      <span class="note">
+        全局重要性 top-5 来自 <code>POST /api/predict</code> 单特征扰动估计（Issue #45）；
+        Waterfall / Beeswarm 保留 mock 参考数据
+      </span>
     </footer>
   </section>
 </template>
@@ -529,6 +638,10 @@ onBeforeUnmount(() => {
 .page-head h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
 .lead code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+.shap-status { font-family: var(--font-mono); font-size: 11px; margin-left: 4px; }
+.shap-status.loading { color: var(--amber); }
+.shap-status.fallback { color: var(--purple, #b49dd8); }
+.shap-status.real { color: var(--green-bright); }
 
 .card {
   background: var(--bg-card);
