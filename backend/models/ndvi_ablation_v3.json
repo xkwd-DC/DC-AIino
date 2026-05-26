@@ -1,0 +1,52 @@
+{
+  "data": "data/interim/paper_panel_v3.parquet",
+  "target": "yield_kg_per_ha",
+  "n_seeds": 10,
+  "split": "random 8:2",
+  "dim_11": {
+    "features": [
+      "irr",
+      "flood",
+      "sun",
+      "temp",
+      "spei",
+      "prec",
+      "mech",
+      "fert",
+      "drou_a",
+      "flood_a",
+      "ndvi"
+    ],
+    "r2_mean": 0.9072118332865688,
+    "r2_std": 0.038335597900477844,
+    "rmse_mean": 312.47426345478186,
+    "rmse_std": 54.19897659543521
+  },
+  "dim_10_no_ndvi": {
+    "features": [
+      "irr",
+      "flood",
+      "sun",
+      "temp",
+      "spei",
+      "prec",
+      "mech",
+      "fert",
+      "drou_a",
+      "flood_a"
+    ],
+    "r2_mean": 0.9038029481688643,
+    "r2_std": 0.02181599077962979,
+    "rmse_mean": 326.4364504011619,
+    "rmse_std": 48.33528023024045
+  },
+  "ndvi_attribution": {
+    "absolute_drop": 0.003408885117704541,
+    "relative_drop_pct": 0.3757540403055729
+  },
+  "paper_target_0_6293": {
+    "value": 0.6293,
+    "ten_dim_matches_paper": false,
+    "diff": 0.27450294816886434
+  }
+}
