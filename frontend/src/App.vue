@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchHealth } from '@/api/health'
 
@@ -24,34 +24,63 @@ const tabs = [
   { code: 'M03', name: '参数情景模拟', path: '/scenario' },
   { code: 'M04', name: '韧性路径推荐', path: '/pathway' },
 ]
+
+// a11y(WCAG SC 1.4.1 Use of Color):健康状态不能只靠颜色。
+// 加 icon(✓ / ✗ / …)+ 文本 + aria-live,屏幕阅读器朗读状态变化。
+const healthIcon = computed(() => {
+  if (healthState.value === 'ok') return '✓'
+  if (healthState.value === 'fail') return '✗'
+  return '…'
+})
+const healthLabel = computed(() => {
+  if (healthState.value === 'ok') return `后端服务正常 ${apiVersion.value}`
+  if (healthState.value === 'fail') return '后端服务离线'
+  return '正在检测后端服务'
+})
 </script>
 
 <template>
-  <header class="app-header">
+  <!-- a11y(WCAG SC 2.4.1 Bypass Blocks):skip-link 让键盘用户跳过 header 直接到主内容。 -->
+  <a href="#app-main" class="sr-only sr-only-focusable skip-link">跳转到主要内容</a>
+
+  <header class="app-header" role="banner">
     <div class="brand">
-      <div class="brand-logo">粮</div>
+      <div class="brand-logo" aria-hidden="true">粮</div>
       <div class="brand-text">
         <h1>极端气候下粮食生产风险智能分析</h1>
         <div class="sub">FOOD-RISK INTELLIGENCE PLATFORM · v0.1</div>
       </div>
     </div>
 
-    <nav class="tabs">
+    <!-- a11y(SC 4.1.2):主导航 aria-label + 当前 tab aria-current="page" -->
+    <nav class="tabs" aria-label="主导航" role="navigation">
       <router-link
         v-for="t in tabs"
         :key="t.path"
         :to="t.path"
         class="tab"
         :class="{ active: route.path === t.path }"
+        :aria-current="route.path === t.path ? 'page' : undefined"
+        :aria-label="`${t.code} ${t.name}`"
       >
-        <span class="code">{{ t.code }}</span>
+        <span class="code" aria-hidden="true">{{ t.code }}</span>
         <span class="name">{{ t.name }}</span>
       </router-link>
     </nav>
 
     <div class="header-right">
-      <span class="health" :class="healthState">
-        <span class="dot"></span>
+      <!-- a11y(SC 1.4.1 Use of Color + SC 4.1.3 Status Messages):
+           健康状态双通道 = 色(.health) + icon(✓/✗/…) + 文本;
+           role="status" + aria-live="polite" 让屏幕阅读器朗读状态变化。 -->
+      <span
+        class="health"
+        :class="healthState"
+        role="status"
+        aria-live="polite"
+        :aria-label="healthLabel"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <span class="icon" aria-hidden="true">{{ healthIcon }}</span>
         <span class="label">
           <template v-if="healthState === 'ok'">Backend OK {{ apiVersion }}</template>
           <template v-else-if="healthState === 'fail'">Backend Offline</template>
@@ -61,7 +90,7 @@ const tabs = [
     </div>
   </header>
 
-  <main class="app-main">
+  <main id="app-main" class="app-main" role="main" tabindex="-1">
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
         <component :is="Component" />
@@ -157,6 +186,13 @@ const tabs = [
   height: 6px;
   border-radius: 50%;
   background: var(--text-3);
+}
+/* a11y SC 1.4.1: icon 通道补充色彩,色盲 / 高对比模式仍能识别状态 */
+.health .icon {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 .health.ok { color: var(--green-bright); border-color: rgba(160, 183, 133, 0.25); }
 .health.ok .dot { background: var(--green); animation: pulseDot 2.2s infinite; }

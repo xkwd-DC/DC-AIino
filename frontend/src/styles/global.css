@@ -26,6 +26,44 @@ button {
   color: inherit;
 }
 
+/* ============ a11y(WCAG 2.2 AA) ============ */
+
+/* SC 2.4.11 Focus Appearance + SC 2.4.7 Focus Visible
+   全站默认 focus-visible 视觉,所有可聚焦元素 ── 即便组件作者忘记加。 */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: 2px;
+}
+
+/* 屏幕阅读器专用 (Visually-Hidden) 工具类 ── 给键盘 / AT 用户的备用文本 */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-visible {
+  position: fixed;
+  top: 8px; left: 8px;
+  width: auto; height: auto;
+  padding: 10px 16px; margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: var(--bg-card);
+  color: var(--green-bright);
+  border: 2px solid var(--green-bright);
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  z-index: 9999;
+}
+
 /* 滚动条 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-2); }

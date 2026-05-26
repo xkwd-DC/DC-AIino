@@ -391,27 +391,28 @@ onBeforeUnmount(() => {
           <div class="card-head">
             <div>
               <div class="num">M03-B · CONTROLS</div>
-              <h3>5 维干预参数</h3>
+              <h3 id="controls-heading">5 维干预参数</h3>
             </div>
           </div>
-          <div class="sliders">
+          <div class="sliders" role="group" aria-labelledby="controls-heading">
             <div v-for="def in SLIDERS" :key="def.key" class="slider-card">
               <div class="slider-head">
                 <span class="slider-name">
-                  <span class="icon" :class="def.iconCls">{{ def.icon }}</span>
+                  <span class="icon" :class="def.iconCls" aria-hidden="true">{{ def.icon }}</span>
                   {{ def.label }}
-                  <span class="key">{{ def.key.toUpperCase() }}</span>
+                  <span class="key" aria-hidden="true">{{ def.key.toUpperCase() }}</span>
                 </span>
                 <span class="slider-value">
                   {{ fmtVal(def.key, params[def.key]) }}<span class="unit">{{ def.unit }}</span>
                 </span>
               </div>
               <div class="slider-track-wrap">
-                <div class="slider-track">
+                <div class="slider-track" aria-hidden="true">
                   <div class="slider-baseline" :style="{ left: pctOf(baseline[def.key], def) + '%' }"></div>
                   <div class="slider-fill" :style="{ width: pctOf(params[def.key], def) + '%' }"></div>
                   <div class="slider-thumb" :style="{ left: pctOf(params[def.key], def) + '%' }"></div>
                 </div>
+                <!-- a11y SC 1.3.1 + SC 4.1.2:每个滑块 aria-label/valuemin/max/now/valuetext -->
                 <input
                   v-model.number="params[def.key]"
                   type="range"
@@ -419,6 +420,11 @@ onBeforeUnmount(() => {
                   :min="def.min"
                   :max="def.max"
                   :step="def.step"
+                  :aria-label="`${def.label},最小值 ${def.min}${def.unit},最大值 ${def.max}${def.unit},${def.hint}`"
+                  :aria-valuemin="def.min"
+                  :aria-valuemax="def.max"
+                  :aria-valuenow="params[def.key]"
+                  :aria-valuetext="`${fmtVal(def.key, params[def.key])}${def.unit}`"
                 />
               </div>
               <div class="slider-scale">
@@ -432,7 +438,7 @@ onBeforeUnmount(() => {
       </aside>
 
       <!-- 右：双 gauge + delta + 贡献度 -->
-      <section class="right-col">
+      <section class="right-col" aria-label="情景模拟结果区">
         <div class="gauges">
           <div class="card gauge-card">
             <div class="card-head">
@@ -441,7 +447,14 @@ onBeforeUnmount(() => {
                 <h3>基线风险 Y</h3>
               </div>
             </div>
-            <div ref="gaugeBaseEl" class="gauge-canvas"></div>
+            <!-- a11y SC 1.1.1:gauge canvas 文本替代 -->
+            <div
+              ref="gaugeBaseEl"
+              class="gauge-canvas"
+              role="img"
+              :aria-label="`基线风险 Y 仪表盘,当前值 ${selected.y.toFixed(4)}`"
+              tabindex="0"
+            ></div>
           </div>
           <div class="card gauge-card">
             <div class="card-head">
@@ -450,31 +463,49 @@ onBeforeUnmount(() => {
                 <h3>模拟风险 Y</h3>
               </div>
               <div class="sim-head-right">
-                <span v-if="isLoadingBackend" class="backend-tag loading">COMPUTING…</span>
-                <span v-else-if="backendUnavailable" class="backend-tag fallback">ESTIMATE</span>
-                <span v-else-if="!isEstimate" class="backend-tag real">MODEL</span>
-                <span class="sim-tag" :class="{ worse: isWorse, better: !isWorse }">
-                  {{ isWorse ? 'WORSE' : 'BETTER' }}
+                <span v-if="isLoadingBackend" class="backend-tag loading" role="status" aria-live="polite">COMPUTING…</span>
+                <span v-else-if="backendUnavailable" class="backend-tag fallback" aria-label="使用线性近似估算,后端不可用">ESTIMATE</span>
+                <span v-else-if="!isEstimate" class="backend-tag real" aria-label="使用真实模型计算">MODEL</span>
+                <!-- a11y SC 1.4.1:WORSE/BETTER 不只靠色,文字 + 上下箭头双通道 -->
+                <span
+                  class="sim-tag"
+                  :class="{ worse: isWorse, better: !isWorse }"
+                  :aria-label="isWorse ? '风险上升 worse' : '风险下降 better'"
+                >
+                  <span aria-hidden="true">{{ isWorse ? '▲ ' : '▼ ' }}</span>{{ isWorse ? 'WORSE' : 'BETTER' }}
                 </span>
               </div>
             </div>
-            <div ref="gaugeSimEl" class="gauge-canvas"></div>
+            <div
+              ref="gaugeSimEl"
+              class="gauge-canvas"
+              role="img"
+              :aria-label="`模拟风险 Y 仪表盘,当前值 ${simRisk.toFixed(4)},较基线${isWorse ? '上升' : '下降'} ${Math.abs(deltaPct).toFixed(1)}%`"
+              tabindex="0"
+            ></div>
           </div>
         </div>
 
-        <div class="card delta-card" :class="{ worse: isWorse, better: !isWorse }">
+        <!-- a11y SC 4.1.3:delta-card 内容更新时通过 aria-live 朗读 -->
+        <div
+          class="card delta-card"
+          :class="{ worse: isWorse, better: !isWorse }"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <div class="delta-head">
             <span class="num">M03-E · DELTA</span>
             <span class="label">基线 → 模拟</span>
           </div>
           <div class="delta-body">
             <div class="delta-main">
-              <span class="arrow">{{ isWorse ? '▲' : '▼' }}</span>
+              <span class="arrow" aria-hidden="true">{{ isWorse ? '▲' : '▼' }}</span>
               <span class="abs">{{ Math.abs(delta).toFixed(4) }}</span>
             </div>
             <div class="delta-sub">
               较基线 <span class="pct">{{ isWorse ? '+' : '−' }}{{ Math.abs(deltaPct).toFixed(1) }}%</span>
-              <span class="dot">·</span>
+              <span class="dot" aria-hidden="true">·</span>
               {{ isWorse ? '风险上升，建议复核干预方向' : '风险下降，韧性提升' }}
               <span v-if="backendUnavailable" class="fallback-note">（线性近似 estimate · 后端不可用）</span>
             </div>
@@ -488,11 +519,18 @@ onBeforeUnmount(() => {
               <h3>各参数对风险的边际贡献</h3>
             </div>
             <div class="contrib-legend">
-              <span><span class="swatch up"></span>推升风险</span>
-              <span><span class="swatch dn"></span>降低风险</span>
+              <span><span class="swatch up" aria-hidden="true"></span>推升风险</span>
+              <span><span class="swatch dn" aria-hidden="true"></span>降低风险</span>
             </div>
           </div>
-          <div ref="contribEl" class="contrib-canvas"></div>
+          <!-- a11y SC 1.1.1:贡献度图文本替代 -->
+          <div
+            ref="contribEl"
+            class="contrib-canvas"
+            role="img"
+            aria-label="各干预参数对风险的边际贡献条形图:正值(赭石色)推高风险,负值(绿色)降低风险,按绝对值由大到小排序"
+            tabindex="0"
+          ></div>
         </div>
       </section>
     </div>
@@ -564,7 +602,13 @@ onBeforeUnmount(() => {
   appearance: none;
   margin-bottom: 10px;
 }
-.province-select:focus { outline: none; border-color: var(--green); }
+/* a11y SC 2.4.11 Focus Appearance:替代 outline:none,2px green-bright + offset */
+.province-select:focus { border-color: var(--green); }
+.province-select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-color: var(--green-bright);
+}
 
 .baseline-info {
   font-family: var(--font-mono);
@@ -647,6 +691,13 @@ onBeforeUnmount(() => {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   opacity: 0; cursor: pointer; z-index: 2;
+}
+/* a11y SC 2.4.11:opacity:0 隐了原生 focus ring,
+   focus 时给父 wrapper 加可见 ring 等价反馈 */
+.slider-track-wrap:focus-within .slider-track {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: 4px;
 }
 .slider-scale {
   display: flex;

@@ -9,6 +9,9 @@ import {
   type ActionItem,
 } from '@/data/recommendation'
 import { useProvinceStore } from '@/stores/useProvinceStore'
+// a11y: 不同于 ECharts,本视图只用 CSS animation,prefers-reduced-motion 由全局
+// global.css 媒体查询接管 (animation-duration:0.01ms)。这里仅取值用于条件渲染。
+import { prefersReducedMotion } from '@/data/a11y'
 
 // SECURITY: 所有 v-html 渲染必须经此 sanitize。
 // 当前 desc 来自 recommendation.ts 内部硬编码，目前安全；
@@ -126,15 +129,22 @@ const stages = computed<StageVM[]>(() => [
 
     <div class="grid">
       <!-- 左 sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="韧性路径侧边栏">
         <div class="card">
           <div class="card-head">
             <div>
               <div class="num">M04-A · TARGET</div>
-              <h3>选择省份</h3>
+              <h3 id="pathway-target-heading">选择省份</h3>
             </div>
           </div>
-          <select v-model.number="selectedIdx" class="province-select">
+          <!-- a11y SC 1.3.1 + 4.1.2:select 显式 label 关联 -->
+          <label class="sr-only" for="province-select-pathway">韧性路径目标省份选择器</label>
+          <select
+            id="province-select-pathway"
+            v-model.number="selectedIdx"
+            class="province-select"
+            aria-labelledby="pathway-target-heading"
+          >
             <option v-for="(p, i) in PROVINCES_PROFILE" :key="p.name" :value="i">
               {{ p.name }} · {{ p.type }}
             </option>
@@ -215,16 +225,20 @@ const stages = computed<StageVM[]>(() => [
           </div>
         </div>
 
-        <!-- key 强制切省份时 re-mount → 重放 stagger 入场动画 -->
-        <div :key="selectedIdx" class="stages">
+        <!-- key 强制切省份时 re-mount → 重放 stagger 入场动画。
+             a11y SC 2.3.3:reduced-motion 时 animationDelay 也归零,
+             否则即便 global @media 把 duration 设为 0.01ms,数百 ms 的 delay
+             仍会让卡片"延迟显示",对认知障碍 / 前庭敏感用户不友好。 -->
+        <div :key="selectedIdx" class="stages" role="list" aria-label="韧性路径三阶段">
           <div
             v-for="(s, si) in stages"
             :key="s.key"
             class="stage"
             :class="s.cls"
-            :style="{ animationDelay: si * 0.12 + 's' }"
+            role="listitem"
+            :style="{ animationDelay: prefersReducedMotion() ? '0s' : si * 0.12 + 's' }"
           >
-            <div class="stage-marker"></div>
+            <div class="stage-marker" aria-hidden="true"></div>
             <div class="stage-head">
               <h3>
                 {{ s.title }}
@@ -235,10 +249,10 @@ const stages = computed<StageVM[]>(() => [
             <div class="stage-sub">
               <template v-for="(sub, i) in s.sub" :key="sub">
                 <span class="acc">{{ sub }}</span>
-                <span v-if="i < s.sub.length - 1" class="dot"> · </span>
+                <span v-if="i < s.sub.length - 1" class="dot" aria-hidden="true"> · </span>
               </template>
             </div>
-            <div class="actions">
+            <div class="actions" role="list" :aria-label="`${s.title}行动项列表`">
               <div v-if="s.items.length === 0" class="action-empty">
                 该省份在此阶段无显著匹配规则，可根据本地实际补充行动项
               </div>
@@ -247,7 +261,8 @@ const stages = computed<StageVM[]>(() => [
                 v-else
                 :key="it.ruleId"
                 class="action"
-                :style="{ animationDelay: si * 0.12 + i * 0.06 + 0.2 + 's' }"
+                role="listitem"
+                :style="{ animationDelay: prefersReducedMotion() ? '0s' : si * 0.12 + i * 0.06 + 0.2 + 's' }"
               >
                 <div class="action-num">{{ String(i + 1).padStart(2, '0') }}</div>
                 <div class="action-body">
@@ -350,9 +365,12 @@ const stages = computed<StageVM[]>(() => [
   background-position: right 12px center;
   background-size: 8px;
 }
-.province-select:focus {
-  outline: none;
-  border-color: var(--green);
+/* a11y SC 2.4.11 Focus Appearance:替代 outline:none */
+.province-select:focus { border-color: var(--green); }
+.province-select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-color: var(--green-bright);
 }
 
 .rank-tag {

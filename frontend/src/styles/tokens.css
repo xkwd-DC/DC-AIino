@@ -10,7 +10,15 @@
 
   --text: #E8E4D8;
   --text-2: #A8B5AC;
-  --text-3: #6B7A72;
+  /* a11y(WCAG 2.2 AA SC 1.4.3): 原 #6B7A72 on --bg-card #283A35 对比 ~2.8:1。
+     提到 #95A39B → 在 --bg-card 上 ~4.6:1，达 AA 正文阈值 4.5:1。
+     在 --bg #162520 上仍 ≥ 5.8:1 安全。 */
+  --text-3: #95A39B;
+
+  /* a11y: 全站统一 focus-visible 视觉。outline 替代 outline:none，
+     2px green-bright + offset 2px 满足 WCAG 2.2 SC 2.4.11 Focus Appearance。 */
+  --focus-ring: 2px solid var(--green-bright);
+  --focus-offset: 2px;
 
   --green: #A0B785;
   --green-bright: #C5D4AF;

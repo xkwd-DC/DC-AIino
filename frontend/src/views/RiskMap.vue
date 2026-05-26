@@ -14,6 +14,8 @@ import {
   riskColorVar,
   type ProvinceSnapshot,
 } from '@/data/mockProvinces'
+// a11y: ECharts canvas 动画绕过 CSS prefers-reduced-motion,需 JS 探测后传 0。
+import { motionDuration, prefersReducedMotion } from '@/data/a11y'
 
 // HIGH#3: 走自托管 /maps/china.json (PR #34 入仓的 61KB GeoJSON)，
 // 消除 CDN 单点故障 + 8s timeout 风险。SHA-256 记录见 frontend/public/maps/README.md。
@@ -135,6 +137,9 @@ function renderMap() {
           data: mapData,
         },
       ],
+      // a11y SC 2.3.3:reduced-motion 时 ECharts 自身动画归零
+      animationDuration: motionDuration(600),
+      animationDurationUpdate: motionDuration(400),
     },
     true,
   )
@@ -193,8 +198,8 @@ function renderMiniChart() {
           },
         },
       ],
-      animation: true,
-      animationDuration: 400,
+      animation: !prefersReducedMotion(),
+      animationDuration: motionDuration(400),
     },
     true,
   )
@@ -240,6 +245,20 @@ function onRowClick(name: string) {
   if (mapChart) {
     mapChart.dispatchAction({ type: 'highlight', name })
     setTimeout(() => mapChart?.dispatchAction({ type: 'downplay', name }), 1500)
+  }
+}
+
+// a11y SC 2.1.1 Keyboard:Top10 行 / tick 用 Enter/Space 触发等价 click
+function onRowKey(e: KeyboardEvent, name: string) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    onRowClick(name)
+  }
+}
+function onTickKey(e: KeyboardEvent, y: number) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    currentYear.value = y
   }
 }
 
@@ -292,12 +311,32 @@ function fmtPct(p: number, digits = 1): string {
           <h3>中国粮食生产风险分布</h3>
         </div>
         <div class="map-canvas-wrap">
-          <div ref="mapEl" class="map-canvas"></div>
-          <div v-if="mapLoading" class="map-state">
-            <div class="spinner"></div>
+          <!-- a11y SC 1.1.1 Non-text Content + SC 4.1.2:
+               ECharts canvas 无文本替代,role="img" + aria-label + aria-describedby 指向 Top10 表 -->
+          <div
+            ref="mapEl"
+            class="map-canvas"
+            role="img"
+            aria-label="中国 31 省粮食生产风险分布地图,使用颜色深浅表示风险高低,赭石色越深风险越高"
+            aria-describedby="map-top10-desc"
+            tabindex="0"
+          ></div>
+          <div
+            v-if="mapLoading"
+            class="map-state"
+            role="status"
+            aria-live="polite"
+            aria-label="正在加载中国地图数据"
+          >
+            <div class="spinner" aria-hidden="true"></div>
             <div>正在加载中国地图…</div>
           </div>
-          <div v-else-if="mapError" class="map-state error">
+          <div
+            v-else-if="mapError"
+            class="map-state error"
+            role="alert"
+            aria-live="assertive"
+          >
             <div>⚠ 地图数据加载失败</div>
             <div class="small">{{ mapError }} — 请检查网络后刷新</div>
           </div>
@@ -312,9 +351,10 @@ function fmtPct(p: number, digits = 1): string {
             <span class="year-step">{{ YEAR_MIN }} — {{ YEAR_MAX }} · 13 年</span>
           </div>
           <div class="slider-track-wrap">
-            <div class="slider-track">
+            <div class="slider-track" aria-hidden="true">
               <div class="slider-fill" :style="{ width: sliderFillPct + '%' }"></div>
             </div>
+            <!-- a11y SC 1.3.1 + SC 4.1.2:range input 加 aria-label / valuemin/max/now / valuetext -->
             <input
               v-model.number="currentYear"
               type="range"
@@ -322,14 +362,25 @@ function fmtPct(p: number, digits = 1): string {
               :max="YEAR_MAX"
               step="1"
               class="native-range"
+              :aria-label="`时间年份,${YEAR_MIN} 至 ${YEAR_MAX} 年`"
+              :aria-valuemin="YEAR_MIN"
+              :aria-valuemax="YEAR_MAX"
+              :aria-valuenow="currentYear"
+              :aria-valuetext="`${currentYear} 年`"
             />
-            <div class="slider-ticks">
+            <!-- a11y SC 2.1.1:tick 加 role/tabindex/keyboard handler -->
+            <div class="slider-ticks" role="group" aria-label="年份快捷跳转">
               <div
                 v-for="y in YEARS"
                 :key="y"
                 class="tick"
                 :class="{ active: y === currentYear }"
+                role="button"
+                tabindex="0"
+                :aria-label="`跳转到 ${y} 年`"
+                :aria-pressed="y === currentYear"
                 @click="currentYear = y"
+                @keydown="onTickKey($event, y)"
               >
                 {{ String(y).slice(-2) }}
               </div>
@@ -346,12 +397,17 @@ function fmtPct(p: number, digits = 1): string {
             <span class="meta">Y · DETRENDED VOLATILITY</span>
           </div>
           <div class="legend-body">
-            <div class="legend-bar">
-              <div :style="{ background: 'var(--risk-1)' }"></div>
-              <div :style="{ background: 'var(--risk-2)' }"></div>
-              <div :style="{ background: 'var(--risk-3)' }"></div>
-              <div :style="{ background: 'var(--risk-4)' }"></div>
-              <div :style="{ background: 'var(--risk-5)' }"></div>
+            <!-- a11y SC 1.1.1:图例色阶加 role/aria-label -->
+            <div
+              class="legend-bar"
+              role="img"
+              aria-label="风险色阶,从浅到深表示风险由低到高,共 5 级"
+            >
+              <div :style="{ background: 'var(--risk-1)' }" aria-hidden="true"></div>
+              <div :style="{ background: 'var(--risk-2)' }" aria-hidden="true"></div>
+              <div :style="{ background: 'var(--risk-3)' }" aria-hidden="true"></div>
+              <div :style="{ background: 'var(--risk-4)' }" aria-hidden="true"></div>
+              <div :style="{ background: 'var(--risk-5)' }" aria-hidden="true"></div>
             </div>
             <div class="legend-labels">
               <span>低 0.011</span>
@@ -377,20 +433,34 @@ function fmtPct(p: number, digits = 1): string {
 
         <div class="card">
           <div class="card-head">
-            <h3>Top 10 高风险省份</h3>
+            <h3 id="top10-heading">Top 10 高风险省份</h3>
             <span class="meta">YEAR {{ currentYear }}</span>
           </div>
-          <div class="top10-body">
-            <div
+          <!-- a11y(SC 1.3.1):列表语义化 + 供地图 aria-describedby 引用 -->
+          <p id="map-top10-desc" class="sr-only">
+            该地图配有右侧 Top 10 高风险省份列表,可使用 Tab 键聚焦各省并查看明细
+          </p>
+          <ul
+            class="top10-body"
+            role="list"
+            aria-labelledby="top10-heading"
+          >
+            <!-- a11y SC 2.1.1 + SC 4.1.2:rank-row 转 button 语义,加 Enter/Space 键盘支持 -->
+            <li
               v-for="(d, i) in top10"
               :key="d.name"
               class="rank-row"
               :class="{ active: d.name === hoveredProvince }"
+              role="button"
+              tabindex="0"
+              :aria-label="`第 ${i + 1} 名 ${d.name},风险值 ${d.y.toFixed(4)},点击查看明细`"
+              :aria-pressed="d.name === hoveredProvince"
               @click="onRowClick(d.name)"
+              @keydown="onRowKey($event, d.name)"
             >
-              <span class="rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <span class="rank-num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
               <span class="rank-name">{{ d.name }}</span>
-              <div class="rank-bar">
+              <div class="rank-bar" aria-hidden="true">
                 <div
                   class="rank-bar-fill"
                   :style="{
@@ -400,8 +470,8 @@ function fmtPct(p: number, digits = 1): string {
                 ></div>
               </div>
               <span class="rank-val" :style="{ color: riskColorVar(d.y) }">{{ d.y.toFixed(4) }}</span>
-            </div>
-          </div>
+            </li>
+          </ul>
         </div>
 
         <div class="card">
@@ -409,7 +479,8 @@ function fmtPct(p: number, digits = 1): string {
             <h3>省份明细</h3>
             <span class="meta">{{ detail ? `${currentYear} · ${detail.type}` : 'HOVER / 点击 查看' }}</span>
           </div>
-          <div class="detail-body">
+          <!-- a11y SC 4.1.3 Status Messages:省份明细变化通过 aria-live 朗读 -->
+          <div class="detail-body" role="region" aria-live="polite" aria-atomic="true" aria-label="选中省份明细">
             <template v-if="detail">
               <div class="detail-province">
                 <span>{{ detail.name }}</span>
@@ -460,7 +531,13 @@ function fmtPct(p: number, digits = 1): string {
                   <span>13 年风险趋势</span>
                   <span>{{ YEAR_MIN }} — {{ YEAR_MAX }}</span>
                 </div>
-                <div ref="miniEl" class="mini-chart"></div>
+                <!-- a11y SC 1.1.1:13 年趋势 mini chart 文本替代 -->
+                <div
+                  ref="miniEl"
+                  class="mini-chart"
+                  role="img"
+                  :aria-label="`${detail?.name ?? ''} 省 ${YEAR_MIN} 至 ${YEAR_MAX} 年风险趋势小图`"
+                ></div>
               </div>
             </template>
             <template v-else>
@@ -627,6 +704,13 @@ function fmtPct(p: number, digits = 1): string {
   opacity: 0;
   cursor: pointer;
   z-index: 2;
+}
+/* a11y SC 2.4.11 Focus Appearance:opacity:0 隐了原生 focus ring,
+   focus 时给父 wrapper 加可见 ring,等价的视觉聚焦反馈 */
+.slider-track-wrap:focus-within .slider-track {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: 4px;
 }
 .slider-ticks {
   display: flex;
