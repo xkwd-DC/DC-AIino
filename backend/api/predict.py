@@ -368,7 +368,7 @@ def _fill_from_baseline(province: str, params: dict[str, float]) -> dict[str, fl
 
 
 @predict_bp.post("/api/predict")
-@limiter.limit("10 per minute")  # Issue #26 HIGH#3 - 真模型 CPU-heavy, DoS 防护
+@limiter.limit("100 per hour")  # Issue #26 HIGH#3 - 真模型 CPU-heavy, DoS 防护 (按 IP)
 def predict():
     body = request.get_json(silent=True) or {}
     province = body.get("province")

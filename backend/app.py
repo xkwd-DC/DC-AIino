@@ -1,7 +1,22 @@
-"""Flask 入口：健康检查 + 31 省 mock 数据 + CORS。
+"""Flask 入口：健康检查 + 31 省面板数据 + 模型推理 + CORS / Rate-Limit / 安全头。
 
-开发：  python app.py
-生产：  gunicorn -w 4 -b 127.0.0.1:5000 app:app  # 必须通过 nginx 反代,勿用 0.0.0.0
+启动方式
+========
+开发：  python app.py                                  # 默认 host=127.0.0.1, debug=0
+生产：  gunicorn -w 4 -b 127.0.0.1:5000 app:app        # 必须通过 nginx 反代,勿用 0.0.0.0
+
+生产防御层 (Issue #26)
+====================
+1. CORS 收窄到 env CORS_ORIGINS (默认 dev localhost;生产必须显式设)
+2. Rate limit (flask-limiter, 见 limiter.py + 各路由 @limiter.limit)
+3. HTTP 安全头 (security_headers.py — HSTS / CSP / X-Frame-Options / nosniff / Referrer / Permissions)
+4. nginx 反代终止 TLS (deploy/nginx.conf, Let's Encrypt)
+
+绝不能在生产做的事
+==================
+- gunicorn `-b 0.0.0.0:5000` (绕过 nginx,直接对外暴露 5000)
+- FLASK_DEBUG=1 (Werkzeug debugger 是 RCE 向量)
+- CORS_ORIGINS=* (任意源跨域读 API)
 """
 import json
 import os
@@ -15,6 +30,7 @@ from flask_cors import CORS
 from api import envelope
 from api.predict import predict_bp, run_startup_smoke_check
 from limiter import limiter
+from security_headers import apply_security_headers
 from services import panel_repo
 
 load_dotenv()
@@ -49,7 +65,18 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 app.register_blueprint(predict_bp)
 
 # Rate limiting — flask-limiter 真装时启用,缺失时 no-op (见 limiter.py)
+# /api/predict   → 100/hour (CPU-heavy 真模型,DoS 防护,见 api/predict.py)
+# /api/provinces → 500/hour (静态面板数据,带宽防护)
+# /api/health    → 不限速 (Cloud Run / GCP load balancer 健康探针)
 limiter.init_app(app)
+
+# HTTP 安全头中间件 — Issue #26 HIGH#4
+# nginx 已在 deploy/nginx.conf 配 HSTS / X-Frame-Options 等,
+# 但 app 层兜底保证:
+#   (a) dev/test 直连 Flask 时也有头
+#   (b) nginx 配置漂移 / 单测试环境也合规
+# 顺序: 在 blueprint 注册之后,limiter 之后 — 用 @app.after_request 注入响应头。
+apply_security_headers(app)
 
 # Issue #39: 启动期模型 smoke check (Henan 2022 XGB yield ≈ 4615 ± 1370)。
 # 失败 → raise → fail-fast,绝不静默 fallback 到 mock。
@@ -58,6 +85,7 @@ run_startup_smoke_check()
 
 
 @app.get("/api/health")
+@limiter.exempt  # Issue #26 HIGH#3 - 健康探针不走 rate limit (GCP LB / Cloud Run 高频探测)
 def health():
     return envelope(
         data={
@@ -70,6 +98,7 @@ def health():
 
 
 @app.get("/api/provinces")
+@limiter.limit("500 per hour")  # Issue #26 HIGH#3 - 静态面板数据,IP 级带宽防护
 def list_provinces():
     """31 省面板数据。
 
@@ -112,6 +141,7 @@ def list_provinces():
 
 
 @app.get("/api/provinces/<string:province>/history")
+@limiter.limit("500 per hour")  # Issue #26 HIGH#3 - 与 /api/provinces 同档,统一带宽防护
 def province_history(province):
     """某省 2011-2023 时间序列。Phase 4 后可用。
 
