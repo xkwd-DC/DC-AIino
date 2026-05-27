@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import { storeToRefs } from 'pinia'
+import { useProvinceStore } from '@/stores/useProvinceStore'
+import { fetchProvinces, fetchProvinceHistory, type ProvinceRow } from '@/api/province'
 import {
-  ALL_DATA,
-  PROVINCES_BASE,
   RANGES,
   YEARS,
   YEAR_MAX,
@@ -33,7 +34,37 @@ let mapChart: echarts.ECharts | null = null
 let miniChart: echarts.ECharts | null = null
 let resizeObserver: ResizeObserver | null = null
 
-const currentData = computed<ProvinceSnapshot[]>(() => ALL_DATA[currentYear.value] ?? [])
+// ── 真后端 store:31 省 latest 数据(/api/provinces) ─────────────────────────
+const provinceStore = useProvinceStore()
+const { provinces, isLoading: storeLoading, error: storeError, source: storeSource } = storeToRefs(provinceStore)
+
+// ── 年度数据缓存:slider 切年时按需 fetch /api/provinces?year=Y ──────────────
+// 设计:
+//   - 初始(mount)由 store.loadProvinces() 拉默认年 → 缓存到 yearCache[YEAR_MAX]
+//   - slider 拖动后,若该年未在缓存,异步 fetch;
+//     fetch 失败(grain.db 未就绪,后端返 503)→ 复用 latest 年的数据 + 标 fallback
+//   - 不再生成 13 年合成 mock(去掉 ALL_DATA 依赖)
+const yearCache = ref<Record<number, ProvinceSnapshot[]>>({})
+const yearLoading = ref(false)
+const yearFallback = ref(false)        // 当年 fetch 失败,正在用 latest 数据回退
+const fallbackNote = ref<string | null>(null)
+
+/** 把 API 行规整成 view 用的 ProvinceSnapshot 结构。
+ *  grain.db 行字段是 flood_r;baseline json 用 flood。统一映射到 flood。 */
+function rowToSnapshot(row: ProvinceRow): ProvinceSnapshot {
+  return {
+    name: row.name ?? row.province ?? '未知',
+    y: row.y ?? 0,
+    irr: row.irr ?? 0,
+    flood: row.flood ?? row.flood_r ?? 0,
+    sun: row.sun ?? 0,
+    spei: row.spei ?? 0,
+    temp: row.temp ?? 0,
+    type: row.type ?? '主产区主导型',
+  }
+}
+
+const currentData = computed<ProvinceSnapshot[]>(() => yearCache.value[currentYear.value] ?? [])
 
 const avgY = computed(() => {
   const arr = currentData.value
@@ -43,8 +74,8 @@ const avgY = computed(() => {
 
 const deltaPct = computed<number | null>(() => {
   if (currentYear.value <= YEAR_MIN) return null
-  const prev = ALL_DATA[currentYear.value - 1]
-  if (!prev) return null
+  const prev = yearCache.value[currentYear.value - 1]
+  if (!prev || prev.length === 0) return null
   const prevAvg = prev.reduce((s, d) => s + d.y, 0) / prev.length
   if (prevAvg === 0) return null
   return ((avgY.value - prevAvg) / prevAvg) * 100
@@ -59,13 +90,10 @@ const detail = computed<ProvinceSnapshot | null>(() => {
   return currentData.value.find((d) => d.name === hoveredProvince.value) ?? null
 })
 
-const detailHistory = computed<Array<number | null>>(() => {
-  if (!hoveredProvince.value) return []
-  return YEARS.map((y) => {
-    const d = ALL_DATA[y]?.find((x) => x.name === hoveredProvince.value)
-    return d ? d.y : null
-  })
-})
+// ── 单省 13 年时序(/api/provinces/<name>/history) ──────────────────────────
+const detailHistorySeries = ref<Array<number | null>>([])
+const detailHistoryLoading = ref(false)
+const detailHistoryError = ref<string | null>(null)
 
 const sliderFillPct = computed(() => {
   return ((currentYear.value - YEAR_MIN) / (YEAR_MAX - YEAR_MIN)) * 100
@@ -150,7 +178,12 @@ function renderMiniChart() {
   if (!miniChart) {
     miniChart = echarts.init(miniEl.value, undefined, { renderer: 'canvas' })
   }
-  const series = detailHistory.value
+  const series = detailHistorySeries.value
+  // 若 series 为空(historical API 不可用),直接清空 mini chart
+  if (series.length === 0) {
+    miniChart.clear()
+    return
+  }
   const currentIdx = currentYear.value - YEAR_MIN
 
   miniChart.setOption(
@@ -166,7 +199,8 @@ function renderMiniChart() {
         textStyle: { color: getCSSVar('--text'), fontSize: 11 },
         formatter: (params: Array<{ axisValue: string; value: number }>) => {
           const p = params[0]
-          return `${p.axisValue} · <b style="color:${getCSSVar('--green-bright')}">${p.value.toFixed(4)}</b>`
+          const v = p.value
+          return `${p.axisValue} · <b style="color:${getCSSVar('--green-bright')}">${v?.toFixed?.(4) ?? '—'}</b>`
         },
       },
       series: [
@@ -192,7 +226,7 @@ function renderMiniChart() {
           markPoint: {
             symbol: 'circle',
             symbolSize: 8,
-            data: [{ coord: [currentIdx, series[currentIdx]] }],
+            data: series[currentIdx] != null ? [{ coord: [currentIdx, series[currentIdx]] }] : [],
             itemStyle: { color: getCSSVar('--green-bright'), borderColor: getCSSVar('--bg'), borderWidth: 2 },
             label: { show: false },
           },
@@ -230,13 +264,64 @@ async function loadMap() {
     resizeObserver = new ResizeObserver(() => mapChart?.resize())
     resizeObserver.observe(mapEl.value)
   } catch (e) {
-    // HIGH#4: 仅 dev 输出到 console，production 仅走 UI mapError 状态展示。
+    // HIGH#4: 仅 dev 输出到 console,production 仅走 UI mapError 状态展示
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.error('[risk-map] geoJson load failed', e)
     }
     mapError.value = (e as Error).message || 'network error'
     mapLoading.value = false
+  }
+}
+
+/** 初始化:用 store.loadProvinces() 拉 latest year(默认走 /api/provinces 无参) */
+async function initProvinces() {
+  await provinceStore.loadProvinces()
+  // store 已 normalize 为 ProvinceBase,view 用同样 schema 的 ProvinceSnapshot
+  // (type 等可选字段已对齐),直接复用。
+  yearCache.value[YEAR_MAX] = provinces.value.map((p) => ({ ...p }))
+}
+
+/** 切年时按需 fetch。grain.db 未加载会 503 → 标 fallback,view 沿用 latest 数据。 */
+async function loadYear(year: number) {
+  if (yearCache.value[year]) return // 已缓存
+  if (year === YEAR_MAX) return // 已由 init 填充
+  yearLoading.value = true
+  fallbackNote.value = null
+  try {
+    const rows = await fetchProvinces(year)
+    yearCache.value[year] = rows.map(rowToSnapshot)
+    yearFallback.value = false
+  } catch (e: unknown) {
+    // 503 / 网络错误 → 复用 latest 年数据,提示用户
+    yearCache.value[year] = yearCache.value[YEAR_MAX] ?? []
+    yearFallback.value = true
+    const msg = e instanceof Error ? e.message : 'network error'
+    fallbackNote.value = `${year} 年时序数据未就绪(${msg});展示 ${YEAR_MAX} 年基线快照`
+  } finally {
+    yearLoading.value = false
+  }
+}
+
+/** 拉单省 13 年时序(history)。grain.db 未加载会 503 → 隐藏 mini chart。 */
+async function loadHistory(name: string) {
+  detailHistoryLoading.value = true
+  detailHistoryError.value = null
+  detailHistorySeries.value = []
+  try {
+    const hist = await fetchProvinceHistory(name)
+    // 把 series 按 YEARS 顺序补齐;后端可能返回不连续年份。
+    const map = new Map(hist.series.map((s) => [s.year, s.y_butter ?? s.yield_kg_per_ha ?? null]))
+    detailHistorySeries.value = YEARS.map((y) => {
+      const v = map.get(y)
+      return typeof v === 'number' ? v : null
+    })
+  } catch (e: unknown) {
+    detailHistoryError.value = e instanceof Error ? e.message : 'network error'
+    // 失败保留空 series,renderMiniChart 会清空
+    detailHistorySeries.value = []
+  } finally {
+    detailHistoryLoading.value = false
   }
 }
 
@@ -262,13 +347,24 @@ function onTickKey(e: KeyboardEvent, y: number) {
   }
 }
 
-watch(currentYear, () => {
+async function retryInit() {
+  mapLoading.value = true
+  mapError.value = null
+  await initProvinces()
+  if (!mapChart) await loadMap()
+  else renderMap()
+  mapLoading.value = false
+}
+
+watch(currentYear, async (y) => {
+  await loadYear(y)
   renderMap()
   if (detail.value) renderMiniChart()
 })
 
-watch(detail, (d) => {
+watch(detail, async (d) => {
   if (d) {
+    await loadHistory(d.name)
     // 等 detail 卡 DOM 渲染后再 init mini chart
     requestAnimationFrame(() => renderMiniChart())
   } else if (miniChart) {
@@ -277,8 +373,11 @@ watch(detail, (d) => {
   }
 })
 
-onMounted(() => {
-  loadMap()
+onMounted(async () => {
+  // 并行:先并发拉 geoJson + 31 省数据,然后渲染。
+  await Promise.all([initProvinces(), loadMap()])
+  // initProvinces 完成后再 render(map 已 init 在 loadMap 里)
+  renderMap()
 })
 
 onBeforeUnmount(() => {
@@ -290,6 +389,10 @@ onBeforeUnmount(() => {
 function fmtPct(p: number, digits = 1): string {
   return p.toFixed(digits)
 }
+
+// 抑制未用警告(percentile/riskColorResolved 模板内被用)
+void percentile
+void riskColorResolved
 </script>
 
 <template>
@@ -298,17 +401,36 @@ function fmtPct(p: number, digits = 1): string {
       <div class="eyebrow">M01 · SPATIO-TEMPORAL RISK MAP</div>
       <h2>风险时空地图</h2>
       <p class="lead">
-        31 省 2011–2023 年粮食生产风险时空分布。当前为前端 mock 数据演示，
-        Phase 4（5/27-28）后将切换至 SQLite + <code>/api/provinces?year</code> 真实数据。
+        31 省 2011–2023 年粮食生产风险时空分布。数据来源:
+        <code>GET /api/provinces[?year]</code> 与
+        <code>GET /api/provinces/&lt;name&gt;/history</code>。
       </p>
     </header>
 
+    <!-- 初始 store 加载失败时的全局 banner(retry) -->
+    <div
+      v-if="storeError && storeSource === 'mock'"
+      class="page-banner"
+      role="alert"
+      aria-live="assertive"
+    >
+      <span class="banner-icon" aria-hidden="true">⚠</span>
+      <div class="banner-text">
+        <b>后端数据加载失败:</b>{{ storeError }} · 当前展示骨架数据,
+        <button type="button" class="banner-retry" @click="retryInit">重新加载</button>
+      </div>
+    </div>
+
     <div class="grid">
-      <!-- 左：地图 + 时间轴 -->
+      <!-- 左:地图 + 时间轴 -->
       <section class="map-panel">
         <div class="map-toolbar">
           <span class="num">M01-A</span>
           <h3>中国粮食生产风险分布</h3>
+          <span v-if="yearLoading" class="map-status loading">加载 {{ currentYear }} 年…</span>
+          <span v-else-if="yearFallback" class="map-status fallback" :title="fallbackNote ?? ''">
+            {{ currentYear }} 年时序数据未就绪 · 展示最近年快照
+          </span>
         </div>
         <div class="map-canvas-wrap">
           <!-- a11y SC 1.1.1 Non-text Content + SC 4.1.2:
@@ -322,14 +444,14 @@ function fmtPct(p: number, digits = 1): string {
             tabindex="0"
           ></div>
           <div
-            v-if="mapLoading"
+            v-if="mapLoading || storeLoading"
             class="map-state"
             role="status"
             aria-live="polite"
-            aria-label="正在加载中国地图数据"
+            aria-label="正在加载中国地图与省份数据"
           >
             <div class="spinner" aria-hidden="true"></div>
-            <div>正在加载中国地图…</div>
+            <div>正在加载中国地图与省份数据…</div>
           </div>
           <div
             v-else-if="mapError"
@@ -338,7 +460,8 @@ function fmtPct(p: number, digits = 1): string {
             aria-live="assertive"
           >
             <div>⚠ 地图数据加载失败</div>
-            <div class="small">{{ mapError }} — 请检查网络后刷新</div>
+            <div class="small">{{ mapError }}</div>
+            <button class="retry-btn" type="button" @click="retryInit">重试</button>
           </div>
         </div>
 
@@ -389,7 +512,7 @@ function fmtPct(p: number, digits = 1): string {
         </div>
       </section>
 
-      <!-- 右：图例 + Top10 + 明细 -->
+      <!-- 右:图例 + Top10 + 明细 -->
       <aside class="side-panel">
         <div class="card">
           <div class="card-head">
@@ -426,7 +549,7 @@ function fmtPct(p: number, digits = 1): string {
               >
                 {{ deltaPct >= 0 ? '▲ +' : '▼ ' }}{{ fmtPct(deltaPct) }}%
               </span>
-              <span v-else class="v muted">— 起始年</span>
+              <span v-else class="v muted">— 起始年或无对照</span>
             </div>
           </div>
         </div>
@@ -470,6 +593,10 @@ function fmtPct(p: number, digits = 1): string {
                 ></div>
               </div>
               <span class="rank-val" :style="{ color: riskColorVar(d.y) }">{{ d.y.toFixed(4) }}</span>
+            </li>
+            <li v-if="top10.length === 0" class="rank-empty">
+              <span v-if="storeLoading">正在加载省份数据…</span>
+              <span v-else>暂无数据</span>
             </li>
           </ul>
         </div>
@@ -529,15 +656,23 @@ function fmtPct(p: number, digits = 1): string {
               <div class="detail-trend">
                 <div class="trend-label">
                   <span>13 年风险趋势</span>
-                  <span>{{ YEAR_MIN }} — {{ YEAR_MAX }}</span>
+                  <span v-if="detailHistoryLoading" class="trend-status">加载中…</span>
+                  <span v-else-if="detailHistoryError" class="trend-status err" :title="detailHistoryError">
+                    时序未就绪
+                  </span>
+                  <span v-else>{{ YEAR_MIN }} — {{ YEAR_MAX }}</span>
                 </div>
                 <!-- a11y SC 1.1.1:13 年趋势 mini chart 文本替代 -->
                 <div
+                  v-show="!detailHistoryError"
                   ref="miniEl"
                   class="mini-chart"
                   role="img"
                   :aria-label="`${detail?.name ?? ''} 省 ${YEAR_MIN} 至 ${YEAR_MAX} 年风险趋势小图`"
                 ></div>
+                <div v-if="detailHistoryError" class="mini-fallback">
+                  时序数据将在 Phase 4 ETL 完成后启用
+                </div>
               </div>
             </template>
             <template v-else>
@@ -553,7 +688,9 @@ function fmtPct(p: number, digits = 1): string {
 
     <footer class="page-foot">
       <a href="/prototypes/01-risk-map.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">Vue 化数据层为前端 mock；接 SQLite 后切真值。模型 R² 数字（XGB 0.9072 / Att-LSTM 0.8160）来自 <code>backend/models/*</code></span>
+      <span class="note">
+        数据源 <code>/api/provinces</code> · 单省时序 <code>/api/provinces/&lt;name&gt;/history</code>
+      </span>
     </footer>
   </section>
 </template>
@@ -585,6 +722,33 @@ function fmtPct(p: number, digits = 1): string {
   font-size: 11px;
 }
 
+.page-banner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(184, 111, 77, 0.08);
+  border: 1px solid rgba(184, 111, 77, 0.35);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--text-2);
+}
+.banner-icon { color: var(--risk-4); font-size: 16px; }
+.banner-text { line-height: 1.6; }
+.banner-retry {
+  margin-left: 6px;
+  padding: 3px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+.banner-retry:hover { border-color: var(--green); }
+
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
@@ -605,6 +769,7 @@ function fmtPct(p: number, digits = 1): string {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  flex-wrap: wrap;
 }
 .map-toolbar .num {
   font-family: var(--font-mono);
@@ -617,6 +782,14 @@ function fmtPct(p: number, digits = 1): string {
   font-size: 16px;
   font-weight: 600;
 }
+.map-status {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+.map-status.loading { color: var(--amber); }
+.map-status.fallback { color: var(--purple, #b49dd8); }
 
 .map-canvas-wrap {
   position: relative;
@@ -639,6 +812,18 @@ function fmtPct(p: number, digits = 1): string {
 }
 .map-state .small { font-size: 10px; opacity: 0.7; }
 .map-state.error { color: var(--red-bright, #C58866); }
+.retry-btn {
+  margin-top: 8px;
+  padding: 4px 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+.retry-btn:hover { border-color: var(--green); }
 .spinner {
   width: 28px; height: 28px;
   border: 2px solid var(--bg-elev);
@@ -842,6 +1027,13 @@ function fmtPct(p: number, digits = 1): string {
   text-align: right;
   font-weight: 600;
 }
+.rank-empty {
+  padding: 20px 8px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
 
 .detail-body { min-height: 180px; }
 .detail-empty {
@@ -916,7 +1108,20 @@ function fmtPct(p: number, digits = 1): string {
   text-transform: uppercase;
   margin-bottom: 6px;
 }
+.trend-status { color: var(--amber); }
+.trend-status.err { color: var(--purple, #b49dd8); }
 .mini-chart { height: 64px; }
+.mini-fallback {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+}
 
 .page-foot {
   margin-top: 24px;

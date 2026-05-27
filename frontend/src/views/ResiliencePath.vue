@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import DOMPurify from 'dompurify'
 import {
-  PROVINCES_PROFILE,
   buildPathway,
   estimateBudget,
   type ActionItem,
+  type ProvinceProfile,
 } from '@/data/recommendation'
 import { useProvinceStore } from '@/stores/useProvinceStore'
+import { postPredict, type PredictData, type ShapContrib, type Recommendation } from '@/api/predict'
 // a11y: 不同于 ECharts,本视图只用 CSS animation,prefers-reduced-motion 由全局
 // global.css 媒体查询接管 (animation-duration:0.01ms)。这里仅取值用于条件渲染。
 import { prefersReducedMotion } from '@/data/a11y'
 
 // SECURITY: 所有 v-html 渲染必须经此 sanitize。
-// 当前 desc 来自 recommendation.ts 内部硬编码，目前安全；
-// 但 5/29 后会切换到 backend /api/recommendation/<省>（外部输入），
+// 当前 desc 来自 recommendation.ts 内部硬编码,目前安全;
+// 未来若切换到 backend /api/recommendation/<省>(外部输入),
 // 不在数据源切换时统一加 sanitize = XSS 漏洞 100% 出现。
-// 防御性陷阱：今天加，未来扩展自动安全。
+// 防御性陷阱:今天加,未来扩展自动安全。
 // 白名单只允许 <span class="hl|num"> 这两类标签 + class。
 const ALLOWED_TAGS = ['span']
 const ALLOWED_ATTR = ['class']
@@ -25,11 +26,19 @@ function sanitizeDesc(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })
 }
 
-// HIGH#8: Pinia store 共享省份选择 — ScenarioSim.vue 同步切换。
+// ── Pinia store:省份选择 + 真后端 31 省数据(/api/provinces) ──────────────
 const provinceStore = useProvinceStore()
-const { selectedIdx, selected } = storeToRefs(provinceStore)
+const {
+  selectedIdx,
+  selected,
+  profiles,
+  isLoading: storeLoading,
+  error: storeError,
+  source: storeSource,
+} = storeToRefs(provinceStore)
 
-const pathway = computed(() => buildPathway(selected.value))
+// ── 11 条规则引擎(完全前端,输入来自真后端数据) ─────────────────────────
+const pathway = computed(() => buildPathway(selected.value as ProvinceProfile))
 
 const totalActions = computed(
   () => pathway.value.short.length + pathway.value.mid.length + pathway.value.long.length,
@@ -37,9 +46,19 @@ const totalActions = computed(
 
 const budget = computed(() => estimateBudget(totalActions.value))
 
-const yMean = computed(() => PROVINCES_PROFILE.reduce((s, p) => s + p.y, 0) / PROVINCES_PROFILE.length)
-const irrMean = computed(() => PROVINCES_PROFILE.reduce((s, p) => s + p.irr, 0) / PROVINCES_PROFILE.length)
-const floodMean = computed(() => PROVINCES_PROFILE.reduce((s, p) => s + p.flood, 0) / PROVINCES_PROFILE.length)
+// 均值计算改用 store.profiles(真后端 31 省;失败时是 baseline mock)
+const yMean = computed(() => {
+  const arr = profiles.value
+  return arr.length === 0 ? 0 : arr.reduce((s, p) => s + p.y, 0) / arr.length
+})
+const irrMean = computed(() => {
+  const arr = profiles.value
+  return arr.length === 0 ? 0 : arr.reduce((s, p) => s + p.irr, 0) / arr.length
+})
+const floodMean = computed(() => {
+  const arr = profiles.value
+  return arr.length === 0 ? 0 : arr.reduce((s, p) => s + p.flood, 0) / arr.length
+})
 
 interface Metric {
   lbl: string
@@ -50,7 +69,7 @@ interface Metric {
 
 const metrics = computed<Metric[]>(() => {
   const p = selected.value
-  const yDelta = ((p.y - yMean.value) / yMean.value) * 100
+  const yDelta = yMean.value === 0 ? 0 : ((p.y - yMean.value) / yMean.value) * 100
   return [
     {
       lbl: '风险指数 Y',
@@ -114,6 +133,59 @@ const stages = computed<StageVM[]>(() => [
     items: pathway.value.long,
   },
 ])
+
+// ── 真后端 /api/predict:取 SHAP top + 模型动态 recommendations ─────────────
+const predictData = ref<PredictData | null>(null)
+const predictLoading = ref(false)
+const predictError = ref<string | null>(null)
+
+const modelShapTop = computed<ShapContrib[]>(() => predictData.value?.shap_top ?? [])
+const modelRecs = computed<Recommendation[]>(() => predictData.value?.recommendations ?? [])
+const modelDataReady = computed(() => predictData.value !== null && !predictError.value)
+
+async function fetchPredict() {
+  if (storeSource.value === 'none' || profiles.value.length === 0) return
+  predictLoading.value = true
+  predictError.value = null
+  try {
+    const p = selected.value
+    const data = await postPredict(
+      p.name,
+      {
+        irr: p.irr,
+        flood: p.flood,
+        sun: p.sun,
+        temp: p.temp,
+        spei: p.spei,
+      },
+      'ensemble',
+    )
+    predictData.value = data
+  } catch (e: unknown) {
+    predictError.value = e instanceof Error ? e.message : 'network error'
+    predictData.value = null
+  } finally {
+    predictLoading.value = false
+  }
+}
+
+watch(selected, () => {
+  predictData.value = null
+  fetchPredict()
+})
+
+onMounted(async () => {
+  // 等省份数据就绪后再请求 predict(否则 selected 是空壳)
+  if (storeSource.value === 'none') {
+    await provinceStore.loadProvinces()
+  }
+  await fetchPredict()
+})
+
+async function retryInit() {
+  await provinceStore.loadProvinces()
+  await fetchPredict()
+}
 </script>
 
 <template>
@@ -122,10 +194,24 @@ const stages = computed<StageVM[]>(() => [
       <div class="eyebrow">M04 · RESILIENCE PATHWAY ENGINE · v2.1</div>
       <h2>韧性路径推荐</h2>
       <p class="lead">
-        基于省份风险指纹（灌溉/洪涝/SPEI/温度/日照/省域类型）匹配 11 条规则，自动生成三阶段（短期 / 中期 / 长期）行动路径。
+        基于省份风险指纹(灌溉/洪涝/SPEI/温度/日照/省域类型)匹配 11 条规则,自动生成三阶段(短期 / 中期 / 长期)行动路径。
+        省份特征来自 <code>GET /api/provinces</code>;SHAP 因子与模型推荐来自 <code>POST /api/predict</code>。
         可用于农业农村厅政策决策、农险机构产品定价、农科院课题立项、储备局空间布局等场景。
       </p>
     </header>
+
+    <div
+      v-if="storeError && storeSource === 'mock'"
+      class="page-banner"
+      role="alert"
+      aria-live="assertive"
+    >
+      <span class="banner-icon" aria-hidden="true">⚠</span>
+      <div class="banner-text">
+        <b>省份数据加载失败:</b>{{ storeError }} · 当前展示骨架,
+        <button type="button" class="banner-retry" @click="retryInit">重新加载</button>
+      </div>
+    </div>
 
     <div class="grid">
       <!-- 左 sidebar -->
@@ -136,6 +222,7 @@ const stages = computed<StageVM[]>(() => [
               <div class="num">M04-A · TARGET</div>
               <h3 id="pathway-target-heading">选择省份</h3>
             </div>
+            <span v-if="storeLoading" class="status loading">加载中…</span>
           </div>
           <!-- a11y SC 1.3.1 + 4.1.2:select 显式 label 关联 -->
           <label class="sr-only" for="province-select-pathway">韧性路径目标省份选择器</label>
@@ -144,8 +231,9 @@ const stages = computed<StageVM[]>(() => [
             v-model.number="selectedIdx"
             class="province-select"
             aria-labelledby="pathway-target-heading"
+            :disabled="storeLoading"
           >
-            <option v-for="(p, i) in PROVINCES_PROFILE" :key="p.name" :value="i">
+            <option v-for="(p, i) in profiles" :key="p.name" :value="i">
               {{ p.name }} · {{ p.type }}
             </option>
           </select>
@@ -172,6 +260,75 @@ const stages = computed<StageVM[]>(() => [
               <div class="delta" :class="m.cls">{{ m.delta }}</div>
             </div>
           </div>
+        </div>
+
+        <!-- M04-B2 · 模型 SHAP top + 推荐(真 /api/predict 输出) -->
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="num">M04-B2 · MODEL SIGNAL</div>
+              <h3>模型 SHAP 与推荐</h3>
+            </div>
+            <span
+              v-if="predictLoading"
+              class="status loading"
+              role="status"
+              aria-live="polite"
+            >COMPUTING…</span>
+            <span
+              v-else-if="predictError"
+              class="status err"
+              :title="predictError"
+              aria-label="模型暂不可用"
+            >MODEL N/A</span>
+            <span v-else-if="modelDataReady" class="status ok">MODEL</span>
+          </div>
+
+          <div v-if="predictError" class="model-empty">
+            模型暂不可用 · {{ predictError }}
+            <button type="button" class="banner-retry" @click="fetchPredict">重试</button>
+          </div>
+          <div v-else-if="!modelDataReady && predictLoading" class="model-empty">
+            正在调用 <code>POST /api/predict</code>…
+          </div>
+          <template v-else-if="modelDataReady">
+            <div class="model-shap">
+              <div class="model-sub">SHAP top {{ modelShapTop.length }} 贡献因子</div>
+              <ul class="shap-list">
+                <li
+                  v-for="(c, i) in modelShapTop"
+                  :key="c.feature + i"
+                  class="shap-row"
+                  :class="c.direction === 'harm' ? 'harm' : 'protect'"
+                >
+                  <span class="shap-rank">{{ String(i + 1).padStart(2, '0') }}</span>
+                  <span class="shap-name">{{ c.feature }}</span>
+                  <span class="shap-val">{{ (c.value >= 0 ? '+' : '') + c.value.toFixed(4) }}</span>
+                  <span class="shap-tag">{{ c.direction === 'harm' ? '推升' : '降低' }}</span>
+                </li>
+              </ul>
+            </div>
+            <div v-if="modelRecs.length > 0" class="model-recs">
+              <div class="model-sub">模型动态推荐</div>
+              <ul class="rec-list">
+                <li
+                  v-for="(r, i) in modelRecs"
+                  :key="r.action + i"
+                  class="rec-row"
+                  :class="r.priority"
+                >
+                  <span class="rec-priority">{{ r.priority.toUpperCase() }}</span>
+                  <div class="rec-body">
+                    <div class="rec-action">{{ r.action }}</div>
+                    <div class="rec-meta">
+                      因子 <span class="v">{{ r.factor }}</span>
+                      · 预期 ∆ <span class="v">{{ r.expected_delta.toFixed(4) }}</span>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </template>
         </div>
 
         <div class="card">
@@ -254,7 +411,7 @@ const stages = computed<StageVM[]>(() => [
             </div>
             <div class="actions" role="list" :aria-label="`${s.title}行动项列表`">
               <div v-if="s.items.length === 0" class="action-empty">
-                该省份在此阶段无显著匹配规则，可根据本地实际补充行动项
+                该省份在此阶段无显著匹配规则,可根据本地实际补充行动项
               </div>
               <div
                 v-for="(it, i) in s.items"
@@ -267,7 +424,7 @@ const stages = computed<StageVM[]>(() => [
                 <div class="action-num">{{ String(i + 1).padStart(2, '0') }}</div>
                 <div class="action-body">
                   <div class="action-title">{{ it.title }}</div>
-                  <!-- desc 经 DOMPurify 白名单（仅 <span class>）。即便未来切外部 API 也防 XSS。 -->
+                  <!-- desc 经 DOMPurify 白名单(仅 <span class>)。即便未来切外部 API 也防 XSS。 -->
                   <div class="action-desc" v-html="sanitizeDesc(it.desc)"></div>
                   <div class="action-tags">
                     <span
@@ -287,8 +444,10 @@ const stages = computed<StageVM[]>(() => [
 
     <footer class="page-foot">
       <a href="/prototypes/04-resilience-pathway.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">11 条规则引擎前端实现于 <code>frontend/src/data/recommendation.ts</code>；
-        5/29 后端 <code>services/recommendation.py</code> 同步落地 + 提供 <code>/api/recommendation/&lt;省&gt;</code></span>
+      <span class="note">
+        11 条规则引擎:<code>frontend/src/data/recommendation.ts</code> ·
+        模型 SHAP 与推荐:<code>POST /api/predict</code>
+      </span>
     </footer>
   </section>
 </template>
@@ -312,6 +471,40 @@ const stages = computed<StageVM[]>(() => [
   margin-bottom: 6px;
 }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
+.lead code {
+  font-family: var(--font-mono);
+  background: var(--bg-elev);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.page-banner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(184, 111, 77, 0.08);
+  border: 1px solid rgba(184, 111, 77, 0.35);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--text-2);
+}
+.banner-icon { color: var(--risk-4); font-size: 16px; }
+.banner-text { line-height: 1.6; }
+.banner-retry {
+  margin-left: 6px;
+  padding: 3px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+.banner-retry:hover { border-color: var(--green); }
 
 .grid {
   display: grid;
@@ -348,6 +541,16 @@ const stages = computed<StageVM[]>(() => [
   font-size: 14px;
   font-weight: 600;
 }
+.status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+.status.loading { color: var(--amber); background: rgba(230, 182, 85, 0.10); }
+.status.err { color: var(--purple, #b49dd8); background: rgba(180, 157, 216, 0.10); }
+.status.ok { color: var(--blue, #6ab4c8); background: rgba(100, 180, 200, 0.10); }
 
 .province-select {
   width: 100%;
@@ -365,6 +568,7 @@ const stages = computed<StageVM[]>(() => [
   background-position: right 12px center;
   background-size: 8px;
 }
+.province-select:disabled { opacity: 0.55; cursor: wait; }
 /* a11y SC 2.4.11 Focus Appearance:替代 outline:none */
 .province-select:focus { border-color: var(--green); }
 .province-select:focus-visible {
@@ -442,6 +646,104 @@ const stages = computed<StageVM[]>(() => [
 }
 .metric .delta.up { color: var(--risk-4); }
 .metric .delta.dn { color: var(--green-bright); }
+
+/* model signal card */
+.model-empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 12px;
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.model-empty code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.model-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 4px 0 6px;
+}
+.shap-list, .rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shap-row {
+  display: grid;
+  grid-template-columns: 22px 1fr 72px 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  border-left: 2px solid transparent;
+}
+.shap-row.harm { border-left-color: var(--risk-4); }
+.shap-row.protect { border-left-color: var(--green); }
+.shap-rank { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+.shap-name { color: var(--text); font-weight: 500; }
+.shap-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+}
+.shap-row.harm .shap-val { color: var(--risk-4); }
+.shap-row.protect .shap-val { color: var(--green-bright); }
+.shap-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.rec-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+  border-left: 2px solid transparent;
+  align-items: start;
+}
+.rec-row.high { border-left-color: var(--risk-4); }
+.rec-row.medium { border-left-color: var(--amber); }
+.rec-row.low { border-left-color: var(--green); }
+.rec-priority {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  align-self: center;
+  text-align: center;
+  padding: 3px 4px;
+  border-radius: 4px;
+  color: var(--text);
+}
+.rec-row.high .rec-priority { color: var(--risk-4); background: rgba(184, 111, 77, 0.12); }
+.rec-row.medium .rec-priority { color: var(--amber-bright); background: rgba(230, 182, 85, 0.12); }
+.rec-row.low .rec-priority { color: var(--green-bright); background: rgba(160, 183, 133, 0.12); }
+.rec-action { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.5; margin-bottom: 2px; }
+.rec-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+.rec-meta .v { color: var(--text-2); font-weight: 500; }
 
 .audience-list { display: flex; flex-direction: column; gap: 10px; }
 .audience-item {

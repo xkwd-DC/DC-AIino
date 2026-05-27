@@ -8,65 +8,80 @@ import { storeToRefs } from 'pinia'
 // a11y: ECharts 动画绕过 CSS prefers-reduced-motion,JS 探测后传 0
 import { motionDuration } from '@/data/a11y'
 
+// 11 维特征顺序与 backend/api/predict.py _FEATURE_LABELS 严格对齐:
+// 这是 view 用来组装"全 11 维"的固定骨架。后端 /api/predict 当前只返 top-5
+// (见 `_shap_top()` top_n=5),其余 6 维我们以 value=0 占位 + 注脚说明,
+// 避免出现"6 个不显示 / 5 个真值"的混杂视觉。
+const FEATURES_SCHEMA: Array<{ name: string; en: string }> = [
+  { name: '灌溉率',       en: 'Irr' },
+  { name: '洪涝占比',     en: 'Flood_R' },
+  { name: '日照时数',     en: 'Sun' },
+  { name: '平均气温',     en: 'Temp' },
+  { name: 'SPEI 干旱指数', en: 'SPEI' },
+  { name: '降水量',       en: 'Prec' },
+  { name: '农机总动力',   en: 'Mech' },
+  { name: '化肥施用量',   en: 'Fert' },
+  { name: '旱灾面积',     en: 'Drou_A' },
+  { name: '水灾面积',     en: 'Flood_A' },
+  { name: 'NDVI 异常',    en: 'NDVI' },
+]
+
 interface Feature {
   name: string
   en: string
   shap: number
   dir: 'green' | 'red'
+  hasValue: boolean   // true=API top-N 真值;false=占位 0
 }
 
-// Mock baseline: fallback when backend unavailable
-const FEATURES_MOCK: Feature[] = [
-  { name: '灌溉率', en: 'Irr', shap: 0.420, dir: 'green' },
-  { name: '洪涝占比', en: 'Flood_R', shap: 0.385, dir: 'red' },
-  { name: '日照时数', en: 'Sun', shap: 0.312, dir: 'green' },
-  { name: '平均气温', en: 'Temp', shap: 0.225, dir: 'red' },
-  { name: '降水量', en: 'Prec', shap: 0.185, dir: 'red' },
-  { name: '干旱指数', en: 'SPEI', shap: 0.162, dir: 'green' },
-  { name: '农机总动力', en: 'Mech', shap: 0.124, dir: 'green' },
-  { name: '化肥施用量', en: 'Fert', shap: 0.092, dir: 'red' },
-  { name: '旱灾面积', en: 'Drou_A', shap: 0.075, dir: 'red' },
-  { name: '水灾面积', en: 'Flood_A', shap: 0.058, dir: 'red' },
-  { name: 'NDVI 异常', en: 'NDVI', shap: 0.034, dir: 'green' },
-]
-
-// ── 后端 SHAP top-5 状态 ──────────────────────────────────────────────────
+// ── 后端 SHAP 状态 ────────────────────────────────────────────────────────
 const backendContribs = ref<ShapContrib[] | null>(null)
 const isLoadingShap = ref(false)
-const shapUnavailable = ref(false)
+const shapError = ref<string | null>(null)
 
 const provinceStore = useProvinceStore()
-const { selected: selectedProvince } = storeToRefs(provinceStore)
+const { selected: selectedProvince, isLoading: storeLoading, source: storeSource } = storeToRefs(provinceStore)
 
-/** 将 API shap_top 数据融合进 FEATURES_MOCK：top-5 用真值，其余保留 mock */
-function mergeShapData(contribs: ShapContrib[]): Feature[] {
-  // Build lookup by feature name (中文)
+/** 把 API top-N 装回 11 维骨架。
+ *  - 命中:value = |shap|;direction → dir(harm=red, protect=green);hasValue=true
+ *  - 未命中:value = 0;dir 按 schema 默认("绿"或"红")推断;hasValue=false → 视觉灰色
+ */
+function assembleFullFeatures(contribs: ShapContrib[]): Feature[] {
   const lookup = new Map<string, ShapContrib>()
-  for (const c of contribs) {
-    lookup.set(c.feature, c)
-  }
-  return FEATURES_MOCK.map((f) => {
+  for (const c of contribs) lookup.set(c.feature, c)
+  return FEATURES_SCHEMA.map((f) => {
     const hit = lookup.get(f.name)
-    if (!hit) return f
+    if (!hit) {
+      return { ...f, shap: 0, dir: 'green', hasValue: false }
+    }
     return {
       ...f,
       shap: Math.abs(hit.value),
       dir: hit.direction === 'harm' ? 'red' : 'green',
+      hasValue: true,
     }
   })
 }
 
-/** 当前特征重要性数组：有后端真值用真值，否则 mock */
+/** 当前 11 维特征数据,只在 backendContribs 就绪时返回有效骨架,
+ *  否则返回空数组(view 显示 loading / error)。 */
 const FEATURES_ALL = computed<Feature[]>(() =>
-  backendContribs.value ? mergeShapData(backendContribs.value) : FEATURES_MOCK,
+  backendContribs.value ? assembleFullFeatures(backendContribs.value) : [],
 )
 
-const shapDataSource = computed(() =>
-  shapUnavailable.value ? 'mock' : backendContribs.value ? 'model' : 'loading',
-)
+const apiReadyCount = computed(() => FEATURES_ALL.value.filter((f) => f.hasValue).length)
+
+const shapDataSource = computed<'loading' | 'error' | 'model' | 'idle'>(() => {
+  if (isLoadingShap.value) return 'loading'
+  if (shapError.value) return 'error'
+  if (backendContribs.value) return 'model'
+  return 'idle'
+})
 
 async function fetchShapData() {
+  if (!selectedProvince.value?.name) return
   isLoadingShap.value = true
+  shapError.value = null
   try {
     const data = await postPredict(
       selectedProvince.value.name,
@@ -77,23 +92,24 @@ async function fetchShapData() {
         temp: selectedProvince.value.temp,
         spei: selectedProvince.value.spei,
       },
-      'xgboost', // use xgboost for SHAP attribution (lighter + XGB has SHAP support)
+      'xgboost', // XGB-SHAP attribution(更稳定,后端 _approx_contribs 用 XGB)
     )
     backendContribs.value = data.shap_top
-    shapUnavailable.value = false
-  } catch (_err: unknown) {
-    shapUnavailable.value = true
+  } catch (e: unknown) {
+    shapError.value = e instanceof Error ? e.message : 'network error'
     backendContribs.value = null
   } finally {
     isLoadingShap.value = false
   }
 }
 
-// Re-fetch when province changes
+// 省份切换时重新拉
 watch(selectedProvince, () => {
-  backendContribs.value = null
-  shapUnavailable.value = false
-  fetchShapData()
+  if (selectedProvince.value?.name) {
+    backendContribs.value = null
+    shapError.value = null
+    fetchShapData()
+  }
 })
 
 type SubsetKey = 'all' | 'north' | 'south' | 'major'
@@ -106,10 +122,14 @@ interface Subset {
   mods: Record<string, number>
 }
 
+// SUBSETS 用于"子集对比展示"——这是 sample-level 演示叙事,
+// mods 是 ablation-style 缩放因子,纯 visualization aid。
+// 真后端要在子集上重新跑模型才能给出精确 SHAP,目前后端没暴露此 endpoint;
+// 此处保留为 visualization 辅助层,不会让用户误把它当作真子集模型输出。
 const SUBSETS: Subset[] = [
   { key: 'all', label: '全样本 (31 省)', sampleN: 403, cover: 31, mods: {} },
-  { key: 'north', label: '北方 (14 省)', sampleN: 169, cover: 14, mods: { '灌溉率': 1.18, '日照时数': 1.22, '干旱指数': 1.35, '旱灾面积': 1.45, '洪涝占比': 0.55, '水灾面积': 0.42, '降水量': 0.78 } },
-  { key: 'south', label: '南方 (12 省)', sampleN: 156, cover: 12, mods: { '灌溉率': 0.72, '洪涝占比': 1.32, '水灾面积': 1.55, '降水量': 1.28, '日照时数': 0.85, '干旱指数': 0.42, '旱灾面积': 0.38 } },
+  { key: 'north', label: '北方 (14 省)', sampleN: 169, cover: 14, mods: { '灌溉率': 1.18, '日照时数': 1.22, 'SPEI 干旱指数': 1.35, '旱灾面积': 1.45, '洪涝占比': 0.55, '水灾面积': 0.42, '降水量': 0.78 } },
+  { key: 'south', label: '南方 (12 省)', sampleN: 156, cover: 12, mods: { '灌溉率': 0.72, '洪涝占比': 1.32, '水灾面积': 1.55, '降水量': 1.28, '日照时数': 0.85, 'SPEI 干旱指数': 0.42, '旱灾面积': 0.38 } },
   { key: 'major', label: '主产区 (13 省)', sampleN: 169, cover: 13, mods: { '灌溉率': 1.08, '化肥施用量': 1.42, '农机总动力': 1.38, '洪涝占比': 1.05, '降水量': 0.92 } },
 ]
 
@@ -118,13 +138,15 @@ const currentSubset = computed(() => SUBSETS.find((s) => s.key === subset.value)
 
 const features = computed<Feature[]>(() => {
   const mods = currentSubset.value.mods
-  return FEATURES_ALL.value.map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(3) })).sort(
-    (a, b) => b.shap - a.shap,
-  )
+  return FEATURES_ALL.value
+    .map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(3) }))
+    .sort((a, b) => b.shap - a.shap)
 })
 
-// Waterfall 河南 2022 单样本数据（与 prototype 一致）
-// HIGH#6: 拆成 discriminated union，TS 在每个 type 分支自动 narrow val/delta，
+// Waterfall:5/27 v0.1 阶段保留参考结构(单样本 attribution 后端尚未暴露 endpoint),
+// 但底数已对齐 backend _BASELINE_RISK = 0.0235 + risk clip 区间。当 backend 加上
+// per-sample shap.TreeExplainer endpoint 后再切真值。
+// HIGH#6: discriminated union,TS 在每个 type 分支自动 narrow val/delta,
 // 去掉所有 `step.val!` / `step.delta!` 非空强断言。
 type WaterfallBaseline = { name: string; type: 'baseline'; val: number }
 type WaterfallFinal = { name: string; type: 'final'; val: number }
@@ -143,11 +165,11 @@ const WATERFALL_STEPS: WaterfallStep[] = [
   { name: '预测 f(x)', val: 0.0249, type: 'final' },
 ]
 
-// 模板里 E[f(x)] / f(x) 两端 readout 用得到 — 类型已知，免去模板里强断言。
+// 模板里 E[f(x)] / f(x) 两端 readout 用得到 — 类型已知,免去模板里强断言。
 const WATERFALL_BASELINE = WATERFALL_STEPS[0] as WaterfallBaseline
 const WATERFALL_FINAL = WATERFALL_STEPS[WATERFALL_STEPS.length - 1] as WaterfallFinal
 
-// 伪随机 beeswarm 数据生成
+// 伪随机 beeswarm:同样是 visualization aid,样本级 SHAP 后端 endpoint 待开。
 function seededRandom(seed: number): () => number {
   let s = seed
   return () => {
@@ -175,7 +197,7 @@ function generateBeeswarmPoints(subsetKey: SubsetKey): { features: string[]; poi
   const mods = currentSubset.value.mods
   const points: BeePoint[] = []
   feats.forEach((f, fi) => {
-    const modKey = f.name === 'SPEI 干旱' ? '干旱指数' : f.name
+    const modKey = f.name === 'SPEI 干旱' ? 'SPEI 干旱指数' : f.name
     const mod = mods[modKey] || 1
     const rng = seededRandom(fi * 1000 + subsetKey.charCodeAt(0) * 13)
     const n = 60 + Math.floor(rng() * 15)
@@ -220,6 +242,10 @@ let resizeHandler: (() => void) | null = null
 function renderImportance() {
   if (!importanceChart) return
   const f = features.value
+  if (f.length === 0) {
+    importanceChart.clear()
+    return
+  }
   importanceChart.setOption(
     {
       backgroundColor: 'transparent',
@@ -231,6 +257,11 @@ function renderImportance() {
         textStyle: { color: getCSSVar('--text'), fontSize: 12 },
         formatter: (p: { dataIndex: number; value: number }) => {
           const ft = f[f.length - 1 - p.dataIndex]
+          if (!ft.hasValue) {
+            return `<b>${ft.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${ft.en}</span><br/>
+              <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:14px;">未进入 top-${apiReadyCount.value} 因子</span><br/>
+              <span style="font-size:11px;color:${getCSSVar('--text-3')};">API 仅返回 top-N,余项以 0 占位</span>`
+          }
           const color = ft.dir === 'green' ? getCSSVar('--green-bright') : getCSSVar('--risk-4')
           const tag = ft.dir === 'green' ? '韧性因子 · 降风险' : '致灾因子 · 推风险'
           return `<b>${ft.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${ft.en}</span><br/>
@@ -258,14 +289,18 @@ function renderImportance() {
           data: f.slice().reverse().map((x) => ({
             value: x.shap,
             itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0, y: 0, x2: 1, y2: 0,
-                colorStops: x.dir === 'green'
-                  ? [{ offset: 0, color: getCSSVar('--green-deep') }, { offset: 1, color: getCSSVar('--green-bright') }]
-                  : [{ offset: 0, color: getCSSVar('--risk-5') }, { offset: 1, color: getCSSVar('--risk-4') }],
-              },
+              color: !x.hasValue
+                ? getCSSVar('--bg-elev')   // 占位项灰色,视觉与 top-N 真值区隔
+                : {
+                    type: 'linear',
+                    x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: x.dir === 'green'
+                      ? [{ offset: 0, color: getCSSVar('--green-deep') }, { offset: 1, color: getCSSVar('--green-bright') }]
+                      : [{ offset: 0, color: getCSSVar('--risk-5') }, { offset: 1, color: getCSSVar('--risk-4') }],
+                  },
               borderRadius: [0, 3, 3, 0],
+              borderColor: !x.hasValue ? getCSSVar('--border') : 'transparent',
+              borderWidth: !x.hasValue ? 1 : 0,
             },
           })),
           barWidth: 16,
@@ -276,7 +311,10 @@ function renderImportance() {
             fontFamily: 'JetBrains Mono',
             fontSize: 11,
             fontWeight: 500,
-            formatter: (p: { value: number }) => p.value.toFixed(3),
+            formatter: (p: { value: number; dataIndex: number }) => {
+              const ft = f[f.length - 1 - p.dataIndex]
+              return ft.hasValue ? p.value.toFixed(3) : '—'
+            },
           },
           animationDuration: motionDuration(800),
         },
@@ -497,13 +535,16 @@ watch(backendContribs, () => {
   renderImportance()
 }, { flush: 'post' })
 
-onMounted(() => {
+onMounted(async () => {
   if (importanceEl.value) importanceChart = echarts.init(importanceEl.value, undefined, { renderer: 'canvas' })
   if (waterfallEl.value) waterfallChart = echarts.init(waterfallEl.value, undefined, { renderer: 'canvas' })
   if (beeswarmEl.value) beeswarmChart = echarts.init(beeswarmEl.value, undefined, { renderer: 'canvas' })
   rerenderAll()
-  // 挂载后拉取后端 SHAP 数据
-  fetchShapData()
+  // 等省份数据就绪后再请求 predict
+  if (storeSource.value === 'none') {
+    await provinceStore.loadProvinces()
+  }
+  await fetchShapData()
   resizeHandler = () => {
     importanceChart?.resize()
     waterfallChart?.resize()
@@ -526,12 +567,16 @@ onBeforeUnmount(() => {
       <div class="eyebrow">M02 · SHAP ATTRIBUTION DASHBOARD</div>
       <h2>SHAP 归因看板</h2>
       <p class="lead">
-        XGBoost-SHAP 三维度可解释性归因：全局重要性 / 单样本预测分解 / 蜂群分布。
-        全局重要性图已接入 <code>POST /api/predict</code> 真模型 top-5 贡献度（Issue #45）；
-        单样本 Waterfall 与 Beeswarm 保留 mock 参考数据。
-        <span v-if="isLoadingShap" class="shap-status loading">· 加载模型数据…</span>
-        <span v-else-if="shapUnavailable" class="shap-status fallback">· 后端不可用，显示参考 mock 数据</span>
-        <span v-else-if="shapDataSource === 'model'" class="shap-status real">· 真模型数据</span>
+        XGBoost-SHAP 三视角:全局重要性 / 单样本预测分解 / 蜂群分布。
+        全局重要性条形图由 <code>POST /api/predict</code> 返回的 SHAP top-{{ apiReadyCount || 5 }} 真值驱动;
+        余项以 0 占位灰条标识(后端当前仅暴露 top-N)。
+        <span v-if="storeLoading || isLoadingShap" class="shap-status loading">· 加载模型数据…</span>
+        <span v-else-if="shapDataSource === 'error'" class="shap-status err">· 模型暂不可用 {{ shapError ? `· ${shapError}` : '' }}</span>
+        <span v-else-if="shapDataSource === 'model'" class="shap-status real">· 真模型 SHAP top-{{ apiReadyCount }}</span>
+      </p>
+      <p v-if="selectedProvince?.name" class="province-line">
+        当前省份 <b>{{ selectedProvince.name }}</b>
+        <span class="prov-meta">{{ selectedProvince.type }} · y={{ selectedProvince.y.toFixed(4) }}</span>
       </p>
     </header>
 
@@ -573,22 +618,31 @@ onBeforeUnmount(() => {
             <div class="num">M02-A · GLOBAL IMPORTANCE</div>
             <h3>全局特征重要性 mean(|SHAP|)</h3>
           </div>
-          <span class="hint">绿色 = 韧性因子，赭石 = 致灾因子</span>
+          <span class="hint">绿色 = 韧性因子,赭石 = 致灾因子,灰条 = 未进入 top-N</span>
         </div>
         <!-- a11y SC 1.1.1:ECharts canvas 加 role/aria-label 文本替代 -->
         <div
           ref="importanceEl"
           class="chart-canvas"
           role="img"
-          aria-label="全局特征重要性条形图:11 个变量按 mean(|SHAP|) 排序,绿色条为韧性因子降低风险,赭石色条为致灾因子推高风险"
+          :aria-label="`全局特征重要性条形图:11 个变量,其中 ${apiReadyCount} 个由 API 返回真值,其余以 0 占位`"
           tabindex="0"
         ></div>
+        <div v-if="shapDataSource === 'loading' && features.length === 0" class="chart-overlay">
+          <div class="spinner" aria-hidden="true"></div>
+          <div>正在请求 <code>POST /api/predict</code>…</div>
+        </div>
+        <div v-else-if="shapDataSource === 'error'" class="chart-overlay err">
+          <div>⚠ 模型暂不可用</div>
+          <div class="small">{{ shapError }}</div>
+          <button type="button" class="retry-btn" @click="fetchShapData">重试</button>
+        </div>
       </div>
 
       <div class="card chart-card">
         <div class="card-head">
           <div>
-            <div class="num">M02-B · WATERFALL · 河南 2022</div>
+            <div class="num">M02-B · WATERFALL · 参考样本</div>
             <h3>单样本预测分解</h3>
           </div>
           <span class="hint">E[f(x)] = {{ WATERFALL_BASELINE.val }} → f(x) = {{ WATERFALL_FINAL.val }}</span>
@@ -597,7 +651,7 @@ onBeforeUnmount(() => {
           ref="waterfallEl"
           class="chart-canvas"
           role="img"
-          :aria-label="`河南 2022 年单样本预测分解 Waterfall 图:从基线 ${WATERFALL_BASELINE.val} 经 7 个特征贡献逐步演变到最终预测 ${WATERFALL_FINAL.val}`"
+          :aria-label="`单样本预测分解 Waterfall 图:从基线 ${WATERFALL_BASELINE.val} 经 7 个特征贡献逐步演变到最终预测 ${WATERFALL_FINAL.val}`"
           tabindex="0"
         ></div>
       </div>
@@ -608,7 +662,7 @@ onBeforeUnmount(() => {
             <div class="num">M02-C · BEESWARM</div>
             <h3>Top 5 特征 SHAP 蜂群分布</h3>
           </div>
-          <span class="hint">点色 = 原始值（蓝低 → 赭石高）&nbsp;·&nbsp;X = SHAP 值</span>
+          <span class="hint">点色 = 原始值(蓝低 → 赭石高)&nbsp;·&nbsp;X = SHAP 值</span>
         </div>
         <div
           ref="beeswarmEl"
@@ -623,8 +677,8 @@ onBeforeUnmount(() => {
     <footer class="page-foot">
       <a href="/prototypes/02-shap-dashboard.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
       <span class="note">
-        全局重要性 top-5 来自 <code>POST /api/predict</code> 单特征扰动估计（Issue #45）；
-        Waterfall / Beeswarm 保留 mock 参考数据
+        全局重要性 = <code>POST /api/predict</code> 单特征扰动 SHAP top-N 真值;
+        Waterfall / Beeswarm = 子集可视化辅助(后端样本级 SHAP endpoint 待开)
       </span>
     </footer>
   </section>
@@ -640,8 +694,16 @@ onBeforeUnmount(() => {
 .lead code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
 .shap-status { font-family: var(--font-mono); font-size: 11px; margin-left: 4px; }
 .shap-status.loading { color: var(--amber); }
-.shap-status.fallback { color: var(--purple, #b49dd8); }
+.shap-status.err { color: var(--purple, #b49dd8); }
 .shap-status.real { color: var(--green-bright); }
+.province-line {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+}
+.province-line b { color: var(--green-bright); font-weight: 600; }
+.province-line .prov-meta { color: var(--text-3); margin-left: 6px; }
 
 .card {
   background: var(--bg-card);
@@ -706,9 +768,47 @@ onBeforeUnmount(() => {
   grid-template-rows: 420px 420px;
   gap: 16px;
 }
-.chart-card { display: flex; flex-direction: column; }
+.chart-card { display: flex; flex-direction: column; position: relative; }
 .chart-card.full { grid-column: 1 / -1; }
 .chart-canvas { flex: 1; min-height: 0; }
+
+.chart-overlay {
+  position: absolute;
+  inset: 56px 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(14, 26, 20, 0.85);
+  border-radius: var(--r-md);
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.chart-overlay code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 5px; border-radius: 2px; }
+.chart-overlay.err { color: var(--purple, #b49dd8); }
+.chart-overlay .small { font-size: 10px; opacity: 0.7; }
+.retry-btn {
+  margin-top: 6px;
+  padding: 4px 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--green-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+.retry-btn:hover { border-color: var(--green); }
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--bg-elev);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .page-foot {
   margin-top: 24px;
