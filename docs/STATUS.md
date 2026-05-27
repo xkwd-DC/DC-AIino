@@ -3,11 +3,36 @@
 > **本文是项目级 single-source-of-truth dashboard**，任何 session 都该来这看大盘。
 > 每次重要进展（PR merge / 任务完成 / 新 blocker）都更新本文。
 >
-> 最近更新：**2026-05-27 早**（🌅 一晚上 Wave 1-4 全部完成 + Issue burndown 9→3 OPEN + v6 三层叙事全 sync;早安邮件已发 sakura93777@163.com)
+> 最近更新：**2026-05-27 上午**（🚀 Wave 5 收尾 — 国家级要求 4 文件入仓 + docs/22 总结 + docs/23 软著指南 + 4 view 彻底切真 API + 期刊验证(中文核心 3/3 在第一批) ）
 
 ---
 
 ## 🚨 关键路线决策
+
+### 🚀 2026-05-27 上午 · Wave 5 — 国家级要求落地 + API 彻底切真
+
+**国家级要求 4 文件入仓 + 操作性总结**(commit `de9c1db` + `4552260` + `69c297b`):
+- `docs/national/18` 申报书国家级批准版(N4)— 法定团队 5 人不可改;**起止时间 2026.6-2027.5(+1 月)**
+- `docs/national/19` 结题验收要求 — **项目负责人(潘)第一作者**;论文须广电总局名单内;竞赛省银+
+- `docs/national/20+21` 学术期刊清单第一批 + 第二批
+- `docs/22_国家级要求总结_2026-05-27.md` 操作性总结:
+  - 期刊验证 3/3 中文核心(《农业工程学报》《中国生态农业学报》《地理研究》)**全在第一批**
+  - SCI 外刊 *Comp & Electronics in Agri* / *Ecological Informatics* **不在名单 → 仅 upside**
+  - **软著 = 最稳兜底**(潘第一作者就过 + 系统已实装)
+- `docs/23_软著申请材料指南_2026-05-27.md` — 706 行 11 章,**代码规模 6,284 行**(远超 CCPC 5K 要求),9/30 提交时间倒推
+
+**4 view 彻底切真 API**(commit `4552260`, 5 文件 +956/-155 行):
+- M01 RiskMap 切 `/api/provinces?year` + `/history`,去 "前端 mock 演示" banner + 注脚,加 loading/error/retry
+- M04 ResiliencePath 切 `/api/predict`(SHAP top + ensemble),11 规则引擎走真值
+- M02 ShapDashboard `FEATURES_MOCK` → `FEATURES_SCHEMA`,API top-N 真值染色,余项灰条 + tooltip
+- npm build 通过 / 叙事 grep 净
+- 5 个有意保留 mock(Waterfall/Beeswarm 子集可视化,后端样本级 SHAP endpoint 待开;ScenarioSim 5 维瞬时反馈公式;`PROVINCES_BASE` 骨架 fallback)
+
+**新发现 follow-up**(待后续):
+- backend 待加单样本逐特征 SHAP + 子集模型 endpoint(支持 Waterfall/Beeswarm 真值)
+- grain.db ETL Phase 4 完成 + `/api/provinces?year=` 返 `y` 字段(目前 503 时前端优雅降级)
+
+---
 
 ### 🌅 2026-05-27 早 · Wave 2 + 3 + 4 战果 + Issue burndown(9 → 3 OPEN)
 
