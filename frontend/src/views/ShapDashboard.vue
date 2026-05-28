@@ -70,6 +70,8 @@ const FEATURES_ALL = computed<Feature[]>(() =>
 )
 
 const apiReadyCount = computed(() => FEATURES_ALL.value.filter((f) => f.hasValue).length)
+// 保留计算以备未来 detail 视图复用,模板已不再展示。
+void apiReadyCount
 
 const shapDataSource = computed<'loading' | 'error' | 'model' | 'idle'>(() => {
   if (isLoadingShap.value) return 'loading'
@@ -259,8 +261,7 @@ function renderImportance() {
           const ft = f[f.length - 1 - p.dataIndex]
           if (!ft.hasValue) {
             return `<b>${ft.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${ft.en}</span><br/>
-              <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:14px;">未进入 top-${apiReadyCount.value} 因子</span><br/>
-              <span style="font-size:11px;color:${getCSSVar('--text-3')};">API 仅返回 top-N,余项以 0 占位</span>`
+              <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:14px;">暂无显著贡献</span>`
           }
           const color = ft.dir === 'green' ? getCSSVar('--green-bright') : getCSSVar('--risk-4')
           const tag = ft.dir === 'green' ? '韧性因子 · 降风险' : '致灾因子 · 推风险'
@@ -567,12 +568,16 @@ onBeforeUnmount(() => {
       <div class="eyebrow">M02 · SHAP ATTRIBUTION DASHBOARD</div>
       <h2>SHAP 归因看板</h2>
       <p class="lead">
-        XGBoost-SHAP 三视角:全局重要性 / 单样本预测分解 / 蜂群分布。
-        全局重要性条形图由 <code>POST /api/predict</code> 返回的 SHAP top-{{ apiReadyCount || 5 }} 真值驱动;
-        余项以 0 占位灰条标识(后端当前仅暴露 top-N)。
-        <span v-if="storeLoading || isLoadingShap" class="shap-status loading">· 加载模型数据…</span>
-        <span v-else-if="shapDataSource === 'error'" class="shap-status err">· 模型暂不可用 {{ shapError ? `· ${shapError}` : '' }}</span>
-        <span v-else-if="shapDataSource === 'model'" class="shap-status real">· 真模型 SHAP top-{{ apiReadyCount }}</span>
+        从全局重要性、单样本分解到蜂群分布三个视角,
+        解析驱动粮食生产风险的关键因子及其方向。
+        <span
+          v-if="storeLoading || isLoadingShap"
+          class="shap-status loading"
+          aria-hidden="true"
+        >
+          <span class="lead-spinner"></span>
+        </span>
+        <span v-else-if="shapDataSource === 'error'" class="shap-status err">· 暂无可用结果</span>
       </p>
       <p v-if="selectedProvince?.name" class="province-line">
         当前省份 <b>{{ selectedProvince.name }}</b>
@@ -618,23 +623,22 @@ onBeforeUnmount(() => {
             <div class="num">M02-A · GLOBAL IMPORTANCE</div>
             <h3>全局特征重要性 mean(|SHAP|)</h3>
           </div>
-          <span class="hint">绿色 = 韧性因子,赭石 = 致灾因子,灰条 = 未进入 top-N</span>
+          <span class="hint">绿色 = 韧性因子,赭石 = 致灾因子</span>
         </div>
         <!-- a11y SC 1.1.1:ECharts canvas 加 role/aria-label 文本替代 -->
         <div
           ref="importanceEl"
           class="chart-canvas"
           role="img"
-          :aria-label="`全局特征重要性条形图:11 个变量,其中 ${apiReadyCount} 个由 API 返回真值,其余以 0 占位`"
+          aria-label="全局特征重要性条形图,按平均 SHAP 绝对值排序展示驱动因子"
           tabindex="0"
         ></div>
         <div v-if="shapDataSource === 'loading' && features.length === 0" class="chart-overlay">
           <div class="spinner" aria-hidden="true"></div>
-          <div>正在请求 <code>POST /api/predict</code>…</div>
+          <div>正在加载归因结果</div>
         </div>
         <div v-else-if="shapDataSource === 'error'" class="chart-overlay err">
-          <div>⚠ 模型暂不可用</div>
-          <div class="small">{{ shapError }}</div>
+          <div>暂无可用结果</div>
           <button type="button" class="retry-btn" @click="fetchShapData">重试</button>
         </div>
       </div>
@@ -674,13 +678,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <footer class="page-foot">
-      <a href="/prototypes/02-shap-dashboard.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">
-        全局重要性 = <code>POST /api/predict</code> 单特征扰动 SHAP top-N 真值;
-        Waterfall / Beeswarm = 子集可视化辅助(后端样本级 SHAP endpoint 待开)
-      </span>
-    </footer>
   </section>
 </template>
 
@@ -691,11 +688,24 @@ onBeforeUnmount(() => {
 .eyebrow { font-family: var(--font-mono); font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
 .page-head h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
-.lead code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
-.shap-status { font-family: var(--font-mono); font-size: 11px; margin-left: 4px; }
-.shap-status.loading { color: var(--amber); }
-.shap-status.err { color: var(--purple, #b49dd8); }
-.shap-status.real { color: var(--green-bright); }
+.shap-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+.shap-status.err { color: var(--text-3); }
+.lead-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--bg-elev);
+  border-top-color: var(--green-bright);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
 .province-line {
   margin-top: 6px;
   font-family: var(--font-mono);
@@ -786,8 +796,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-family: var(--font-mono);
 }
-.chart-overlay code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 5px; border-radius: 2px; }
-.chart-overlay.err { color: var(--purple, #b49dd8); }
+.chart-overlay.err { color: var(--text-3); }
 .chart-overlay .small { font-size: 10px; opacity: 0.7; }
 .retry-btn {
   margin-top: 6px;
@@ -810,30 +819,4 @@ onBeforeUnmount(() => {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.page-foot {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-3);
-  gap: 16px;
-}
-.page-foot .note { font-family: var(--font-mono); text-align: right; }
-.page-foot .note code { background: var(--bg-elev); padding: 1px 5px; border-radius: 2px; font-size: 10px; }
-.proto-link {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  color: var(--green-bright);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.3px;
-  transition: all var(--dur-fast);
-}
-.proto-link:hover { border-color: var(--green); transform: translateY(-1px); }
 </style>

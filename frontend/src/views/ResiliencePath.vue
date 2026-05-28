@@ -191,12 +191,12 @@ async function retryInit() {
 <template>
   <section class="page">
     <header class="page-head">
-      <div class="eyebrow">M04 · RESILIENCE PATHWAY ENGINE · v2.1</div>
+      <div class="eyebrow">M04 · RESILIENCE PATHWAY ENGINE</div>
       <h2>韧性路径推荐</h2>
       <p class="lead">
-        基于省份风险指纹(灌溉/洪涝/SPEI/温度/日照/省域类型)匹配 11 条规则,自动生成三阶段(短期 / 中期 / 长期)行动路径。
-        省份特征来自 <code>GET /api/provinces</code>;SHAP 因子与模型推荐来自 <code>POST /api/predict</code>。
-        可用于农业农村厅政策决策、农险机构产品定价、农科院课题立项、储备局空间布局等场景。
+        基于省份风险指纹(灌溉、洪涝、SPEI、温度、日照、省域类型)匹配规则库,
+        自动生成短期、中期、长期三阶段行动路径,
+        可服务于农业农村厅政策决策、农险机构产品定价、农科院课题立项、储备局空间布局等场景。
       </p>
     </header>
 
@@ -208,7 +208,7 @@ async function retryInit() {
     >
       <span class="banner-icon" aria-hidden="true">⚠</span>
       <div class="banner-text">
-        <b>省份数据加载失败:</b>{{ storeError }} · 当前展示骨架,
+        <b>数据正在同步,请稍后重试。</b>
         <button type="button" class="banner-retry" @click="retryInit">重新加载</button>
       </div>
     </div>
@@ -219,10 +219,18 @@ async function retryInit() {
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="num">M04-A · TARGET</div>
+              <div class="num">M04-A</div>
               <h3 id="pathway-target-heading">选择省份</h3>
             </div>
-            <span v-if="storeLoading" class="status loading">加载中…</span>
+            <span
+              v-if="storeLoading"
+              class="status loading"
+              aria-label="正在加载"
+              role="status"
+              aria-live="polite"
+            >
+              <span class="status-spinner" aria-hidden="true"></span>
+            </span>
           </div>
           <!-- a11y SC 1.3.1 + 4.1.2:select 显式 label 关联 -->
           <label class="sr-only" for="province-select-pathway">韧性路径目标省份选择器</label>
@@ -242,7 +250,7 @@ async function retryInit() {
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="num">M04-B · PROFILE</div>
+              <div class="num">M04-B</div>
               <h3>省份风险画像</h3>
             </div>
             <span
@@ -262,11 +270,11 @@ async function retryInit() {
           </div>
         </div>
 
-        <!-- M04-B2 · 模型 SHAP top + 推荐(真 /api/predict 输出) -->
+        <!-- M04-B2 · 模型 SHAP top + 推荐 -->
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="num">M04-B2 · MODEL SIGNAL</div>
+              <div class="num">M04-B2</div>
               <h3>模型 SHAP 与推荐</h3>
             </div>
             <span
@@ -274,22 +282,23 @@ async function retryInit() {
               class="status loading"
               role="status"
               aria-live="polite"
-            >COMPUTING…</span>
+              aria-label="正在计算"
+            >
+              <span class="status-spinner" aria-hidden="true"></span>
+            </span>
             <span
               v-else-if="predictError"
               class="status err"
-              :title="predictError"
-              aria-label="模型暂不可用"
-            >MODEL N/A</span>
-            <span v-else-if="modelDataReady" class="status ok">MODEL</span>
+              aria-label="结果暂不可用"
+            >暂无</span>
           </div>
 
           <div v-if="predictError" class="model-empty">
-            模型暂不可用 · {{ predictError }}
+            结果暂不可用
             <button type="button" class="banner-retry" @click="fetchPredict">重试</button>
           </div>
           <div v-else-if="!modelDataReady && predictLoading" class="model-empty">
-            正在调用 <code>POST /api/predict</code>…
+            正在加载归因结果
           </div>
           <template v-else-if="modelDataReady">
             <div class="model-shap">
@@ -334,7 +343,7 @@ async function retryInit() {
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="num">M04-C · AUDIENCE</div>
+              <div class="num">M04-C</div>
               <h3>面向用户</h3>
             </div>
           </div>
@@ -374,7 +383,7 @@ async function retryInit() {
       <!-- 右 timeline -->
       <section class="timeline-wrap">
         <div class="timeline-meta">
-          <span class="label">M04-D · PATHWAY</span>
+          <span class="label">M04-D</span>
           <div class="stats">
             <span>路径长度 <span class="v">{{ totalActions }}</span> 项</span>
             <span>预算量级 <span class="v">{{ budget }}</span></span>
@@ -442,13 +451,6 @@ async function retryInit() {
       </section>
     </div>
 
-    <footer class="page-foot">
-      <a href="/prototypes/04-resilience-pathway.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">
-        11 条规则引擎:<code>frontend/src/data/recommendation.ts</code> ·
-        模型 SHAP 与推荐:<code>POST /api/predict</code>
-      </span>
-    </footer>
   </section>
 </template>
 
@@ -471,13 +473,6 @@ async function retryInit() {
   margin-bottom: 6px;
 }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
-.lead code {
-  font-family: var(--font-mono);
-  background: var(--bg-elev);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-}
 
 .page-banner {
   display: flex;
@@ -547,10 +542,21 @@ async function retryInit() {
   padding: 2px 8px;
   border-radius: 8px;
   letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
 }
-.status.loading { color: var(--amber); background: rgba(230, 182, 85, 0.10); }
-.status.err { color: var(--purple, #b49dd8); background: rgba(180, 157, 216, 0.10); }
-.status.ok { color: var(--blue, #6ab4c8); background: rgba(100, 180, 200, 0.10); }
+.status.loading { background: rgba(230, 182, 85, 0.10); }
+.status.err { color: var(--text-3); background: var(--bg-elev); }
+.status-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(230, 182, 85, 0.25);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .province-select {
   width: 100%;
@@ -658,13 +664,6 @@ async function retryInit() {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.model-empty code {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  background: var(--bg);
-  padding: 1px 5px;
-  border-radius: 2px;
 }
 .model-sub {
   font-family: var(--font-mono);
@@ -981,41 +980,4 @@ async function retryInit() {
   background: rgba(230, 182, 85, 0.1);
 }
 
-.page-foot {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-3);
-  gap: 16px;
-}
-.page-foot .note {
-  font-family: var(--font-mono);
-  text-align: right;
-}
-.page-foot .note code {
-  background: var(--bg-elev);
-  padding: 1px 5px;
-  border-radius: 2px;
-  font-size: 10px;
-}
-.proto-link {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  color: var(--green-bright);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.3px;
-  transition: all var(--dur-fast);
-}
-.proto-link:hover {
-  border-color: var(--green);
-  transform: translateY(-1px);
-}
 </style>
