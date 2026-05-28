@@ -17,6 +17,7 @@ onMounted(async () => {
 })
 
 const tabs = [
+  { code: 'M00', name: '系统总览', path: '/overview' },
   { code: 'M01', name: '风险时空地图', path: '/risk-map' },
   { code: 'M02', name: 'SHAP 归因看板', path: '/shap' },
   { code: 'M03', name: '参数情景模拟', path: '/scenario' },
