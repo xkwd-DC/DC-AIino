@@ -293,13 +293,36 @@ def _predict_real(params: dict[str, float], model: str, province: str) -> tuple[
 # perturbation 估计:把每个特征替换为该省 baseline,看 XGB 预测 yield 的变化,
 # 反算成 risk 的变化。轻量级,够前端 top-5 高亮用,不替代 shap.TreeExplainer。
 # ────────────────────────────────────────────────────────────────────────
+_DATASET_MEAN: dict[str, float] | None = None
+
+
+def _get_dataset_mean() -> dict[str, float]:
+    """Lazy compute 跨 31 省 baseline 的特征均值, 用作 SHAP perturbation reference。
+
+    用 dataset mean 而非省 baseline 做 perturbation:
+    - 让"省内当前值 vs 跨省平均"的差异显现为非零贡献
+    - 避免 caller 传入 == 省 baseline 时所有 contribs 退化为 0(原 bug)
+    """
+    global _DATASET_MEAN
+    if _DATASET_MEAN is None:
+        n = len(_PROVINCES)
+        _DATASET_MEAN = {
+            k: sum(p[k] for p in _PROVINCES.values()) / n for k in _FEATURES
+        }
+    return _DATASET_MEAN
+
+
 def _approx_contribs(params: dict[str, float], province: str) -> dict[str, float]:
-    """单特征扰动估计每个特征对 risk 的边际贡献(正 = 加风险)。"""
+    """单特征扰动估计每个特征对 risk 的边际贡献(正 = 加风险)。
+
+    Perturbation reference 用**跨 31 省 dataset mean**(不是该省 baseline),
+    确保 caller 传 baseline params(M02 ShapDashboard 常见用法)也能拿到非零贡献。
+    """
     from services import inference
 
     models = _get_models()
     baseline_yield = _baseline_yield_for(province)
-    baseline_params_full = _fill_from_baseline(province, {})
+    dataset_mean = _get_dataset_mean()
 
     training_full = inference.to_training_keys(params)
     full_yield = inference.predict_xgb_yield(
@@ -309,14 +332,14 @@ def _approx_contribs(params: dict[str, float], province: str) -> dict[str, float
 
     contribs = {}
     for k in _FEATURES:
-        # 把第 k 个特征替换成该省 baseline,其它保留当前值
-        perturbed = {**params, k: baseline_params_full[k]}
+        # 把第 k 个特征替换成 dataset mean,其它保留当前值
+        perturbed = {**params, k: dataset_mean[k]}
         perturbed_training = inference.to_training_keys(perturbed)
         perturbed_yield = inference.predict_xgb_yield(
             perturbed_training, xgb=models["xgb"], x_scaler=models["xgb_x_scaler"]
         )
         perturbed_risk = _yield_to_risk(perturbed_yield, baseline_yield)
-        # full_risk - perturbed_risk = 该特征(从 baseline 偏离到 current)带来的 risk 增量
+        # full_risk - perturbed_risk = 该特征(从 mean 偏离到 current)带来的 risk 增量
         contribs[k] = round(full_risk - perturbed_risk, 6)
     return contribs
 
