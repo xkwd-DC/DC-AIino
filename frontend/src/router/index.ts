@@ -28,6 +28,12 @@ const router = createRouter({
       component: () => import('@/views/ResiliencePath.vue'),
       meta: { title: '韧性路径推荐', code: 'M04' },
     },
+    {
+      path: '/monitor',
+      name: 'monitor',
+      component: () => import('@/views/InferenceTrace.vue'),
+      meta: { title: '推演监控', code: 'M05' },
+    },
   ],
 })
 

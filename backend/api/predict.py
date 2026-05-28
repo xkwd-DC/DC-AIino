@@ -46,7 +46,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from collections import deque
+from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from flask import Blueprint, request
@@ -57,6 +61,15 @@ from limiter import limiter
 logger = logging.getLogger(__name__)
 
 predict_bp = Blueprint("predict", __name__)
+
+# ─── In-memory ring buffer for /api/predict trace (M05 推演监控面板) ───────
+# 保存最近 N 次 /api/predict 调用的完整 trace,供前端 M05 面板拉取展示。
+# 进程内 only,不落盘;gunicorn 多 worker 时各 worker 各自保留。
+# 锁保护写入:Flask 默认 thread-per-request,deque.append 本身 atomic,
+# 但 list(_PREDICT_HISTORY) 在 reader 期间若 append 会触发 RuntimeError,
+# 故 reader / writer 都走 _HISTORY_LOCK 简化推理。
+_PREDICT_HISTORY: deque[dict[str, Any]] = deque(maxlen=50)
+_HISTORY_LOCK = Lock()
 
 # ─── 启动时加载省份基线 ─────────────────────────────────────────────────
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -393,6 +406,7 @@ def _fill_from_baseline(province: str, params: dict[str, float]) -> dict[str, fl
 @predict_bp.post("/api/predict")
 @limiter.limit("100 per hour")  # Issue #26 HIGH#3 - 真模型 CPU-heavy, DoS 防护 (按 IP)
 def predict():
+    start_ts = time.perf_counter()
     body = request.get_json(silent=True) or {}
     province = body.get("province")
     params_in = body.get("params", {})
@@ -431,4 +445,48 @@ def predict():
         "_mock": False,  # Issue #39 后改为 False;真模型生效
     }
     data.update(risk_payload)
+
+    # ─── Append trace 到 ring buffer (供 M05 推演监控面板拉取) ────────────
+    trace = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "province": province,
+        "model": model,
+        "params": data["params_used"],
+        "params_filled_from_baseline": data["params_filled_from_baseline"],
+        "baseline": baseline,
+        "delta": data["delta"],
+        "risk_score": data["risk_score"],
+        "xgboost_risk": data.get("xgboost_risk"),
+        "lstm_risk": data.get("lstm_risk"),
+        "att_lstm_risk": data.get("att_lstm_risk"),
+        "xgboost_yield_kg_per_ha": data.get("xgboost_yield_kg_per_ha"),
+        "lstm_yield_kg_per_ha": data.get("lstm_yield_kg_per_ha"),
+        "att_lstm_yield_kg_per_ha": data.get("att_lstm_yield_kg_per_ha"),
+        "yield_kg_per_ha": data.get("yield_kg_per_ha"),
+        "consensus": data.get("consensus"),
+        "divergence": data.get("divergence"),
+        "shap_top": data["shap_top"],
+        "recommendations": data["recommendations"],
+        "latency_ms": round((time.perf_counter() - start_ts) * 1000, 1),
+    }
+    with _HISTORY_LOCK:
+        _PREDICT_HISTORY.append(trace)
+
     return envelope(data=data)
+
+
+@predict_bp.get("/api/admin/predicts")
+@limiter.exempt
+def list_predicts():
+    """返回最近 50 次 /api/predict 调用 trace(in-memory ring buffer)。
+
+    供 M05 推演监控面板拉取。最新调用在前。
+    数据进程内 only,gunicorn 多 worker 时各 worker 各自保留。
+    """
+    with _HISTORY_LOCK:
+        items = list(_PREDICT_HISTORY)
+    return envelope(data={
+        "count": len(items),
+        "max": _PREDICT_HISTORY.maxlen,
+        "items": list(reversed(items)),  # 最新在前
+    })

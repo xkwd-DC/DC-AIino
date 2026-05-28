@@ -21,6 +21,7 @@ const tabs = [
   { code: 'M02', name: 'SHAP 归因看板', path: '/shap' },
   { code: 'M03', name: '参数情景模拟', path: '/scenario' },
   { code: 'M04', name: '韧性路径推荐', path: '/pathway' },
+  { code: 'M05', name: '推演监控', path: '/monitor' },
 ]
 
 // a11y(WCAG SC 1.4.1 Use of Color):健康状态不能只靠颜色。
