@@ -14,7 +14,12 @@
  */
 import http from './http'
 
-export type SubsetKey = 'all' | 'north' | 'south' | 'major'
+/** subset 选择器键。
+ *  - 'single': 不调 backend subset endpoint;前端用单省 /api/predict 的
+ *    shap_normalized 渲染 bar chart(让 TARGET 省份切换可见地影响 bar)
+ *  - 其余 keys: 调 GET /api/shap/subset?key=... 跨省聚合
+ */
+export type SubsetKey = 'single' | 'all' | 'north' | 'south' | 'major'
 
 /** 单个特征在子集聚合层面的 importance + 原始 mean(|SHAP|)。
  *

@@ -120,12 +120,17 @@ async function fetchShapData() {
   }
 }
 
-// 省份切换时重新拉(用于 M02-B waterfall 单样本归因 + 老 fallback)
+// 省份切换时:
+//   1. 自动切回 'single' 模式 — 让 bar chart 立刻响应新省份(用户视角"切了有用")
+//   2. 重新拉单省 SHAP(waterfall + bar 共用)
+// 注意:如果用户当前正看 subset 模式(如"全样本"), 省份切换会强制跳回 single,
+// 这是产品决策——因为 subset 跨省聚合本来就不依赖单省选择。
 watch(selectedProvince, () => {
   if (selectedProvince.value?.name) {
     backendNormalized.value = null
     backendContribs.value = null
     shapError.value = null
+    currentSubsetKey.value = 'single'
     fetchShapData()
   }
 })
@@ -133,21 +138,38 @@ watch(selectedProvince, () => {
 // ── M02-A SUBSET 子集聚合 SHAP(全局重要性 bar chart 数据源)──────────────
 // 与 M02-B waterfall(单省 SHAP)正交并存:
 //   - 单省 dropdown(M02-0)→ 控制 M02-B 单样本分解
-//   - 4-button SUBSET → 控制 M02-A 全局 bar chart(subset 内所有省份 abs 贡献聚合)
+//   - 5-button SUBSET → 控制 M02-A 全局 bar chart
+//       · 'single': 当前 TARGET 省份单省 SHAP(来源 /api/predict shap_normalized)
+//       · 其余 4 个: subset 内所有省份 abs 贡献跨省聚合
 // 聚合后 sign 失真,direction 一律 'neutral',不强调推/降方向。
+// 'single' 模式保留 harm/protect direction(单省单样本仍有意义)。
 const SUBSETS: { key: SubsetKey; label: string }[] = [
-  { key: 'all',   label: '全样本' },
-  { key: 'north', label: '北方' },
-  { key: 'south', label: '南方' },
-  { key: 'major', label: '主产区' },
+  { key: 'single', label: '当前省份' },  // 标签运行时拼接省名
+  { key: 'all',    label: '全样本' },
+  { key: 'north',  label: '北方' },
+  { key: 'south',  label: '南方' },
+  { key: 'major',  label: '主产区' },
 ]
 
-const currentSubsetKey = ref<SubsetKey>('all')
+const currentSubsetKey = ref<SubsetKey>('single')
 const subsetData = ref<ShapSubset | null>(null)
 const subsetLoading = ref(false)
 const subsetError = ref<string | null>(null)
 
 async function fetchSubset(key: SubsetKey): Promise<void> {
+  // 'single' 模式不调 backend subset endpoint, 数据源来自 /api/predict 的
+  // shap_normalized(由 fetchShapData 维护)。清空 subsetData 让 features
+  // computed fallback 到 FEATURES_ALL(单省单样本归因)。
+  if (key === 'single') {
+    subsetData.value = null
+    subsetError.value = null
+    subsetLoading.value = false
+    // 若单省 SHAP 还没拿到(初次进页 / 错误后重试), 触发 fetchShapData
+    if (!backendNormalized.value && !backendContribs.value && !isLoadingShap.value) {
+      void fetchShapData()
+    }
+    return
+  }
   subsetLoading.value = true
   subsetError.value = null
   try {
@@ -179,15 +201,25 @@ function fromSubset(subset: ShapSubset): Feature[] {
 }
 
 /** 当前 M02-A bar chart 用的 11 维特征数据。
- *  优先用 subset 聚合(真实新逻辑);subset 还在 loading / error 时
- *  fallback 到老的单省 normalized(保留视觉连续性,而非空白)。 */
+ *  - 'single' 模式: 用单省 /api/predict 的 shap_normalized(FEATURES_ALL),
+ *    让 TARGET 省份切换可见地刷新 bar(harm/protect 方向有效)
+ *  - subset 模式: 用 fetchShapSubset 跨省聚合(direction 为 neutral)
+ *  - subset loading / error 时 fallback 到 FEATURES_ALL,避免空白闪烁 */
 const features = computed<Feature[]>(() => {
+  if (currentSubsetKey.value === 'single') return FEATURES_ALL.value
   if (subsetData.value) return fromSubset(subsetData.value)
   return FEATURES_ALL.value
 })
 
-/** Bar chart subtitle 文案 — "聚合 N 省 mean(|SHAP|)"。 */
+/** Bar chart subtitle 文案 — single 模式显示当前省名,subset 模式显示聚合 N 省。 */
 const subsetSubtitle = computed<string>(() => {
+  if (currentSubsetKey.value === 'single') {
+    const prov = selectedProvince.value?.name
+    if (isLoadingShap.value) return '正在计算单省 SHAP...'
+    if (shapError.value) return '单省 SHAP 拉取失败'
+    if (prov) return `省内因子相对重要性 · ${prov}`
+    return '省内因子相对重要性'
+  }
   if (subsetLoading.value) return '正在聚合子集...'
   if (subsetError.value) return '子集聚合失败,展示单省'
   if (subsetData.value) {
@@ -574,8 +606,12 @@ function rerenderAll() {
   renderBeeswarm()
 }
 
-// 后端数据到达时刷新重要性图(单省 + 子集聚合 均会触发)
-watch([backendNormalized, backendContribs, subsetData], () => {
+// 重要性图刷新触发条件:
+//   - backendNormalized / backendContribs: 单省 SHAP 拉取完成
+//   - subsetData: 子集聚合拉取完成
+//   - currentSubsetKey: 模式切换(single ↔ subset)即使数据没变也要重绘
+//     (例如 single 数据已存在, 从 'all' 切回 'single' 不触发上面任何 ref 变更)
+watch([backendNormalized, backendContribs, subsetData, currentSubsetKey], () => {
   renderImportance()
 }, { flush: 'post' })
 
@@ -588,8 +624,10 @@ onMounted(async () => {
   if (storeSource.value === 'none') {
     await provinceStore.loadProvinces()
   }
-  // 并行触发:单省 SHAP(waterfall + fallback)与默认子集聚合(M02-A bar chart)
-  await Promise.all([fetchShapData(), fetchSubset(currentSubsetKey.value)])
+  // 默认 'single' 模式,bar chart 与 waterfall 共用单省 SHAP 数据源,
+  // 只需触发一次 fetchShapData。subset 数据 lazy 拉取(切到 north/south/...
+  // 时才请求 backend),省一次冷启动等待。
+  await fetchShapData()
   resizeHandler = () => {
     importanceChart?.resize()
     waterfallChart?.resize()
@@ -688,7 +726,12 @@ onBeforeUnmount(() => {
               :disabled="subsetLoading && currentSubsetKey !== s.key"
               @click="currentSubsetKey = s.key"
             >
-              {{ s.label }}
+              <template v-if="s.key === 'single' && selectedProvince?.name">
+                {{ s.label }} · {{ selectedProvince.name }}
+              </template>
+              <template v-else>
+                {{ s.label }}
+              </template>
             </button>
           </div>
         </div>
@@ -700,19 +743,29 @@ onBeforeUnmount(() => {
           aria-label="全局特征重要性条形图,按平均 SHAP 绝对值排序展示驱动因子"
           tabindex="0"
         ></div>
+        <!-- loading overlay:single 模式拉单省 SHAP / subset 模式聚合 backend -->
         <div
-          v-if="subsetLoading && features.length === 0"
+          v-if="(currentSubsetKey === 'single' ? isLoadingShap : subsetLoading) && features.length === 0"
           class="chart-overlay"
         >
           <div class="spinner" aria-hidden="true"></div>
-          <div>正在聚合子集 SHAP</div>
+          <div>{{ currentSubsetKey === 'single' ? '正在计算单省 SHAP' : '正在聚合子集 SHAP' }}</div>
         </div>
+        <!-- error overlay:retry 按 mode 调对应 fetch -->
         <div
-          v-else-if="subsetError && !subsetData && shapDataSource === 'error'"
+          v-else-if="currentSubsetKey === 'single'
+            ? (shapDataSource === 'error' && features.length === 0)
+            : (subsetError && !subsetData && features.length === 0)"
           class="chart-overlay err"
         >
           <div>暂无可用结果</div>
-          <button type="button" class="retry-btn" @click="fetchSubset(currentSubsetKey)">重试</button>
+          <button
+            type="button"
+            class="retry-btn"
+            @click="currentSubsetKey === 'single' ? fetchShapData() : fetchSubset(currentSubsetKey)"
+          >
+            重试
+          </button>
         </div>
       </div>
 
