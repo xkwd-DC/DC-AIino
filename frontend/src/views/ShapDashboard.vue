@@ -41,7 +41,13 @@ const isLoadingShap = ref(false)
 const shapError = ref<string | null>(null)
 
 const provinceStore = useProvinceStore()
-const { selected: selectedProvince, isLoading: storeLoading, source: storeSource } = storeToRefs(provinceStore)
+const {
+  selectedIdx,
+  selected: selectedProvince,
+  profiles,
+  isLoading: storeLoading,
+  source: storeSource,
+} = storeToRefs(provinceStore)
 
 /** 用 shap_normalized(11 维归一化) 直接生成 Feature[]。已按 importance 降序。 */
 function fromNormalized(items: ShapNormalized[]): Feature[] {
@@ -123,38 +129,11 @@ watch(selectedProvince, () => {
   }
 })
 
-type SubsetKey = 'all' | 'north' | 'south' | 'major'
-
-interface Subset {
-  key: SubsetKey
-  label: string
-  sampleN: number
-  cover: number
-  mods: Record<string, number>
-}
-
-// SUBSETS 用于"子集对比展示"——这是 sample-level 演示叙事,
-// mods 是 ablation-style 缩放因子,纯 visualization aid。
-// 真后端要在子集上重新跑模型才能给出精确 SHAP,目前后端没暴露此 endpoint;
-// 此处保留为 visualization 辅助层,不会让用户误把它当作真子集模型输出。
-const SUBSETS: Subset[] = [
-  { key: 'all', label: '全样本 (31 省)', sampleN: 403, cover: 31, mods: {} },
-  { key: 'north', label: '北方 (14 省)', sampleN: 169, cover: 14, mods: { '灌溉率': 1.18, '日照时数': 1.22, 'SPEI 干旱指数': 1.35, '旱灾面积': 1.45, '洪涝占比': 0.55, '水灾面积': 0.42, '降水量': 0.78 } },
-  { key: 'south', label: '南方 (12 省)', sampleN: 156, cover: 12, mods: { '灌溉率': 0.72, '洪涝占比': 1.32, '水灾面积': 1.55, '降水量': 1.28, '日照时数': 0.85, 'SPEI 干旱指数': 0.42, '旱灾面积': 0.38 } },
-  { key: 'major', label: '主产区 (13 省)', sampleN: 169, cover: 13, mods: { '灌溉率': 1.08, '化肥施用量': 1.42, '农机总动力': 1.38, '洪涝占比': 1.05, '降水量': 0.92 } },
-]
-
-const subset = ref<SubsetKey>('all')
-const currentSubset = computed(() => SUBSETS.find((s) => s.key === subset.value)!)
-
-const features = computed<Feature[]>(() => {
-  const mods = currentSubset.value.mods
-  // 子集 mod 是 visualization aid(对 importance 做缩放展示空间差异);
-  // 缩放后重新按 shap 降序排列。
-  return FEATURES_ALL.value
-    .map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(4) }))
-    .sort((a, b) => b.shap - a.shap)
-})
+// FEATURES_ALL 已按 importance 降序,直接复用。
+// 旧版的"全样本 / 北方 / 南方 / 主产区"4-button SUBSET selector(以及对应的
+// ablation-style 缩放 mods)已删除 —— backend 未训练独立 subset 模型,
+// 仅前端缩放展示无实际意义,易让用户误以为"4 个子集模型对比"。
+const features = computed<Feature[]>(() => FEATURES_ALL.value)
 
 // Waterfall:5/27 v0.1 阶段保留参考结构(单样本 attribution 后端尚未暴露 endpoint),
 // 但底数已对齐 backend _BASELINE_RISK = 0.0235 + risk clip 区间。当 backend 加上
@@ -199,7 +178,7 @@ interface BeePoint {
   rawNorm: number
 }
 
-function generateBeeswarmPoints(subsetKey: SubsetKey): { features: string[]; points: BeePoint[] } {
+function generateBeeswarmPoints(): { features: string[]; points: BeePoint[] } {
   const feats = [
     { name: '灌溉率', sign: -1, spread: 0.6, range: [25, 110] },
     { name: '洪涝占比', sign: 1, spread: 0.55, range: [0, 22] },
@@ -207,19 +186,16 @@ function generateBeeswarmPoints(subsetKey: SubsetKey): { features: string[]; poi
     { name: '平均气温', sign: 1, spread: 0.4, range: [3, 24] },
     { name: 'SPEI 干旱', sign: -1, spread: 0.35, range: [-2.5, 2.8] },
   ]
-  const mods = currentSubset.value.mods
   const points: BeePoint[] = []
   feats.forEach((f, fi) => {
-    const modKey = f.name === 'SPEI 干旱' ? 'SPEI 干旱指数' : f.name
-    const mod = mods[modKey] || 1
-    const rng = seededRandom(fi * 1000 + subsetKey.charCodeAt(0) * 13)
+    const rng = seededRandom(fi * 1000 + 97)
     const n = 60 + Math.floor(rng() * 15)
     for (let i = 0; i < n; i++) {
       const r = rng()
       const u = rng() || 0.0001
       const v = rng() || 0.0001
       const gauss = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
-      const shap = (f.sign * (0.05 + r * 0.4) + gauss * 0.06) * f.spread * mod
+      const shap = (f.sign * (0.05 + r * 0.4) + gauss * 0.06) * f.spread
       const rawNorm = f.sign < 0
         ? Math.max(0, Math.min(1, 0.5 - shap * 1.5 + (rng() - 0.5) * 0.4))
         : Math.max(0, Math.min(1, 0.5 + shap * 1.5 + (rng() - 0.5) * 0.4))
@@ -461,7 +437,7 @@ function renderWaterfall() {
 
 function renderBeeswarm() {
   if (!beeswarmChart) return
-  const { features: featNames, points } = generateBeeswarmPoints(subset.value)
+  const { features: featNames, points } = generateBeeswarmPoints()
   const seriesData = featNames.map((_, fi) =>
     points
       .filter((p) => p.fi === fi)
@@ -537,11 +513,6 @@ function rerenderAll() {
   renderBeeswarm()
 }
 
-watch(subset, () => {
-  renderImportance()
-  renderBeeswarm()
-})
-
 // 后端数据到达时刷新重要性图
 watch([backendNormalized, backendContribs], () => {
   renderImportance()
@@ -579,8 +550,11 @@ onBeforeUnmount(() => {
       <div class="eyebrow">M02 · SHAP ATTRIBUTION DASHBOARD</div>
       <h2>SHAP 归因看板</h2>
       <p class="lead">
-        从全局重要性、单样本分解到蜂群分布三个视角,
-        解析驱动粮食生产风险的关键因子及其方向。
+        对当前选定省份
+        <b v-if="selectedProvince?.name">{{ selectedProvince.name }}</b>
+        <b v-else>—</b>
+        解析 XGBoost-SHAP 省内风险因子相对重要性,
+        从全局重要性、单样本预测分解到蜂群分布三个视角呈现互补归因视角。
         <span
           v-if="storeLoading || isLoadingShap"
           class="shap-status loading"
@@ -596,34 +570,36 @@ onBeforeUnmount(() => {
       </p>
     </header>
 
-    <!-- 顶部 subset selector + meta -->
-    <div class="subset-bar card">
-      <div class="subset-head">
+    <!-- M02-0 · 目标省份切换器(与 M03/M04 共享 Pinia store) -->
+    <div class="target-bar card">
+      <div class="target-head">
         <div>
-          <div class="num">M02-0 · SUBSET</div>
-          <h3 id="subset-heading">样本子集切换</h3>
+          <div class="num">M02-0 · TARGET</div>
+          <h3 id="shap-target-heading">选择省份</h3>
         </div>
-        <div class="meta">
-          <span>样本 N <span class="v">{{ currentSubset.sampleN }}</span></span>
-          <span>覆盖 <span class="v">{{ currentSubset.cover }}</span> 省</span>
-        </div>
-      </div>
-      <!-- a11y SC 4.1.2 + WAI-ARIA Tabs Pattern:tablist / tab + aria-selected -->
-      <div class="seg" role="tablist" aria-labelledby="subset-heading">
-        <button
-          v-for="s in SUBSETS"
-          :key="s.key"
-          class="seg-btn"
-          :class="{ active: subset === s.key }"
-          role="tab"
-          :aria-selected="subset === s.key"
-          :aria-label="`切换至 ${s.label} 样本子集`"
-          :tabindex="subset === s.key ? 0 : -1"
-          @click="subset = s.key"
+        <span
+          v-if="storeLoading"
+          class="status loading"
+          aria-label="正在加载"
+          role="status"
+          aria-live="polite"
         >
-          {{ s.label }}
-        </button>
+          <span class="status-spinner" aria-hidden="true"></span>
+        </span>
       </div>
+      <!-- a11y SC 1.3.1 + 4.1.2:select 显式 label 关联 -->
+      <label class="sr-only" for="province-select-shap">SHAP 归因目标省份选择器</label>
+      <select
+        id="province-select-shap"
+        v-model.number="selectedIdx"
+        class="province-select"
+        aria-labelledby="shap-target-heading"
+        :disabled="storeLoading"
+      >
+        <option v-for="(p, i) in profiles" :key="p.name" :value="i">
+          {{ p.name }} · {{ p.type }}
+        </option>
+      </select>
     </div>
 
     <!-- 主 grid 3 chart -->
@@ -744,42 +720,60 @@ onBeforeUnmount(() => {
 .card-head h3 { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
 .card-head .hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
 
-/* subset bar */
-.subset-bar { margin-bottom: 16px; }
-.subset-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
-.subset-head .meta {
+/* target bar(省份切换器) */
+.target-bar { margin-bottom: 16px; }
+.target-head {
   display: flex;
-  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.target-head .num { font-family: var(--font-mono); font-size: 9px; color: var(--text-3); letter-spacing: 1px; margin-bottom: 2px; }
+.target-head h3 { font-family: var(--font-serif); font-size: 14px; font-weight: 600; }
+
+.province-select {
+  width: 100%;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%236B7A72'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 8px;
+}
+.province-select:disabled { opacity: 0.55; cursor: wait; }
+/* a11y SC 2.4.11 Focus Appearance:替代 outline:none */
+.province-select:focus { border-color: var(--green); }
+.province-select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-color: var(--green-bright);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-3);
 }
-.subset-head .v { color: var(--green-bright); font-weight: 600; margin-left: 4px; }
-
-.seg {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--bg-elev);
-  border-radius: var(--r-md);
-}
-.seg-btn {
-  flex: 1;
-  padding: 8px 14px;
-  background: transparent;
-  border: none;
-  border-radius: var(--r-sm);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--dur-fast);
-}
-.seg-btn:hover { color: var(--text); }
-.seg-btn.active {
-  background: var(--bg-card);
-  color: var(--green-bright);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+.status.loading { padding: 2px 6px; background: rgba(230, 182, 85, 0.10); border-radius: 8px; }
+.status-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(230, 182, 85, 0.25);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
 
 /* main grid */
