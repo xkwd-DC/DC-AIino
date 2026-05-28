@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { getCSSVar } from '@/data/mockProvinces'
 import { postPredict, type ShapContrib, type ShapNormalized } from '@/api/predict'
+import { fetchShapSubset, type ShapSubset, type SubsetKey } from '@/api/shap'
 import { useProvinceStore } from '@/stores/useProvinceStore'
 import { storeToRefs } from 'pinia'
 // a11y: ECharts 动画绕过 CSS prefers-reduced-motion,JS 探测后传 0
@@ -119,7 +120,7 @@ async function fetchShapData() {
   }
 }
 
-// 省份切换时重新拉
+// 省份切换时重新拉(用于 M02-B waterfall 单样本归因 + 老 fallback)
 watch(selectedProvince, () => {
   if (selectedProvince.value?.name) {
     backendNormalized.value = null
@@ -129,11 +130,71 @@ watch(selectedProvince, () => {
   }
 })
 
-// FEATURES_ALL 已按 importance 降序,直接复用。
-// 旧版的"全样本 / 北方 / 南方 / 主产区"4-button SUBSET selector(以及对应的
-// ablation-style 缩放 mods)已删除 —— backend 未训练独立 subset 模型,
-// 仅前端缩放展示无实际意义,易让用户误以为"4 个子集模型对比"。
-const features = computed<Feature[]>(() => FEATURES_ALL.value)
+// ── M02-A SUBSET 子集聚合 SHAP(全局重要性 bar chart 数据源)──────────────
+// 与 M02-B waterfall(单省 SHAP)正交并存:
+//   - 单省 dropdown(M02-0)→ 控制 M02-B 单样本分解
+//   - 4-button SUBSET → 控制 M02-A 全局 bar chart(subset 内所有省份 abs 贡献聚合)
+// 聚合后 sign 失真,direction 一律 'neutral',不强调推/降方向。
+const SUBSETS: { key: SubsetKey; label: string }[] = [
+  { key: 'all',   label: '全样本' },
+  { key: 'north', label: '北方' },
+  { key: 'south', label: '南方' },
+  { key: 'major', label: '主产区' },
+]
+
+const currentSubsetKey = ref<SubsetKey>('all')
+const subsetData = ref<ShapSubset | null>(null)
+const subsetLoading = ref(false)
+const subsetError = ref<string | null>(null)
+
+async function fetchSubset(key: SubsetKey): Promise<void> {
+  subsetLoading.value = true
+  subsetError.value = null
+  try {
+    subsetData.value = await fetchShapSubset(key)
+  } catch (e: unknown) {
+    subsetError.value = e instanceof Error ? e.message : 'network error'
+    subsetData.value = null
+  } finally {
+    subsetLoading.value = false
+  }
+}
+
+watch(currentSubsetKey, (key) => {
+  void fetchSubset(key)
+})
+
+/** 从 subset 聚合结果生成 bar chart 用 Feature[]。聚合后 direction='neutral',
+ *  渲染时按"中性绿"色阶展示(不偏 harm/protect)。 */
+function fromSubset(subset: ShapSubset): Feature[] {
+  return subset.features.map((f) => ({
+    name: f.feature,
+    en: FEATURE_EN_LOOKUP[f.feature] ?? '',
+    shap: f.importance,
+    rawAbs: f.mean_abs,
+    // direction 在聚合后失真;用 'green' 作为中性色,避免误读为某方向因子。
+    dir: 'green' as const,
+    hasValue: true,
+  }))
+}
+
+/** 当前 M02-A bar chart 用的 11 维特征数据。
+ *  优先用 subset 聚合(真实新逻辑);subset 还在 loading / error 时
+ *  fallback 到老的单省 normalized(保留视觉连续性,而非空白)。 */
+const features = computed<Feature[]>(() => {
+  if (subsetData.value) return fromSubset(subsetData.value)
+  return FEATURES_ALL.value
+})
+
+/** Bar chart subtitle 文案 — "聚合 N 省 mean(|SHAP|)"。 */
+const subsetSubtitle = computed<string>(() => {
+  if (subsetLoading.value) return '正在聚合子集...'
+  if (subsetError.value) return '子集聚合失败,展示单省'
+  if (subsetData.value) {
+    return `聚合 ${subsetData.value.province_count} 省 mean(|SHAP|)`
+  }
+  return ''
+})
 
 // Waterfall:5/27 v0.1 阶段保留参考结构(单样本 attribution 后端尚未暴露 endpoint),
 // 但底数已对齐 backend _BASELINE_RISK = 0.0235 + risk clip 区间。当 backend 加上
@@ -513,8 +574,8 @@ function rerenderAll() {
   renderBeeswarm()
 }
 
-// 后端数据到达时刷新重要性图
-watch([backendNormalized, backendContribs], () => {
+// 后端数据到达时刷新重要性图(单省 + 子集聚合 均会触发)
+watch([backendNormalized, backendContribs, subsetData], () => {
   renderImportance()
 }, { flush: 'post' })
 
@@ -527,7 +588,8 @@ onMounted(async () => {
   if (storeSource.value === 'none') {
     await provinceStore.loadProvinces()
   }
-  await fetchShapData()
+  // 并行触发:单省 SHAP(waterfall + fallback)与默认子集聚合(M02-A bar chart)
+  await Promise.all([fetchShapData(), fetchSubset(currentSubsetKey.value)])
   resizeHandler = () => {
     importanceChart?.resize()
     waterfallChart?.resize()
@@ -609,8 +671,26 @@ onBeforeUnmount(() => {
           <div>
             <div class="num">M02-A · GLOBAL IMPORTANCE</div>
             <h3>全局特征重要性 mean(|SHAP|)</h3>
+            <div v-if="subsetSubtitle" class="subset-subtitle">{{ subsetSubtitle }}</div>
           </div>
-          <span class="hint">绿色 = 韧性因子,赭石 = 致灾因子</span>
+          <div
+            class="subset-toggle"
+            role="tablist"
+            aria-label="全局重要性子集切换"
+          >
+            <button
+              v-for="s in SUBSETS"
+              :key="s.key"
+              type="button"
+              role="tab"
+              :aria-selected="currentSubsetKey === s.key"
+              :class="{ active: currentSubsetKey === s.key }"
+              :disabled="subsetLoading && currentSubsetKey !== s.key"
+              @click="currentSubsetKey = s.key"
+            >
+              {{ s.label }}
+            </button>
+          </div>
         </div>
         <!-- a11y SC 1.1.1:ECharts canvas 加 role/aria-label 文本替代 -->
         <div
@@ -620,13 +700,19 @@ onBeforeUnmount(() => {
           aria-label="全局特征重要性条形图,按平均 SHAP 绝对值排序展示驱动因子"
           tabindex="0"
         ></div>
-        <div v-if="shapDataSource === 'loading' && features.length === 0" class="chart-overlay">
+        <div
+          v-if="subsetLoading && features.length === 0"
+          class="chart-overlay"
+        >
           <div class="spinner" aria-hidden="true"></div>
-          <div>正在加载归因结果</div>
+          <div>正在聚合子集 SHAP</div>
         </div>
-        <div v-else-if="shapDataSource === 'error'" class="chart-overlay err">
+        <div
+          v-else-if="subsetError && !subsetData && shapDataSource === 'error'"
+          class="chart-overlay err"
+        >
           <div>暂无可用结果</div>
-          <button type="button" class="retry-btn" @click="fetchShapData">重试</button>
+          <button type="button" class="retry-btn" @click="fetchSubset(currentSubsetKey)">重试</button>
         </div>
       </div>
 
@@ -823,5 +909,51 @@ onBeforeUnmount(() => {
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* M02-A SUBSET 4-button toggle(card-head 内右上)─────────────────────── */
+.subset-toggle {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  padding: 2px;
+}
+.subset-toggle button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: calc(var(--r-md) - 4px);
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.subset-toggle button:hover:not(.active):not(:disabled) {
+  color: var(--text);
+}
+.subset-toggle button.active {
+  background: var(--green-deep, rgba(160, 183, 133, 0.18));
+  color: var(--green-bright);
+  font-weight: 600;
+}
+.subset-toggle button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.subset-toggle button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.subset-subtitle {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+}
 
 </style>

@@ -86,6 +86,42 @@ _FEATURE_LABELS = {
 _FEATURES = list(_FEATURE_LABELS.keys())
 _VALID_MODELS = {"xgboost", "lstm", "ensemble"}
 
+# ─── SUBSET 子集划分(地理 + 国家公布粮食主产区)──────────────────────────
+# M02-A 全局重要性 4-button selector 用,聚合 subset 内所有省份 SHAP 的
+# abs 贡献求和,归一化作为全局 importance 展示。
+# "all" 在文件加载时填充为 sorted(_PROVINCES.keys())。
+_SUBSET_PROVINCES: dict[str, list[str]] = {
+    "all": [],
+    "north": [
+        "北京", "天津", "河北", "山西", "内蒙古",
+        "辽宁", "吉林", "黑龙江", "山东", "河南",
+        "陕西", "甘肃", "宁夏", "青海",
+    ],  # 14 省
+    "south": [
+        "上海", "江苏", "浙江", "福建", "江西",
+        "湖北", "湖南", "广东", "广西", "海南",
+        "重庆", "四川",
+    ],  # 12 省
+    "major": [
+        "黑龙江", "吉林", "辽宁", "内蒙古",
+        "河北", "河南", "山东", "江苏", "安徽",
+        "江西", "湖北", "湖南", "四川",
+    ],  # 13 省(国家公布粮食主产区)
+}
+_SUBSET_PROVINCES["all"] = sorted(_PROVINCES.keys())
+
+_SUBSET_LABELS = {
+    "all":   f"全样本 ({len(_SUBSET_PROVINCES['all'])} 省)",
+    "north": f"北方 ({len(_SUBSET_PROVINCES['north'])} 省)",
+    "south": f"南方 ({len(_SUBSET_PROVINCES['south'])} 省)",
+    "major": f"主产区 ({len(_SUBSET_PROVINCES['major'])} 省)",
+}
+
+# Cache: subset key → aggregated result (进程内 only, 单 worker fine;
+# 多 worker 时各 worker 各自缓存,首次访问代价均摊)。
+_SUBSET_CACHE: dict[str, dict] = {}
+_SUBSET_CACHE_LOCK = Lock()
+
 # ─── yield → risk 映射常量 ──────────────────────────────────────────────
 _BASELINE_RISK = 0.0235      # 基线 yield 对应的 risk 中枢
 _RISK_PER_DROP = 0.10        # 10% 单产下降 → +0.01 risk
@@ -523,3 +559,91 @@ def list_predicts():
         "max": _PREDICT_HISTORY.maxlen,
         "items": list(reversed(items)),  # 最新在前
     })
+
+
+# ============================================================================
+# SUBSET 聚合 SHAP — M02-A 全局重要性 4-button selector backend
+# ----------------------------------------------------------------------------
+# 语义:对 subset 内的每个省份用 baseline params 调 _approx_contribs,
+# 把 abs 贡献按特征求和后归一化,作为该子集的"全局重要性"。
+#
+# 注意:聚合后 sign 已无单方向意义(同一特征不同省份可能 push/pull 互抵),
+# direction 一律返 "neutral",前端用中性色或保留 harm/protect 二色但不强调
+# 信号方向。
+#
+# 性能:首次调用某 subset 需 N×11 = N×11 次 XGB predict(单省 _approx_contribs
+# 已 11 次)。31 省 × 11 ≈ 341 次,~3-5s/cold;后续 cache 命中 instant。
+# ============================================================================
+@predict_bp.get("/api/shap/subset")
+@limiter.limit("100 per hour")
+def shap_subset():
+    """聚合 subset 内所有省份的 SHAP,返 11 维 abs normalized importance。
+
+    Query:
+      key — one of {all, north, south, major}
+
+    Returns(envelope data):
+      {
+        "subset": "all",
+        "label": "全样本 (31 省)",
+        "province_count": 31,
+        "features": [
+          {"feature": "灌溉率", "importance": 0.13, "mean_abs": ..., "direction": "neutral"},
+          ...
+        ]
+      }
+    """
+    key = (request.args.get("key") or "all").lower()
+    if key not in _SUBSET_PROVINCES:
+        return envelope(
+            error={
+                "code": 400,
+                "message": (
+                    f"unknown subset: {key!r}; "
+                    f"allowed: {sorted(_SUBSET_PROVINCES.keys())}"
+                ),
+            },
+            status=400,
+        )
+
+    with _SUBSET_CACHE_LOCK:
+        cached = _SUBSET_CACHE.get(key)
+    if cached is not None:
+        return envelope(data=cached)
+
+    sum_abs_contribs: dict[str, float] = {f: 0.0 for f in _FEATURES}
+    province_count = 0
+    for province in _SUBSET_PROVINCES[key]:
+        if province not in _PROVINCES:
+            continue
+        baseline_params = _fill_from_baseline(province, {})
+        try:
+            contribs = _approx_contribs(baseline_params, province)
+        except Exception as e:
+            logger.warning(f"shap_subset: skipping {province}: {e}")
+            continue
+        for f, v in contribs.items():
+            sum_abs_contribs[f] += abs(v)
+        province_count += 1
+
+    total = sum(sum_abs_contribs.values()) or 1.0
+    items = sorted(sum_abs_contribs.items(), key=lambda kv: kv[1], reverse=True)
+
+    result = {
+        "subset": key,
+        "label": _SUBSET_LABELS[key],
+        "province_count": province_count,
+        "features": [
+            {
+                "feature": _FEATURE_LABELS[f],
+                "importance": round(v / total, 4),
+                "mean_abs": round(v / province_count if province_count else 0, 6),
+                "direction": "neutral",
+            }
+            for f, v in items
+        ],
+    }
+
+    with _SUBSET_CACHE_LOCK:
+        _SUBSET_CACHE[key] = result
+    return envelope(data=result)
