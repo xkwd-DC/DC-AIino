@@ -39,8 +39,8 @@ const SLIDERS: SliderDef[] = [
   { key: 'spei', label: 'SPEI 干旱', icon: 'D', iconCls: 'purple', unit: '', min: -3, max: 3, step: 0.05, hint: '↑ 越湿润风险越低' },
 ]
 
-// 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维 mock 公式。
-// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（无延迟），后端记录 + Phase 2 切真模型。
+// 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维瞬时反馈公式。
+// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（200ms 瞬时反馈，无网络延迟），真模型（XGBoost/LSTM/Att-LSTM ensemble）异步覆盖（#45 已接通）。
 const FORMULA_BASE = 0.0235
 const MEANS: Record<SliderDef['key'], number> = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 }
 const WEIGHTS: Record<SliderDef['key'], number> = {
@@ -346,8 +346,8 @@ onBeforeUnmount(() => {
       <h2>参数情景模拟</h2>
       <p class="lead">
         在选定省份基线值之上调节 5 个核心干预参数（灌溉率 / 洪涝占比 / 日照 / 气温 / SPEI），
-        实时计算模拟风险 Y 与基线差值。前端走线性近似公式（与 <code>backend/api/predict.py</code> 一致），
-        Phase 2 接入熊鑫 .pkl/.h5 真模型后改为 POST <code>/api/predict</code>。
+        实时计算模拟风险 Y 与基线差值。滑块拖动时前端线性公式做 200ms 瞬时反馈（无网络延迟），
+        随后由 <code>POST /api/predict</code> 真模型（XGBoost / LSTM / Attention-LSTM 三模型 ensemble）覆盖。
       </p>
     </header>
 
