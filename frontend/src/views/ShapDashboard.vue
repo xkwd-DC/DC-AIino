@@ -2,39 +2,40 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { getCSSVar } from '@/data/mockProvinces'
-import { postPredict, type ShapContrib } from '@/api/predict'
+import { postPredict, type ShapContrib, type ShapNormalized } from '@/api/predict'
 import { useProvinceStore } from '@/stores/useProvinceStore'
 import { storeToRefs } from 'pinia'
 // a11y: ECharts 动画绕过 CSS prefers-reduced-motion,JS 探测后传 0
 import { motionDuration } from '@/data/a11y'
 
-// 11 维特征顺序与 backend/api/predict.py _FEATURE_LABELS 严格对齐:
-// 这是 view 用来组装"全 11 维"的固定骨架。后端 /api/predict 当前只返 top-5
-// (见 `_shap_top()` top_n=5),其余 6 维我们以 value=0 占位 + 注脚说明,
-// 避免出现"6 个不显示 / 5 个真值"的混杂视觉。
-const FEATURES_SCHEMA: Array<{ name: string; en: string }> = [
-  { name: '灌溉率',       en: 'Irr' },
-  { name: '洪涝占比',     en: 'Flood_R' },
-  { name: '日照时数',     en: 'Sun' },
-  { name: '平均气温',     en: 'Temp' },
-  { name: 'SPEI 干旱指数', en: 'SPEI' },
-  { name: '降水量',       en: 'Prec' },
-  { name: '农机总动力',   en: 'Mech' },
-  { name: '化肥施用量',   en: 'Fert' },
-  { name: '旱灾面积',     en: 'Drou_A' },
-  { name: '水灾面积',     en: 'Flood_A' },
-  { name: 'NDVI 异常',    en: 'NDVI' },
-]
+// 11 维特征中文 ↔ 英文短码映射。仅 schema/lookup 用途,顺序不再决定渲染顺序,
+// 渲染顺序由 backend 返回的 shap_normalized(按 importance 降序)决定。
+const FEATURE_EN_LOOKUP: Record<string, string> = {
+  '灌溉率': 'Irr',
+  '洪涝占比': 'Flood_R',
+  '日照时数': 'Sun',
+  '平均气温': 'Temp',
+  'SPEI 干旱指数': 'SPEI',
+  '降水量': 'Prec',
+  '农机总动力': 'Mech',
+  '化肥施用量': 'Fert',
+  '旱灾面积': 'Drou_A',
+  '水灾面积': 'Flood_A',
+  'NDVI 异常': 'NDVI',
+}
 
 interface Feature {
   name: string
   en: string
-  shap: number
+  shap: number          // 用于 bar chart 渲染的 importance(0-1, 已 abs 归一)
+  rawAbs: number        // 原始 abs 贡献, tooltip 展示
   dir: 'green' | 'red'
-  hasValue: boolean   // true=API top-N 真值;false=占位 0
+  hasValue: boolean     // 始终 true(全 11 维都有真值);保留字段以兼容老模板
 }
 
 // ── 后端 SHAP 状态 ────────────────────────────────────────────────────────
+// 优先用归一化 11 维全量;若后端老版本不返 shap_normalized,从 shap_top 回退合成。
+const backendNormalized = ref<ShapNormalized[] | null>(null)
 const backendContribs = ref<ShapContrib[] | null>(null)
 const isLoadingShap = ref(false)
 const shapError = ref<string | null>(null)
@@ -42,41 +43,46 @@ const shapError = ref<string | null>(null)
 const provinceStore = useProvinceStore()
 const { selected: selectedProvince, isLoading: storeLoading, source: storeSource } = storeToRefs(provinceStore)
 
-/** 把 API top-N 装回 11 维骨架。
- *  - 命中:value = |shap|;direction → dir(harm=red, protect=green);hasValue=true
- *  - 未命中:value = 0;dir 按 schema 默认("绿"或"红")推断;hasValue=false → 视觉灰色
- */
-function assembleFullFeatures(contribs: ShapContrib[]): Feature[] {
-  const lookup = new Map<string, ShapContrib>()
-  for (const c of contribs) lookup.set(c.feature, c)
-  return FEATURES_SCHEMA.map((f) => {
-    const hit = lookup.get(f.name)
-    if (!hit) {
-      return { ...f, shap: 0, dir: 'green', hasValue: false }
-    }
-    return {
-      ...f,
-      shap: Math.abs(hit.value),
-      dir: hit.direction === 'harm' ? 'red' : 'green',
-      hasValue: true,
-    }
-  })
+/** 用 shap_normalized(11 维归一化) 直接生成 Feature[]。已按 importance 降序。 */
+function fromNormalized(items: ShapNormalized[]): Feature[] {
+  return items.map((it) => ({
+    name: it.feature,
+    en: FEATURE_EN_LOOKUP[it.feature] ?? '',
+    shap: it.importance,
+    rawAbs: it.raw_abs,
+    dir: it.direction === 'harm' ? 'red' : 'green',
+    hasValue: true,
+  }))
 }
 
-/** 当前 11 维特征数据,只在 backendContribs 就绪时返回有效骨架,
- *  否则返回空数组(view 显示 loading / error)。 */
-const FEATURES_ALL = computed<Feature[]>(() =>
-  backendContribs.value ? assembleFullFeatures(backendContribs.value) : [],
-)
+/** 老后端 fallback:从 shap_top 现场合成归一化 importance。
+ *  shap_top 可能只 5 维,合成后仍 5 维;视觉饱满度依赖后端升级。 */
+function fromContribsFallback(contribs: ShapContrib[]): Feature[] {
+  const absVals = contribs.map((c) => Math.abs(c.value))
+  const total = absVals.reduce((a, b) => a + b, 0) || 1
+  return contribs
+    .map((c, i) => ({
+      name: c.feature,
+      en: FEATURE_EN_LOOKUP[c.feature] ?? '',
+      shap: absVals[i] / total,
+      rawAbs: Math.abs(c.value),
+      dir: c.direction === 'harm' ? ('red' as const) : ('green' as const),
+      hasValue: true,
+    }))
+    .sort((a, b) => b.shap - a.shap)
+}
 
-const apiReadyCount = computed(() => FEATURES_ALL.value.filter((f) => f.hasValue).length)
-// 保留计算以备未来 detail 视图复用,模板已不再展示。
-void apiReadyCount
+/** 当前 11 维特征数据。优先 normalized,其次 contribs fallback,否则空数组。 */
+const FEATURES_ALL = computed<Feature[]>(() => {
+  if (backendNormalized.value) return fromNormalized(backendNormalized.value)
+  if (backendContribs.value) return fromContribsFallback(backendContribs.value)
+  return []
+})
 
 const shapDataSource = computed<'loading' | 'error' | 'model' | 'idle'>(() => {
   if (isLoadingShap.value) return 'loading'
   if (shapError.value) return 'error'
-  if (backendContribs.value) return 'model'
+  if (backendNormalized.value || backendContribs.value) return 'model'
   return 'idle'
 })
 
@@ -96,9 +102,11 @@ async function fetchShapData() {
       },
       'xgboost', // XGB-SHAP attribution(更稳定,后端 _approx_contribs 用 XGB)
     )
+    backendNormalized.value = data.shap_normalized ?? null
     backendContribs.value = data.shap_top
   } catch (e: unknown) {
     shapError.value = e instanceof Error ? e.message : 'network error'
+    backendNormalized.value = null
     backendContribs.value = null
   } finally {
     isLoadingShap.value = false
@@ -108,6 +116,7 @@ async function fetchShapData() {
 // 省份切换时重新拉
 watch(selectedProvince, () => {
   if (selectedProvince.value?.name) {
+    backendNormalized.value = null
     backendContribs.value = null
     shapError.value = null
     fetchShapData()
@@ -140,8 +149,10 @@ const currentSubset = computed(() => SUBSETS.find((s) => s.key === subset.value)
 
 const features = computed<Feature[]>(() => {
   const mods = currentSubset.value.mods
+  // 子集 mod 是 visualization aid(对 importance 做缩放展示空间差异);
+  // 缩放后重新按 shap 降序排列。
   return FEATURES_ALL.value
-    .map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(3) }))
+    .map((f) => ({ ...f, shap: +(f.shap * (mods[f.name] || 1)).toFixed(4) }))
     .sort((a, b) => b.shap - a.shap)
 })
 
@@ -248,10 +259,13 @@ function renderImportance() {
     importanceChart.clear()
     return
   }
+  // xAxis 自适应:最大 importance × 1.15(给 label 留 padding;原 0.55 写死是为 mock 大数字)
+  const maxImportance = f.reduce((m, x) => Math.max(m, x.shap), 0)
+  const xMax = maxImportance > 0 ? +(maxImportance * 1.15).toFixed(3) : 1
   importanceChart.setOption(
     {
       backgroundColor: 'transparent',
-      grid: { left: 100, right: 60, top: 14, bottom: 28 },
+      grid: { left: 100, right: 70, top: 14, bottom: 28 },
       tooltip: {
         trigger: 'item',
         backgroundColor: getCSSVar('--bg-elev'),
@@ -259,23 +273,27 @@ function renderImportance() {
         textStyle: { color: getCSSVar('--text'), fontSize: 12 },
         formatter: (p: { dataIndex: number; value: number }) => {
           const ft = f[f.length - 1 - p.dataIndex]
-          if (!ft.hasValue) {
-            return `<b>${ft.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${ft.en}</span><br/>
-              <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:14px;">暂无显著贡献</span>`
-          }
           const color = ft.dir === 'green' ? getCSSVar('--green-bright') : getCSSVar('--risk-4')
           const tag = ft.dir === 'green' ? '韧性因子 · 降风险' : '致灾因子 · 推风险'
+          const pct = (p.value * 100).toFixed(1)
           return `<b>${ft.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${ft.en}</span><br/>
-            <span style="font-family:JetBrains Mono;color:${color};font-size:16px;font-weight:600;">${p.value.toFixed(3)}</span><br/>
-            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${tag}</span>`
+            <span style="font-family:JetBrains Mono;color:${color};font-size:16px;font-weight:600;">${pct}%</span>
+            <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:11px;margin-left:4px;">mean|SHAP|</span><br/>
+            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${tag}</span><br/>
+            <span style="font-size:10px;color:${getCSSVar('--text-3')};font-family:JetBrains Mono;">原始 abs 贡献 ${ft.rawAbs.toExponential(2)}</span>`
         },
       },
       xAxis: {
         type: 'value',
-        max: 0.55,
+        max: xMax,
         splitLine: { lineStyle: { color: getCSSVar('--border'), type: 'dashed' } },
         axisLine: { lineStyle: { color: getCSSVar('--border-strong') } },
-        axisLabel: { color: getCSSVar('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10 },
+        axisLabel: {
+          color: getCSSVar('--text-3'),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 10,
+          formatter: (v: number) => (v * 100).toFixed(0) + '%',
+        },
       },
       yAxis: {
         type: 'category',
@@ -290,18 +308,14 @@ function renderImportance() {
           data: f.slice().reverse().map((x) => ({
             value: x.shap,
             itemStyle: {
-              color: !x.hasValue
-                ? getCSSVar('--bg-elev')   // 占位项灰色,视觉与 top-N 真值区隔
-                : {
-                    type: 'linear',
-                    x: 0, y: 0, x2: 1, y2: 0,
-                    colorStops: x.dir === 'green'
-                      ? [{ offset: 0, color: getCSSVar('--green-deep') }, { offset: 1, color: getCSSVar('--green-bright') }]
-                      : [{ offset: 0, color: getCSSVar('--risk-5') }, { offset: 1, color: getCSSVar('--risk-4') }],
-                  },
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 1, y2: 0,
+                colorStops: x.dir === 'green'
+                  ? [{ offset: 0, color: getCSSVar('--green-deep') }, { offset: 1, color: getCSSVar('--green-bright') }]
+                  : [{ offset: 0, color: getCSSVar('--risk-5') }, { offset: 1, color: getCSSVar('--risk-4') }],
+              },
               borderRadius: [0, 3, 3, 0],
-              borderColor: !x.hasValue ? getCSSVar('--border') : 'transparent',
-              borderWidth: !x.hasValue ? 1 : 0,
             },
           })),
           barWidth: 16,
@@ -312,10 +326,7 @@ function renderImportance() {
             fontFamily: 'JetBrains Mono',
             fontSize: 11,
             fontWeight: 500,
-            formatter: (p: { value: number; dataIndex: number }) => {
-              const ft = f[f.length - 1 - p.dataIndex]
-              return ft.hasValue ? p.value.toFixed(3) : '—'
-            },
+            formatter: (p: { value: number }) => (p.value * 100).toFixed(1) + '%',
           },
           animationDuration: motionDuration(800),
         },
@@ -532,7 +543,7 @@ watch(subset, () => {
 })
 
 // 后端数据到达时刷新重要性图
-watch(backendContribs, () => {
+watch([backendNormalized, backendContribs], () => {
   renderImportance()
 }, { flush: 'post' })
 

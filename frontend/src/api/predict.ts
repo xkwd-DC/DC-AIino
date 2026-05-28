@@ -17,10 +17,22 @@ export interface PredictParams {
 
 export type PredictModel = 'xgboost' | 'lstm' | 'ensemble'
 
-// ─── 响应 schema (对齐 backend/api/predict.py L397-411) ─────────────────────
+// ─── 响应 schema (对齐 backend/api/predict.py predict() data envelope) ──────
 export interface ShapContrib {
   feature: string
   value: number
+  direction: 'harm' | 'protect'
+}
+
+/** mean(|SHAP|) 归一化版,11 维全量,按 importance 降序。
+ *  - importance: abs(value) / sum(abs(values)), 0-1, sum ≈ 1.0
+ *  - raw_abs: 原始 abs 贡献(未归一化), tooltip 展示用
+ *  - direction: harm(推风险) | protect(降风险)
+ */
+export interface ShapNormalized {
+  feature: string
+  importance: number
+  raw_abs: number
   direction: 'harm' | 'protect'
 }
 
@@ -51,6 +63,9 @@ export interface PredictData {
   // single-model only
   yield_kg_per_ha?: number
   shap_top: ShapContrib[]
+  /** 11 维归一化 mean(|SHAP|) — backend 在 2026-05-28 后版本起返,
+   *  老 cache 期暂不存在,故可选 + 前端有回退分支。 */
+  shap_normalized?: ShapNormalized[]
   recommendations: Recommendation[]
   params_used: Record<string, number>
   params_filled_from_baseline: string[]

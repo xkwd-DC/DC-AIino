@@ -357,13 +357,44 @@ def _approx_contribs(params: dict[str, float], province: str) -> dict[str, float
     return contribs
 
 
-def _shap_top(contribs: dict[str, float], top_n: int = 5) -> list[dict]:
+def _shap_top(contribs: dict[str, float], top_n: int = 11) -> list[dict]:
+    """返按 abs 排序的 contribs(默认全 11 维)。
+
+    M02 视觉:前端 bar chart 需要全 11 维真值才能视觉饱满,故默认 top_n=11。
+    向后兼容:caller 可显式传 top_n=5 限制为只取前 5 强因子。
+    """
     items = sorted(contribs.items(), key=lambda kv: abs(kv[1]), reverse=True)[:top_n]
     return [
         {
             "feature": _FEATURE_LABELS[k],
             "value": round(v, 6),
             "direction": "harm" if v > 0 else "protect",
+        }
+        for k, v in items
+    ]
+
+
+def _shap_normalized(contribs: dict[str, float]) -> list[dict]:
+    """归一化 11 维 SHAP 重要性:abs(value) / sum(abs(values))。
+
+    用 mean(|SHAP|) 标准化,与公开文献的 'global importance' 口径一致。
+    前端 bar chart 直接用,xAxis 自适应即可视觉饱满展示。
+
+    每项包含:
+      - feature: 中文 label
+      - importance: 0-1 归一化权重(按 abs 降序;sum ≈ 1.0)
+      - raw_abs: 原始 abs 贡献值, 保留供 tooltip 展示
+      - direction: harm(贡献为正 → 推风险) | protect(贡献为负 → 降风险)
+    """
+    abs_vals = {k: abs(v) for k, v in contribs.items()}
+    total = sum(abs_vals.values()) or 1.0
+    items = sorted(abs_vals.items(), key=lambda kv: kv[1], reverse=True)
+    return [
+        {
+            "feature": _FEATURE_LABELS[k],
+            "importance": round(v / total, 4),
+            "raw_abs": round(v, 6),
+            "direction": "harm" if contribs[k] > 0 else "protect",
         }
         for k, v in items
     ]
@@ -439,6 +470,7 @@ def predict():
         "delta": round(risk_payload["risk_score"] - baseline, 6),
         "confidence": 0.78,  # 当前固定值;后续可用 MC dropout / 预测区间替换
         "shap_top": _shap_top(contribs),
+        "shap_normalized": _shap_normalized(contribs),
         "recommendations": _recommendations(contribs),
         "params_used": {k: round(params[k], 4) for k in _FEATURES},
         "params_filled_from_baseline": sorted(set(_FEATURES) - set(params_in.keys())),
@@ -466,6 +498,7 @@ def predict():
         "consensus": data.get("consensus"),
         "divergence": data.get("divergence"),
         "shap_top": data["shap_top"],
+        "shap_normalized": data["shap_normalized"],
         "recommendations": data["recommendations"],
         "latency_ms": round((time.perf_counter() - start_ts) * 1000, 1),
     }
