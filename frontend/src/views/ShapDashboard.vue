@@ -228,31 +228,37 @@ const subsetSubtitle = computed<string>(() => {
   return ''
 })
 
-// Waterfall:5/27 v0.1 阶段保留参考结构(单样本 attribution 后端尚未暴露 endpoint),
-// 但底数已对齐 backend _BASELINE_RISK = 0.0235 + risk clip 区间。当 backend 加上
-// per-sample shap.TreeExplainer endpoint 后再切真值。
-// HIGH#6: discriminated union,TS 在每个 type 分支自动 narrow val/delta,
-// 去掉所有 `step.val!` / `step.delta!` 非空强断言。
-type WaterfallBaseline = { name: string; type: 'baseline'; val: number }
-type WaterfallFinal = { name: string; type: 'final'; val: number }
-type WaterfallPos = { name: string; type: 'pos'; delta: number }
-type WaterfallNeg = { name: string; type: 'neg'; delta: number }
-type WaterfallStep = WaterfallBaseline | WaterfallFinal | WaterfallPos | WaterfallNeg
+// ── M02-B 省内因子带向贡献(signed marginal contribution)─────────────────
+// 取当前省份单省 SHAP(FEATURES_ALL)的「有符号」边际贡献:
+//   正值(red) = 该因子在本省取值相对跨省均值「推升」风险
+//   负值(green)= 「降低」风险
+// 注:本页输入恒为省份 baseline → 预测≈基线,baseline→f(x) 累计 waterfall 无意义,
+// 且单特征扰动 contribs 非可加 SHAP;故改为直接展示各因子带符号贡献,
+// 切换省份即随真值刷新(修复"切省归因不变")。
+interface ContribBar {
+  name: string
+  en: string
+  value: number          // signed:>0 推升风险(red) / <0 降低风险(green)
+}
 
-const WATERFALL_STEPS: WaterfallStep[] = [
-  { name: '基线 E[f(x)]', val: 0.0235, type: 'baseline' },
-  { name: '洪涝 4.2%', delta: 0.0028, type: 'pos' },
-  { name: '化肥施用量', delta: 0.0009, type: 'pos' },
-  { name: '气温 14.2°C', delta: 0.0015, type: 'pos' },
-  { name: '灌溉 65.4%', delta: -0.0022, type: 'neg' },
-  { name: '日照 2240h', delta: -0.0011, type: 'neg' },
-  { name: '农机总动力', delta: -0.0005, type: 'neg' },
-  { name: '预测 f(x)', val: 0.0249, type: 'final' },
-]
+const CONTRIB_TOP_N = 8
 
-// 模板里 E[f(x)] / f(x) 两端 readout 用得到 — 类型已知,免去模板里强断言。
-const WATERFALL_BASELINE = WATERFALL_STEPS[0] as WaterfallBaseline
-const WATERFALL_FINAL = WATERFALL_STEPS[WATERFALL_STEPS.length - 1] as WaterfallFinal
+const contribBars = computed<ContribBar[]>(() => {
+  const f = FEATURES_ALL.value
+  if (f.length === 0) return []
+  return f.slice(0, CONTRIB_TOP_N).map((x) => ({
+    name: x.name,
+    en: x.en,
+    value: x.dir === 'red' ? x.rawAbs : -x.rawAbs,
+  }))
+})
+
+/** 头部 readout:本省最强带向因子(名称 + 方向)。 */
+const contribHeadline = computed<string>(() => {
+  const f = FEATURES_ALL.value
+  if (f.length === 0) return '—'
+  return `${f[0].name} · ${f[0].dir === 'red' ? '推升' : '降低'}风险`
+})
 
 // 伪随机 beeswarm:同样是 visualization aid,样本级 SHAP 后端 endpoint 待开。
 function seededRandom(seed: number): () => number {
@@ -271,33 +277,34 @@ interface BeePoint {
   rawNorm: number
 }
 
+// 蜂群分布:用当前省份单省 SHAP 的 Top-5 因子驱动 —
+//   · 每个因子的「方向 + 相对强度」来自真实 contribs(切省即变)
+//   · 样本级 SHAP endpoint 未开,故点云为围绕真值的「示意分布」(spread 为示意)
+// seed 由本省 Top-5 真值派生 → 不同省份散点形态不同。
 function generateBeeswarmPoints(): { features: string[]; points: BeePoint[] } {
-  const feats = [
-    { name: '灌溉率', sign: -1, spread: 0.6, range: [25, 110] },
-    { name: '洪涝占比', sign: 1, spread: 0.55, range: [0, 22] },
-    { name: '日照时数', sign: -1, spread: 0.45, range: [1180, 3320] },
-    { name: '平均气温', sign: 1, spread: 0.4, range: [3, 24] },
-    { name: 'SPEI 干旱', sign: -1, spread: 0.35, range: [-2.5, 2.8] },
-  ]
+  const top5 = FEATURES_ALL.value.slice(0, 5)
+  if (top5.length === 0) return { features: [], points: [] }
+  const maxAbs = top5.reduce((m, x) => Math.max(m, x.rawAbs), 0) || 0.001
+  const seedBase =
+    (Math.floor(top5.reduce((s, x, i) => s + x.rawAbs * 1e6 * (i + 1), 0)) % 90000) + 17
   const points: BeePoint[] = []
-  feats.forEach((f, fi) => {
-    const rng = seededRandom(fi * 1000 + 97)
-    const n = 60 + Math.floor(rng() * 15)
+  top5.forEach((ft, fi) => {
+    const sign = ft.dir === 'red' ? 1 : -1
+    const center = sign * (ft.rawAbs / maxAbs) * 0.42      // 真实带向贡献映射到 [-0.42, 0.42]
+    const spread = 0.04 + (ft.rawAbs / maxAbs) * 0.1
+    const rng = seededRandom(seedBase + fi * 1000 + 97)
+    const n = 56 + Math.floor(rng() * 16)
     for (let i = 0; i < n; i++) {
-      const r = rng()
       const u = rng() || 0.0001
       const v = rng() || 0.0001
       const gauss = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
-      const shap = (f.sign * (0.05 + r * 0.4) + gauss * 0.06) * f.spread
-      const rawNorm = f.sign < 0
-        ? Math.max(0, Math.min(1, 0.5 - shap * 1.5 + (rng() - 0.5) * 0.4))
-        : Math.max(0, Math.min(1, 0.5 + shap * 1.5 + (rng() - 0.5) * 0.4))
-      const raw = f.range[0] + rawNorm * (f.range[1] - f.range[0])
+      const shap = center + gauss * spread
+      const rawNorm = Math.max(0, Math.min(1, 0.5 + sign * (shap - center) * 3 + (rng() - 0.5) * 0.3))
       const jitter = (rng() - 0.5) * 0.62
-      points.push({ fi, shap, raw, rawNorm, yPos: fi + jitter })
+      points.push({ fi, shap, raw: shap, rawNorm, yPos: fi + jitter })
     }
   })
-  return { features: feats.map((f) => f.name), points }
+  return { features: top5.map((x) => x.name), points }
 }
 
 function rawColor(t: number): string {
@@ -405,124 +412,75 @@ function renderImportance() {
   )
 }
 
-function renderWaterfall() {
+function renderContribBars() {
   if (!waterfallChart) return
-
-  let cumulative = 0
-  const placeholder: Array<number | string> = []
-  const positive: Array<number | string> = []
-  const negative: Array<number | string> = []
-  const totalBar: Array<{ value: number; itemStyle: { color: string; borderRadius: number } } | string> = []
-  const labels = WATERFALL_STEPS.map((s) => s.name)
-
-  WATERFALL_STEPS.forEach((step) => {
-    if (step.type === 'baseline') {
-      placeholder.push('-'); positive.push('-'); negative.push('-')
-      totalBar.push({ value: step.val, itemStyle: { color: getCSSVar('--amber'), borderRadius: 2 } })
-      cumulative = step.val
-    } else if (step.type === 'final') {
-      placeholder.push('-'); positive.push('-'); negative.push('-')
-      totalBar.push({ value: step.val, itemStyle: { color: getCSSVar('--blue'), borderRadius: 2 } })
-    } else if (step.type === 'pos') {
-      placeholder.push(cumulative); positive.push(step.delta); negative.push('-'); totalBar.push('-')
-      cumulative += step.delta
-    } else {
-      cumulative += step.delta
-      placeholder.push(cumulative); positive.push('-'); negative.push(-step.delta); totalBar.push('-')
-    }
-  })
+  const bars = contribBars.value
+  if (bars.length === 0) {
+    waterfallChart.clear()
+    return
+  }
+  // y 轴对称自适应:最大 abs 贡献 × 1.18 留 label padding。
+  const maxAbs = bars.reduce((m, b) => Math.max(m, Math.abs(b.value)), 0) || 0.001
+  const axisAbs = +(maxAbs * 1.18).toFixed(4)
 
   waterfallChart.setOption(
     {
       backgroundColor: 'transparent',
-      grid: { left: 60, right: 50, top: 14, bottom: 78 },
+      grid: { left: 16, right: 16, top: 16, bottom: 72 },
       tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(160,183,133,0.06)' } },
+        trigger: 'item',
         backgroundColor: getCSSVar('--bg-elev'),
         borderColor: getCSSVar('--border-strong'),
         textStyle: { color: getCSSVar('--text'), fontSize: 12 },
-        formatter: (params: Array<{ dataIndex: number }>) => {
-          const step = WATERFALL_STEPS[params[0].dataIndex]
-          if (step.type === 'baseline' || step.type === 'final') {
-            const c = step.type === 'baseline' ? getCSSVar('--amber') : getCSSVar('--blue')
-            return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${c};">${step.val.toFixed(4)}</span>`
-          }
-          // step.type narrowed to 'pos' | 'neg', both carry numeric delta.
-          const sign = step.delta >= 0 ? '+' : ''
-          const color = step.delta >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
-          return `<b>${step.name}</b><br/><span style="font-family:JetBrains Mono;font-size:15px;font-weight:600;color:${color};">${sign}${step.delta.toFixed(4)}</span><br/>
-            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${step.delta >= 0 ? '推高风险' : '降低风险'}</span>`
+        formatter: (p: { dataIndex: number }) => {
+          const b = bars[p.dataIndex]
+          const color = b.value >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
+          const sign = b.value >= 0 ? '+' : '−'
+          const tag = b.value >= 0 ? '致灾因子 · 推升风险' : '韧性因子 · 降低风险'
+          return `<b>${b.name}</b> <span style="color:${getCSSVar('--text-3')};font-family:JetBrains Mono;font-size:10px;">${b.en}</span><br/>
+            <span style="font-family:JetBrains Mono;color:${color};font-size:16px;font-weight:600;">${sign}${Math.abs(b.value).toFixed(4)}</span>
+            <span style="font-family:JetBrains Mono;color:${getCSSVar('--text-3')};font-size:11px;margin-left:4px;">SHAP 贡献</span><br/>
+            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${tag} · 相对跨省均值</span>`
         },
       },
       xAxis: {
         type: 'category',
-        data: labels,
+        data: bars.map((b) => b.name),
         axisLine: { lineStyle: { color: getCSSVar('--border-strong') } },
         axisLabel: { color: getCSSVar('--text-2'), fontFamily: 'Noto Sans SC', fontSize: 10, interval: 0, rotate: 32 },
         axisTick: { show: false },
       },
       yAxis: {
         type: 'value',
-        min: 0.02,
-        max: 0.028,
+        min: -axisAbs,
+        max: axisAbs,
         splitLine: { lineStyle: { color: getCSSVar('--border'), type: 'dashed' } },
         axisLine: { show: false },
-        axisLabel: { color: getCSSVar('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10, formatter: (v: number) => v.toFixed(4) },
+        axisLabel: { color: getCSSVar('--text-3'), fontFamily: 'JetBrains Mono', fontSize: 10, formatter: (v: number) => v.toFixed(3) },
       },
       series: [
-        { name: 'placeholder', type: 'bar', stack: 'all', data: placeholder, itemStyle: { color: 'transparent' }, silent: true },
         {
-          name: '推升',
           type: 'bar',
-          stack: 'all',
-          data: positive,
-          itemStyle: { color: getCSSVar('--risk-4'), borderRadius: 2 },
+          data: bars.map((b) => ({
+            value: b.value,
+            itemStyle: {
+              color: b.value >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green'),
+              borderRadius: b.value >= 0 ? [3, 3, 0, 0] : [0, 0, 3, 3],
+            },
+          })),
+          barWidth: 20,
           label: {
             show: true,
-            position: 'top',
-            color: getCSSVar('--risk-4'),
+            position: (p: { value: number }) => (p.value >= 0 ? 'top' : 'bottom'),
+            color: getCSSVar('--text-2'),
             fontFamily: 'JetBrains Mono',
-            fontSize: 10,
-            fontWeight: 600,
-            formatter: (p: { value: number | string }) => (p.value === '-' ? '' : '+' + (p.value as number).toFixed(4)),
+            fontSize: 9,
+            formatter: (p: { value: number }) => (p.value >= 0 ? '+' : '−') + Math.abs(p.value).toFixed(3),
           },
-          barWidth: 22,
-        },
-        {
-          name: '降低',
-          type: 'bar',
-          stack: 'all',
-          data: negative,
-          itemStyle: { color: getCSSVar('--green'), borderRadius: 2 },
-          label: {
-            show: true,
-            position: 'bottom',
-            color: getCSSVar('--green-bright'),
-            fontFamily: 'JetBrains Mono',
-            fontSize: 10,
-            fontWeight: 600,
-            formatter: (p: { value: number | string }) => (p.value === '-' ? '' : '−' + (p.value as number).toFixed(4)),
-          },
-          barWidth: 22,
-        },
-        {
-          name: '基线/终点',
-          type: 'bar',
-          data: totalBar,
-          label: {
-            show: true,
-            position: 'top',
-            color: getCSSVar('--text'),
-            fontFamily: 'JetBrains Mono',
-            fontSize: 11,
-            fontWeight: 600,
-            formatter: (p: { value: number | string }) => (p.value === '-' ? '' : (p.value as number).toFixed(4)),
-          },
-          barWidth: 22,
+          animationDuration: motionDuration(700),
+          animationDurationUpdate: motionDuration(400),
         },
       ],
-      animationDuration: motionDuration(800),
     },
     true,
   )
@@ -531,6 +489,10 @@ function renderWaterfall() {
 function renderBeeswarm() {
   if (!beeswarmChart) return
   const { features: featNames, points } = generateBeeswarmPoints()
+  if (featNames.length === 0) {
+    beeswarmChart.clear()
+    return
+  }
   const seriesData = featNames.map((_, fi) =>
     points
       .filter((p) => p.fi === fi)
@@ -555,7 +517,7 @@ function renderBeeswarm() {
           const sign = p.value[0] >= 0 ? '+' : ''
           const color = p.value[0] >= 0 ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
           return `<b>${fname}</b><br/><span style="font-family:JetBrains Mono;font-size:14px;color:${color};font-weight:600;">SHAP ${sign}${p.value[0].toFixed(3)}</span><br/>
-            <span style="font-size:11px;color:${getCSSVar('--text-2')};">原始值 ${p.value[2].toFixed(1)}</span>`
+            <span style="font-size:11px;color:${getCSSVar('--text-2')};">${p.value[0] >= 0 ? '推升' : '降低'}风险 · 示意分布</span>`
         },
       },
       xAxis: {
@@ -602,7 +564,7 @@ function renderBeeswarm() {
 
 function rerenderAll() {
   renderImportance()
-  renderWaterfall()
+  renderContribBars()
   renderBeeswarm()
 }
 
@@ -613,6 +575,14 @@ function rerenderAll() {
 //     (例如 single 数据已存在, 从 'all' 切回 'single' 不触发上面任何 ref 变更)
 watch([backendNormalized, backendContribs, subsetData, currentSubsetKey], () => {
   renderImportance()
+}, { flush: 'post' })
+
+// M02-B 带向贡献 + M02-C 蜂群:数据源是单省 SHAP(FEATURES_ALL,不随 subset 切换),
+// 故只盯 backendNormalized / backendContribs。切换 TARGET 省份 → fetchShapData 刷新
+// 这两个 ref → 两图同步重绘(修复"切省份归因不变")。
+watch([backendNormalized, backendContribs], () => {
+  renderContribBars()
+  renderBeeswarm()
 }, { flush: 'post' })
 
 onMounted(async () => {
@@ -772,16 +742,16 @@ onBeforeUnmount(() => {
       <div class="card chart-card">
         <div class="card-head">
           <div>
-            <div class="num">M02-B · WATERFALL · 参考样本</div>
-            <h3>单样本预测分解</h3>
+            <div class="num">M02-B · SIGNED CONTRIBUTION · 当前省份</div>
+            <h3>省内因子带向贡献</h3>
           </div>
-          <span class="hint">E[f(x)] = {{ WATERFALL_BASELINE.val }} → f(x) = {{ WATERFALL_FINAL.val }}</span>
+          <span class="hint">最强 {{ contribHeadline }}</span>
         </div>
         <div
           ref="waterfallEl"
           class="chart-canvas"
           role="img"
-          :aria-label="`单样本预测分解 Waterfall 图:从基线 ${WATERFALL_BASELINE.val} 经 7 个特征贡献逐步演变到最终预测 ${WATERFALL_FINAL.val}`"
+          :aria-label="`${selectedProvince?.name ?? ''} 省内各因子带符号 SHAP 贡献柱状图:红色向上为推升风险,绿色向下为降低风险,按贡献绝对值排序`"
           tabindex="0"
         ></div>
       </div>
@@ -789,16 +759,16 @@ onBeforeUnmount(() => {
       <div class="card chart-card full">
         <div class="card-head">
           <div>
-            <div class="num">M02-C · BEESWARM</div>
-            <h3>Top 5 特征 SHAP 蜂群分布</h3>
+            <div class="num">M02-C · BEESWARM · 当前省份 Top-5</div>
+            <h3>Top 5 因子 SHAP 分布(示意)</h3>
           </div>
-          <span class="hint">点色 = 原始值(蓝低 → 赭石高)&nbsp;·&nbsp;X = SHAP 值</span>
+          <span class="hint">围绕本省真实带向贡献的示意分布&nbsp;·&nbsp;X = SHAP 方向</span>
         </div>
         <div
           ref="beeswarmEl"
           class="chart-canvas"
           role="img"
-          aria-label="Top 5 特征 SHAP 蜂群分布散点图:每个点代表一个样本,横轴为 SHAP 值,点色由蓝到赭石映射原始值由低到高"
+          :aria-label="`${selectedProvince?.name ?? ''} Top 5 因子 SHAP 示意分布散点图:每个因子点云围绕其真实带向贡献展开,横轴左侧减损、右侧增灾`"
           tabindex="0"
         ></div>
       </div>

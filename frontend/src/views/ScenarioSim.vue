@@ -40,7 +40,7 @@ const SLIDERS: SliderDef[] = [
 ]
 
 // 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维瞬时反馈公式。
-// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（200ms 瞬时反馈，无网络延迟），真模型（XGBoost/LSTM/Att-LSTM ensemble）异步覆盖（#45 已接通）。
+// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（200ms 瞬时反馈，无网络延迟），真模型（XGBoost/LSTM/Attention-LSTM ensemble）异步覆盖（#45 已接通）。
 const FORMULA_BASE = 0.0235
 const MEANS: Record<SliderDef['key'], number> = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 }
 const WEIGHTS: Record<SliderDef['key'], number> = {

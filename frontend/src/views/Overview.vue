@@ -50,7 +50,7 @@ const KPIS: ReadonlyArray<KpiCard> = [
     eyebrow: 'TRI-MODEL R²',
     title: 'random 8:2 协议',
     value: '0.907',
-    subtitle: 'XGB 0.907 / LSTM 0.886 / Att-LSTM 0.816(10 种子均值)',
+    subtitle: 'XGB 0.907 / LSTM 0.886 / Attention-LSTM 0.816(10 种子均值)',
     tone: 'amber',
     aria: '三模型 R² 在 random 8:2 协议下,XGBoost 0.907,LSTM 0.886,Attention-LSTM 0.816,10 种子均值',
   },
@@ -264,7 +264,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
 
           <div class="model-block">
             <div class="model-head">
-              <span class="model-name">Att-LSTM Attention</span>
+              <span class="model-name">Attention-LSTM</span>
               <span class="model-tag">模型 gating · 内部偏好</span>
             </div>
             <div class="chip-row" role="list" aria-label="Attention-LSTM Top-3 因子">
