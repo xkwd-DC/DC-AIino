@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新成员上手指南 · DC-AIino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF5EA;
+    --paper-2:#F2EAD7;
+    --paper-3:#ECE1C9;
+    --ink:#211D14;
+    --ink-soft:#574E3C;
+    --ink-faint:#867B62;
+    --pine:#1E3B2C;
+    --pine-2:#2C5440;
+    --moss:#5E7B5A;
+    --terracotta:#C2562B;
+    --amber:#D9943A;
+    --clay:#A93D22;
+    --line:rgba(33,29,20,.14);
+    --line-soft:rgba(33,29,20,.08);
+    --code-bg:#1C2A21;
+    --code-ink:#E8E2CF;
+    --code-faint:#8FA98C;
+    --font-display:'Fraunces','Noto Serif SC',Georgia,serif;
+    --font-body:'Hanken Grotesk','Noto Sans SC',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:80px}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16.5px;
+    line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(94,123,90,.07), transparent 38%),
+      radial-gradient(circle at 88% 4%, rgba(194,86,43,.06), transparent 40%);
+  }
+  /* grain overlay */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.035;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* scroll progress */
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--terracotta),var(--amber));z-index:10000;transition:width .1s linear}
+
+  /* ===== HERO ===== */
+  header.hero{
+    position:relative;overflow:hidden;
+    background:var(--pine);
+    color:var(--paper);
+    padding:96px 7vw 84px;
+    border-bottom:3px solid var(--ink);
+  }
+  header.hero::after{
+    content:"";position:absolute;inset:0;opacity:.5;pointer-events:none;
+    background:
+      radial-gradient(circle at 85% 18%, rgba(217,148,58,.30), transparent 45%),
+      radial-gradient(circle at 8% 92%, rgba(94,123,90,.45), transparent 50%);
+  }
+  /* decorative grain/leaf svg */
+  .hero-deco{position:absolute;right:-40px;top:-30px;width:340px;height:340px;opacity:.12;color:var(--amber);transform:rotate(8deg)}
+  .hero-inner{position:relative;z-index:2;max-width:1040px;margin:0 auto}
+  .eyebrow{
+    font-family:var(--font-mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--amber);display:inline-flex;align-items:center;gap:10px;margin-bottom:26px;
+  }
+  .eyebrow::before{content:"";width:34px;height:1px;background:var(--amber)}
+  header.hero h1{
+    font-family:var(--font-display);font-weight:900;font-size:clamp(2.7rem,6.4vw,5.1rem);
+    line-height:1.02;letter-spacing:-.02em;margin-bottom:24px;
+  }
+  header.hero h1 em{font-style:italic;font-weight:500;color:var(--amber)}
+  .project-name{
+    font-family:var(--font-body);font-weight:500;color:rgba(250,245,234,.82);
+    font-size:clamp(1rem,2vw,1.22rem);max-width:680px;line-height:1.6;
+    border-left:2px solid rgba(217,148,58,.6);padding-left:18px;margin-bottom:34px;
+  }
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .chip{
+    font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;
+    padding:7px 14px;border:1px solid rgba(250,245,234,.28);border-radius:100px;
+    color:rgba(250,245,234,.9);background:rgba(250,245,234,.04);
+  }
+
+  /* ===== LAYOUT ===== */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 7vw;display:grid;grid-template-columns:230px 1fr;gap:56px;align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;gap:0;padding:0 6vw}}
+
+  /* TOC */
+  nav.toc{position:sticky;top:34px;padding-top:56px;font-size:14px}
+  @media(max-width:900px){nav.toc{position:static;padding-top:34px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:10px}}
+  .toc-title{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:16px}
+  nav.toc ol{list-style:none;counter-reset:t}
+  nav.toc a{
+    counter-increment:t;display:flex;gap:11px;text-decoration:none;color:var(--ink-soft);
+    padding:6px 0;border-radius:6px;transition:color .2s,transform .2s;line-height:1.4;
+  }
+  nav.toc a::before{content:counter(t,decimal-leading-zero);font-family:var(--font-mono);font-size:11px;color:var(--amber);padding-top:3px;font-weight:500}
+  nav.toc a:hover{color:var(--pine)}
+  nav.toc a.active{color:var(--pine);font-weight:600;transform:translateX(3px)}
+
+  main{padding-top:56px;padding-bottom:120px;min-width:0}
+  @media(max-width:900px){main{padding-top:26px}}
+
+  /* ===== SECTIONS ===== */
+  section{margin-bottom:74px;scroll-margin-top:30px}
+  .sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:8px}
+  .sec-num{
+    font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--paper);
+    background:var(--pine);width:34px;height:34px;border-radius:9px;
+    display:grid;place-items:center;flex:none;transform:translateY(-2px);
+    box-shadow:3px 3px 0 var(--amber);
+  }
+  h2{font-family:var(--font-display);font-weight:600;font-size:clamp(1.6rem,3.4vw,2.25rem);line-height:1.15;letter-spacing:-.015em}
+  .sec-sub{color:var(--ink-soft);font-size:15.5px;margin:14px 0 26px;max-width:62ch}
+  .sec-divider{width:100%;height:1px;background:var(--line-soft);margin:74px 0;position:relative}
+  .sec-divider::before{content:"❖";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--paper);padding:0 16px;color:var(--moss);font-size:13px}
+
+  h3{font-family:var(--font-body);font-weight:700;font-size:1.12rem;margin:34px 0 12px;color:var(--pine);display:flex;align-items:center;gap:9px}
+  h3 .h3-mark{width:7px;height:7px;border-radius:2px;background:var(--terracotta);transform:rotate(45deg);flex:none}
+  p{margin-bottom:15px}
+  p+h3{margin-top:30px}
+  a.link{color:var(--clay);text-decoration:none;border-bottom:1.5px solid rgba(169,61,34,.3);font-weight:500;transition:border-color .2s}
+  a.link:hover{border-color:var(--clay)}
+  strong{font-weight:700;color:var(--ink)}
+  code.inline{
+    font-family:var(--font-mono);font-size:.86em;background:var(--paper-3);
+    padding:2px 7px;border-radius:5px;color:var(--clay);border:1px solid var(--line-soft);white-space:nowrap;
+  }
+  .kbd{font-family:var(--font-mono);font-size:.8em;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:2px 7px;color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+
+  /* steps */
+  ol.steps{list-style:none;counter-reset:s;margin:18px 0}
+  ol.steps>li{counter-increment:s;position:relative;padding-left:46px;margin-bottom:20px}
+  ol.steps>li::before{
+    content:counter(s);position:absolute;left:0;top:-1px;width:30px;height:30px;border-radius:50%;
+    background:var(--paper-2);border:1.5px solid var(--moss);color:var(--pine);
+    font-family:var(--font-mono);font-weight:700;font-size:13px;display:grid;place-items:center;
+  }
+  ul.dot{list-style:none;margin:12px 0}
+  ul.dot li{position:relative;padding-left:22px;margin-bottom:8px}
+  ul.dot li::before{content:"";position:absolute;left:4px;top:11px;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+
+  /* code block */
+  .code{background:var(--code-bg);border-radius:12px;margin:18px 0;overflow:hidden;border:1px solid #15201a;box-shadow:0 12px 30px -18px rgba(28,42,33,.7)}
+  .code-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)}
+  .dots{display:flex;gap:6px}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#E0664B}.dots i:nth-child(2){background:#E0A93A}.dots i:nth-child(3){background:#6FA86C}
+  .code-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--code-faint);text-transform:uppercase;margin-left:6px}
+  .copy{margin-left:auto;font-family:var(--font-mono);font-size:11.5px;color:var(--code-faint);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:4px 11px;border-radius:6px;cursor:pointer;transition:.18s;letter-spacing:.03em}
+  .copy:hover{color:var(--code-ink);background:rgba(255,255,255,.12)}
+  .copy.done{color:#9FD79B;border-color:rgba(159,215,155,.4)}
+  .code pre{padding:16px 18px;overflow-x:auto}
+  .code code{font-family:var(--font-mono);font-size:13.5px;line-height:1.7;color:var(--code-ink);white-space:pre;display:block}
+  .code .cmt{color:var(--code-faint);font-style:italic}
+  .code .pr{color:#6FA86C;user-select:none}
+  .code .fl{color:var(--amber)}
+
+  /* callouts */
+  .callout{border-radius:11px;padding:18px 20px 18px 22px;margin:22px 0;position:relative;border:1px solid;font-size:15px;line-height:1.7}
+  .callout .co-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .callout p:last-child{margin-bottom:0}
+  .callout.tip{background:rgba(94,123,90,.1);border-color:rgba(94,123,90,.35)}
+  .callout.tip .co-label{color:var(--pine-2)}
+  .callout.warn{background:rgba(217,148,58,.12);border-color:rgba(194,86,43,.4)}
+  .callout.warn .co-label{color:var(--clay)}
+  .callout.note{background:var(--paper-2);border-color:var(--line)}
+  .callout.note .co-label{color:var(--ink-faint)}
+
+  /* table */
+  .tablewrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:11px}
+  table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px}
+  thead th{background:var(--pine);color:var(--paper);font-family:var(--font-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:12px 16px;font-weight:500}
+  tbody td{padding:11px 16px;border-top:1px solid var(--line-soft);vertical-align:top}
+  tbody tr:nth-child(even){background:rgba(33,29,20,.025)}
+  td code{font-family:var(--font-mono);font-size:12.5px;color:var(--clay);background:var(--paper-3);padding:2px 6px;border-radius:4px;white-space:nowrap}
+
+  /* mini cards */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .minicard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .minicard h4{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--terracotta);margin-bottom:8px;font-weight:700}
+  .minicard p{font-size:14px;color:var(--ink-soft);margin:0}
+
+  footer{background:var(--pine);color:rgba(250,245,234,.7);padding:48px 7vw;text-align:center;font-size:13.5px;border-top:3px solid var(--ink)}
+  footer .fdisplay{font-family:var(--font-display);font-style:italic;font-weight:500;font-size:1.3rem;color:var(--amber);margin-bottom:10px}
+  footer a{color:var(--amber);text-decoration:none}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header class="hero">
+  <svg class="hero-deco" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4">
+    <path d="M50 10 C50 35 50 70 50 92 M50 30 C40 24 32 26 28 34 M50 30 C60 24 68 26 72 34 M50 46 C40 40 32 42 28 50 M50 46 C60 40 68 42 72 50 M50 62 C40 56 32 58 28 66 M50 62 C60 56 68 58 72 66"/>
+  </svg>
+  <div class="hero-inner">
+    <span class="eyebrow">DC-AIino · 新成员上手指南</span>
+    <h1>从零开始<br><em>跑通整套工作流</em></h1>
+    <p class="project-name">课题：基于多模态的极端气候下我国粮食生产风险的核心因子识别与韧性提升可视化系统</p>
+    <div class="hero-meta">
+      <span class="chip">Claude Project</span>
+      <span class="chip">SSH 配置</span>
+      <span class="chip">VS Code · Remote-SSH</span>
+      <span class="chip">GitHub · xkwd-DC</span>
+      <span class="chip">Claude Code</span>
+      <span class="chip">Hermes Agent</span>
+      <span class="chip">DeepSeek Chat</span>
+      <span class="chip">tmux</span>
+      <span class="chip">Skills</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <ol>
+      <li><a href="#s1">整体流程总览</a></li>
+      <li><a href="#s2">在 Claude Project 里协作</a></li>
+      <li><a href="#s3">从零配置 SSH</a></li>
+      <li><a href="#s4">VS Code 连接服务器</a></li>
+      <li><a href="#s5">在工作区 clone 仓库</a></li>
+      <li><a href="#s6">Git / GitHub 常用操作</a></li>
+      <li><a href="#s7">启动并使用 Claude Code</a></li>
+      <li><a href="#s8">tmux：让对话留在服务器</a></li>
+      <li><a href="#s9">安装 Claude Code 技能</a></li>
+      <li><a href="#s10">使用 Hermes Agent · 接入 DeepSeek</a></li>
+      <li><a href="#s11">命令速查表</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ===== 1 ===== -->
+    <section id="s1">
+      <div class="sec-head"><span class="sec-num">01</span><h2>整体流程总览</h2></div>
+      <p class="sec-sub">在动手之前，先看清楚这套工作流里的几个角色，知道每一步在干嘛，后面就不会迷路。</p>
+
+      <p>我们的协作大致由这几块拼起来，你会在不同环节用到它们：</p>
+      <div class="grid2">
+        <div class="minicard"><h4>Claude Project</h4><p>团队在 claude.ai 上的项目空间，放着课题资料、报告、查新材料。和 Claude 讨论、写文档、查资料都在这里。</p></div>
+        <div class="minicard"><h4>服务器</h4><p>我们真正跑代码的地方。你用自己电脑上的 VS Code 远程连上去，在上面的「工作区」干活。</p></div>
+        <div class="minicard"><h4>GitHub 仓库</h4><p><code class="inline">xkwd-DC/DC-AIino</code> 是代码的「云端总账本」。你已经加入了 <strong>xkwd-DC</strong> 组织，所以有权限。</p></div>
+        <div class="minicard"><h4>Claude Code</h4><p>装在服务器终端里的 AI 编程助手。它能读懂整个项目代码，帮你写代码、改 bug、跑命令。</p></div>
+      </div>
+
+      <p>把它串起来就是一条主线：</p>
+      <div class="callout note">
+        <div class=" co-label">◷ 一句话流程</div>
+        <p>先在本机 <strong>配好 SSH</strong> → 用 <strong>VS Code 远程连上服务器</strong> → 在自己的工作区里 <strong>clone 仓库</strong> → 在里面写代码并用 <strong>Claude Code</strong> 协助（用 <strong>tmux</strong> 让对话不掉线） → 用 <strong>Git</strong> 把成果 commit & push 回 GitHub。需要查资料、写报告时，就回到 <strong>Claude Project</strong>。</p>
+      </div>
+      <p>下面每一节都对应其中一步，照着做就行。完全没接触过命令行也别担心，需要敲的命令我都写好了，点「复制」即可。</p>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 2 ===== -->
+    <section id="s2">
+      <div class="sec-head"><span class="sec-num">02</span><h2>在 Claude Project 里协作</h2></div>
+      <p class="sec-sub">Project 是我们这个课题的「共享大脑」——资料、上下文和对话都集中在一处，Claude 会基于这些内容回答你。</p>
+
+      <h3><span class="h3-mark"></span>进入项目</h3>
+      <ol class="steps">
+        <li>打开 <a class="link" href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> 并用团队账号登录。</li>
+        <li>在左侧边栏点 <strong>Projects（项目）</strong>，找到我们这个粮食生产风险可视化的课题项目并点进去。</li>
+        <li>项目里有两块：上方/右侧的 <strong>项目知识（Project knowledge）</strong> 放的是共享资料（论文、研究报告、查新报告、申报材料等）；中间是 <strong>对话区</strong>，每次新开一个聊天都会自动带上这些资料作为背景。</li>
+      </ol>
+
+      <h3><span class="h3-mark"></span>怎么用才顺手</h3>
+      <ul class="dot">
+        <li><strong>每个小任务开一个新对话</strong>。比如「帮我梳理核心因子识别的方法」和「帮我改研究报告第三章」分开聊，上下文更干净。</li>
+        <li><strong>需要 Claude 参考的资料就传进项目知识里</strong>，而不是每次粘贴一大段。传一次，之后所有对话都能用到。</li>
+        <li>提问尽量<strong>说清背景和目标</strong>：你想要什么、给谁看、要多长、什么格式。要求越具体，结果越好。</li>
+        <li>需要可下载的文件（Word 报告、PPT、Excel）时直接说，Claude 可以生成给你。</li>
+      </ul>
+
+      <div class="callout tip">
+        <div class="co-label">✦ 小提示</div>
+        <p>Project 里的对话只对项目成员可见，是放课题专属上下文的好地方。和别的不相干的事情（比如随便问个常识）就不必占用项目对话，单独开个普通聊天即可。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 3 SSH ===== -->
+    <section id="s3">
+      <div class="sec-head"><span class="sec-num">03</span><h2>从零配置 SSH</h2></div>
+      <p class="sec-sub">SSH 是安全登录远程服务器的方式。配置一次之后，VS Code 和终端就能「一键」连上服务器、不用每次输密码。如果你的 SSH 配置文件已经由别人帮你配好了，可以直接跳到下一节。</p>
+
+      <h3><span class="h3-mark"></span>先理解两样东西</h3>
+      <ul class="dot">
+        <li><strong>一对密钥</strong>：在你自己电脑上生成。<strong>私钥</strong>（没有 <code class="inline">.pub</code> 后缀）绝不外传，留在本机；<strong>公钥</strong>（<code class="inline">.pub</code> 结尾）复制到服务器上。服务器认得你的公钥，就放你进门。</li>
+        <li><strong>一个配置文件</strong>：本机的 <code class="inline">~/.ssh/config</code>。在里面给服务器起个「昵称」，VS Code 的连接列表里出现的就是这个昵称，连接也变成 <code class="inline">ssh 昵称</code> 这么简单。</li>
+      </ul>
+      <div class="callout warn">
+        <div class=" co-label">⚠ 私钥 = 你的钥匙</div>
+        <p>私钥文件（如 <code class="inline">id_ed25519</code>）等于进服务器的钥匙，<strong>千万不要发给任何人、不要上传到 GitHub</strong>。需要交换的永远只有公钥（<code class="inline">.pub</code>）。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>① 生成密钥（本机操作，只需一次）</h3>
+      <p>在<strong>你自己电脑</strong>的终端里运行（Windows 用 PowerShell 或 Git Bash）：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 在你自己的电脑上</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 邮箱换成你自己的，一路回车即可（位置用默认）</span>
+<span class="pr">$ </span>ssh-keygen -t ed25519 -C <span class="fl">"你的邮箱"</span></code></pre>
+      </div>
+      <ul class="dot">
+        <li>问保存位置时，<strong>直接回车</strong>用默认（<code class="inline">~/.ssh/id_ed25519</code>）。</li>
+        <li>问 passphrase（口令）时，可以直接回车留空（更方便）；想更安全就设一个——以后连接会让你输这个口令，而不是服务器密码。</li>
+      </ul>
+
+      <h3><span class="h3-mark"></span>② 把公钥送上服务器</h3>
+      <p>最省事的办法（Mac / Linux / Git Bash 都行），这一步会让你<strong>输一次服务器密码</strong>：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 一键拷贝公钥</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 把 用户名 和 服务器地址 换成实际的</span>
+<span class="pr">$ </span>ssh-copy-id 用户名@服务器IP</code></pre>
+      </div>
+      <p>如果系统没有 <code class="inline">ssh-copy-id</code>（纯 Windows 常见），就手动：先 <code class="inline">cat ~/.ssh/id_ed25519.pub</code> 复制整段公钥，再登录服务器，把它<strong>追加</strong>到服务器的 <code class="inline">~/.ssh/authorized_keys</code> 文件末尾即可。</p>
+
+      <h3><span class="h3-mark"></span>③ 写本机的 config 文件</h3>
+      <p>编辑（没有就新建）本机的 <code class="inline">~/.ssh/config</code>，加上这样一段：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">~/.ssh/config · 在你自己的电脑上</span><button class="copy">复制</button></div>
+        <pre><code>Host dc-server
+    HostName 123.45.67.89
+    User 你的服务器用户名
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519</code></pre>
+      </div>
+      <ul class="dot">
+        <li><code class="inline">Host</code>：昵称，随便起（这里叫 <code class="inline">dc-server</code>）——<strong>这就是 VS Code 列表里会显示的名字</strong>。</li>
+        <li><code class="inline">HostName</code>：服务器真实 IP 或域名。</li>
+        <li><code class="inline">User</code>：你在服务器上的登录名。</li>
+        <li><code class="inline">Port</code>：端口，默认 22，没改过就写 22（或整行删掉）。</li>
+        <li><code class="inline">IdentityFile</code>：指向你的<strong>私钥</strong>路径。</li>
+      </ul>
+      <div class="callout note">
+        <div class=" co-label">◷ Windows 路径</div>
+        <p>Windows 上这个文件在 <code class="inline">C:\Users\你的用户名\.ssh\config</code>。若 <code class="inline">.ssh</code> 文件夹不存在，先建一个。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>④ 测试连接</h3>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 用昵称连接</span><button class="copy">复制</button></div>
+        <pre><code><span class="pr">$ </span>ssh dc-server
+<span class="cmt"># 不再要服务器密码、直接进去 = 配置成功</span>
+<span class="cmt">#（若你给密钥设了口令，这里会问的是口令，不是服务器密码）</span></code></pre>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 连不上？十有八九是权限</div>
+        <p>密钥认证最常见的坑是<strong>权限不对，导致 SSH 悄悄拒绝、回退到要密码</strong>。在<strong>服务器上</strong>修正一下即可：<code class="inline">chmod 700 ~/.ssh</code> 且 <code class="inline">chmod 600 ~/.ssh/authorized_keys</code>。还连不上就加 <code class="inline">-v</code> 看详细日志：<code class="inline">ssh -v dc-server</code>。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 4 VSCODE ===== -->
+    <section id="s4">
+      <div class="sec-head"><span class="sec-num">04</span><h2>VS Code 连接服务器</h2></div>
+      <p class="sec-sub">用本地的 VS Code 远程连上服务器，就像在自己电脑上写代码一样，但文件和运行环境都在服务器上。上一节配好的 SSH 在这里直接派上用场。</p>
+
+      <h3><span class="h3-mark"></span>第一次：装好插件</h3>
+      <ol class="steps">
+        <li>打开 VS Code，点左侧最下方的 <strong>扩展（Extensions）</strong>图标（四个小方块）。</li>
+        <li>搜索 <code class="inline">Remote - SSH</code>，安装由 <strong>Microsoft</strong> 出品的那个（或者直接装 <code class="inline">Remote Development</code> 扩展包，里面都包含了）。</li>
+        <li>装好后，VS Code <strong>左下角</strong>会出现一个蓝绿色的 <span class="kbd">&gt;&lt;</span> 远程按钮。</li>
+      </ol>
+
+      <h3><span class="h3-mark"></span>连接服务器</h3>
+      <ol class="steps">
+        <li>点左下角那个 <span class="kbd">&gt;&lt;</span> 按钮，在弹出的菜单里选 <strong>Connect to Host…（连接到主机）</strong>。</li>
+        <li>因为 SSH 配置文件（<code class="inline">~/.ssh/config</code>）里已经写好了主机，列表里会直接出现你起的昵称（比如 <code class="inline">dc-server</code>），<strong>点它就行</strong>，不用手动敲地址。</li>
+        <li>第一次连接可能会让你确认指纹（选 <strong>Continue</strong>）。如果之前配的是密钥认证，就不用输密码了；如果让你输密码，按提示输入即可。</li>
+        <li>连接成功后，左下角会显示 <strong>SSH: 服务器名</strong>，说明你现在已经「人在服务器上」了。</li>
+      </ol>
+
+      <h3><span class="h3-mark"></span>打开你的工作区</h3>
+      <ol class="steps">
+        <li>顶部菜单 <strong>File → Open Folder（打开文件夹）</strong>。</li>
+        <li>这时浏览的是<strong>服务器上的目录</strong>。进入分配给你的个人工作区文件夹（如果还没有，可以在终端里建一个，见下一节）。</li>
+        <li>顶部菜单 <strong>Terminal → New Terminal</strong> 打开终端，之后所有命令都在这个终端里敲——它直接跑在服务器上。</li>
+      </ol>
+
+      <div class="callout note">
+        <div class="co-label">◷ 两种「SSH」别搞混</div>
+        <p>① <strong>你的电脑 → 服务器</strong>：这个已经配好了，就是上面用的。<br>② <strong>服务器 → GitHub</strong>：这是另一回事，是从服务器拉取/推送代码用的认证，下一节会单独说。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 5 ===== -->
+    <section id="s5">
+      <div class="sec-head"><span class="sec-num">05</span><h2>在工作区 clone 仓库</h2></div>
+      <p class="sec-sub">「clone（克隆）」就是把 GitHub 上的仓库完整下载一份到服务器上，变成你能编辑的本地文件夹。你已经在 xkwd-DC 组织里，所以有读写权限。</p>
+
+      <h3><span class="h3-mark"></span>① 先告诉 Git 你是谁（只需一次）</h3>
+      <p>这一步是给你之后的每一次提交署名，全局设置一次即可。在终端里运行：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 在服务器终端</span><button class="copy">复制</button></div>
+        <pre><code><span class="pr">$ </span>git config --global user.name <span class="fl">"你的名字"</span>
+<span class="pr">$ </span>git config --global user.email <span class="fl">"你的GitHub邮箱"</span></code></pre>
+      </div>
+
+      <h3><span class="h3-mark"></span>② 让服务器能访问 GitHub（认证）</h3>
+      <p>从服务器拉代码需要让 GitHub 认识这台机器。推荐用 <strong>SSH 密钥</strong>方式，配一次以后都不用输密码：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 生成并查看密钥</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 1) 生成一对密钥（一路回车即可，邮箱换成你的）</span>
+<span class="pr">$ </span>ssh-keygen -t ed25519 -C <span class="fl">"你的GitHub邮箱"</span>
+
+<span class="cmt"># 2) 打印出公钥，整段复制下来</span>
+<span class="pr">$ </span>cat ~/.ssh/id_ed25519.pub</code></pre>
+      </div>
+      <ol class="steps">
+        <li>复制上面打印出来的<strong>公钥</strong>（以 <code class="inline">ssh-ed25519</code> 开头的一整行）。</li>
+        <li>打开 GitHub → 右上角头像 → <strong>Settings → SSH and GPG keys → New SSH key</strong>，把公钥粘进去保存。</li>
+        <li>验证一下是否连通：</li>
+      </ol>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 测试连接</span><button class="copy">复制</button></div>
+        <pre><code><span class="pr">$ </span>ssh -T git@github.com
+<span class="cmt"># 看到 "Hi 你的用户名! You've successfully authenticated" 就成功了</span></code></pre>
+      </div>
+      <div class="callout note">
+        <div class=" co-label">◷ 不想配 SSH？</div>
+        <p>也可以用 <strong>HTTPS + 访问令牌（PAT）</strong>：clone 时地址换成 <code class="inline">https://github.com/...</code>，遇到要密码时，<strong>用 GitHub 个人访问令牌代替密码</strong>（在 Settings → Developer settings → Personal access tokens 里生成）。SSH 配一次更省心，按需选择。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>③ Clone 仓库到你的工作区</h3>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 克隆代码</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 进入（或新建）你的个人工作区目录</span>
+<span class="pr">$ </span>mkdir -p ~/workspace <span class="cmt"># 如果还没有就建一个</span>
+<span class="pr">$ </span>cd ~/workspace
+
+<span class="cmt"># 用 SSH 方式克隆（推荐）</span>
+<span class="pr">$ </span>git clone git@github.com:xkwd-DC/DC-AIino.git
+
+<span class="cmt"># 或者用 HTTPS 方式克隆</span>
+<span class="pr">$ </span>git clone https://github.com/xkwd-DC/DC-AIino.git
+
+<span class="cmt"># 进入项目文件夹</span>
+<span class="pr">$ </span>cd DC-AIino</code></pre>
+      </div>
+      <p>完成后，在 VS Code 里 <strong>File → Open Folder</strong> 选中这个 <code class="inline">DC-AIino</code> 文件夹，就能开始编辑了。</p>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 开干之前先拉一下</div>
+        <p>每次开始工作前，先 <code class="inline">git pull</code> 把别人最新的改动同步下来，能减少很多冲突。这个习惯很值钱。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 6 ===== -->
+    <section id="s6">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Git / GitHub 常用操作</h2></div>
+      <p class="sec-sub">Git 是给代码做「存档」的工具。先理解几个核心概念，命令就很好记了。</p>
+
+      <h3><span class="h3-mark"></span>先搞懂三个空间</h3>
+      <ul class="dot">
+        <li><strong>工作区</strong>：你正在编辑的文件本身。</li>
+        <li><strong>暂存区（staged）</strong>：你挑出来「准备这次要存档」的改动，用 <code class="inline">git add</code> 放进去。</li>
+        <li><strong>本地仓库</strong>：用 <code class="inline">git commit</code> 把暂存区的改动正式存成一个「快照」，留在你这台机器上。</li>
+        <li><strong>远程仓库（GitHub）</strong>：用 <code class="inline">git push</code> 把本地的 commit 上传到 GitHub，别人才看得到。</li>
+      </ul>
+
+      <div class="callout tip">
+        <div class=" co-label">✦ 关键词翻译</div>
+        <p><strong>commit（提交）</strong>＝ 在<em>本地</em>给当前改动拍一张存档照片，附一句说明。<br><strong>push（推送）</strong>＝ 把这些存档照片<em>上传到 GitHub</em>。<br><strong>pull（拉取）</strong>＝ 把 GitHub 上别人的最新改动<em>下载</em>到本地。<br>简单记：<strong>commit 是存档，push 是上传，pull 是同步。</strong></p>
+      </div>
+
+      <h3><span class="h3-mark"></span>日常工作流（最常用的一套）</h3>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 一天的典型流程</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 1) 开工前，先同步最新代码</span>
+<span class="pr">$ </span>git pull
+
+<span class="cmt"># 2) 改完文件后，看看动了哪些</span>
+<span class="pr">$ </span>git status
+
+<span class="cmt"># 3) 把要提交的改动放进暂存区（. 表示全部）</span>
+<span class="pr">$ </span>git add .
+
+<span class="cmt"># 4) 提交一个存档，写清楚这次干了啥</span>
+<span class="pr">$ </span>git commit -m <span class="fl">"完成核心因子识别模块的数据预处理"</span>
+
+<span class="cmt"># 5) 上传到 GitHub，让队友看到</span>
+<span class="pr">$ </span>git push</code></pre>
+      </div>
+
+      <h3><span class="h3-mark"></span>用分支（branch）来不互相干扰</h3>
+      <p>多人协作时，最好<strong>各自开一条分支</strong>干活，做完再合并回主分支，避免直接改乱主线。</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 分支操作</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 新建并切换到一条自己的分支</span>
+<span class="pr">$ </span>git checkout -b feature/data-cleaning
+
+<span class="cmt"># 在分支上正常 add / commit / push</span>
+<span class="pr">$ </span>git push -u origin feature/data-cleaning
+
+<span class="cmt"># 切回主分支</span>
+<span class="pr">$ </span>git checkout main</code></pre>
+      </div>
+      <p>推上去后，可以在 GitHub 网页上发起 <strong>Pull Request（PR）</strong>，让队友 review 后再合并进 <code class="inline">main</code>。这是最稳妥的协作方式。</p>
+
+      <h3><span class="h3-mark"></span>常用命令一览</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>git status</code></td><td>查看当前有哪些改动、在哪条分支</td></tr>
+            <tr><td><code>git add .</code></td><td>把所有改动放进暂存区（也可指定单个文件）</td></tr>
+            <tr><td><code>git commit -m "说明"</code></td><td>把暂存区的改动存为一个本地快照</td></tr>
+            <tr><td><code>git push</code></td><td>把本地 commit 上传到 GitHub</td></tr>
+            <tr><td><code>git pull</code></td><td>把 GitHub 上的最新改动同步到本地</td></tr>
+            <tr><td><code>git log --oneline</code></td><td>简洁地查看提交历史</td></tr>
+            <tr><td><code>git diff</code></td><td>查看具体改了哪几行</td></tr>
+            <tr><td><code>git branch</code></td><td>列出所有分支（带 * 的是当前分支）</td></tr>
+            <tr><td><code>git checkout -b 名字</code></td><td>新建并切换到一条新分支</td></tr>
+            <tr><td><code>git clone 地址</code></td><td>把远程仓库下载到本地</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 别慌的几个原则</div>
+        <p>commit 信息写清楚「做了什么」，方便日后回溯；不确定操作前先 <code class="inline">git status</code> 看清状态；遇到 push 被拒（别人先推了），先 <code class="inline">git pull</code> 再 push。真遇到冲突或搞不定，先停手别乱试，截图发群里问。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 7 ===== -->
+    <section id="s7">
+      <div class="sec-head"><span class="sec-num">07</span><h2>启动并使用 Claude Code</h2></div>
+      <p class="sec-sub">Claude Code 是跑在终端里的 AI 编程助手。它能读懂整个项目、帮你写和改代码、还能直接运行命令。下面在服务器终端里完成安装和启动。</p>
+
+      <h3><span class="h3-mark"></span>① 安装</h3>
+      <p>最通用的方式是用 npm 安装（需要服务器上已装好 <strong>Node.js 18 及以上</strong>）：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 安装 Claude Code</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 先确认 Node 版本（应 ≥ 18）</span>
+<span class="pr">$ </span>node --version
+
+<span class="cmt"># 全局安装 Claude Code（不要加 sudo）</span>
+<span class="pr">$ </span>npm install -g @anthropic-ai/claude-code
+
+<span class="cmt"># 验证安装成功</span>
+<span class="pr">$ </span>claude --version</code></pre>
+      </div>
+      <div class="callout note">
+        <div class=" co-label">◷ 装不上 / 权限报错？</div>
+        <p>如果遇到 <code class="inline">EACCES</code> 权限错误，<strong>不要用 sudo</strong>。把 npm 全局目录改到自己有权限的位置即可：<br><code class="inline">mkdir ~/.npm-global</code> →  <code class="inline">npm config set prefix '~/.npm-global'</code> → 把 <code class="inline">export PATH="$HOME/.npm-global/bin:$PATH"</code> 加到 <code class="inline">~/.bashrc</code> 或 <code class="inline">~/.zshrc</code>，再 <code class="inline">source</code> 一下重新安装。Anthropic 也提供「原生安装器」（无需 Node.js），详见 <a class="link" href="https://docs.claude.com/en/docs/claude-code/overview" target="_blank" rel="noopener">官方文档</a>。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>② 启动并登录</h3>
+      <ol class="steps">
+        <li>进入项目目录（很重要——它会以当前文件夹为工作上下文）：<code class="inline">cd ~/workspace/DC-AIino</code></li>
+        <li>输入 <code class="inline">claude</code> 启动。首次运行会引导你登录授权。</li>
+        <li>按提示用团队的 Claude 账号完成登录（会给一个链接/验证码的授权流程），授权后凭证保存在本地，之后就不用再登了。</li>
+      </ol>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 启动</span><button class="copy">复制</button></div>
+        <pre><code><span class="pr">$ </span>cd ~/workspace/DC-AIino
+<span class="pr">$ </span>claude</code></pre>
+      </div>
+
+      <h3><span class="h3-mark"></span>③ 怎么用</h3>
+      <p>启动后进入一个对话式界面，你直接<strong>用大白话描述需求</strong>就行，比如：</p>
+      <ul class="dot">
+        <li>「读一下这个项目，告诉我整体结构和各模块是干嘛的。」</li>
+        <li>「帮我在 <code class="inline">data/</code> 目录写一个脚本，把气候数据按月份聚合。」</li>
+        <li>「这段代码报了这个错，帮我定位并修好，然后跑测试验证。」</li>
+      </ul>
+      <p>Claude Code 会自己读相关文件、提出修改、（在你允许后）执行命令。第一次进新项目，建议先让它生成一份项目说明文件：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">claude · 斜杠命令</span><button class="copy">复制</button></div>
+        <pre><code>/init      <span class="cmt"># 自动生成 CLAUDE.md（记录项目命令、结构、约定）</span>
+/help      <span class="cmt"># 查看所有可用命令</span>
+/clear     <span class="cmt"># 清空当前上下文，开始新任务</span>
+/compact   <span class="cmt"># 压缩对话历史，省 token</span></code></pre>
+      </div>
+      <div class="callout tip">
+        <div class=" co-label">✦ CLAUDE.md 是个好东西</div>
+        <p><code class="inline">/init</code> 生成的 <code class="inline">CLAUDE.md</code> 会被 Claude 每次开场自动读取，相当于项目的「使用说明」。把它一起 commit 到仓库，全组都能共享同一套上下文，Claude 对项目的理解会更准。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 8 TMUX ===== -->
+    <section id="s8">
+      <div class="sec-head"><span class="sec-num">08</span><h2>tmux：让对话留在服务器</h2></div>
+      <p class="sec-sub">这是最容易被忽略、但极其重要的一步。tmux 能让 Claude Code 在你断开连接后<strong>继续留在服务器上运行</strong>，下次回来对话还在原地。它好用但有几处「反人类」的设计，下面讲清楚。</p>
+
+      <h3><span class="h3-mark"></span>为什么必须用它</h3>
+      <p>当你 SSH 连上服务器、直接运行 <code class="inline">claude</code> 时，这个进程是「挂」在你这次连接上的。一旦——</p>
+      <ul class="dot">
+        <li>笔记本合盖休眠、WiFi 抖动、网络断开；</li>
+        <li>不小心关掉了 VS Code 或终端窗口；</li>
+      </ul>
+      <p>——连接一断，Claude Code 进程<strong>当场被杀掉</strong>，正在跑的任务和对话全没了。tmux 的作用就是：在服务器上开一个<strong>常驻会话</strong>，进程跑在它里面。你「离开（detach）」后会话照常运行，下次「回来（attach）」时，<strong>一切原样还在，Claude Code 还停在你离开时的那句对话</strong>。</p>
+
+      <h3><span class="h3-mark"></span>核心三步走</h3>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 在服务器终端</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 如果没装（一般已自带）</span>
+<span class="pr">$ </span>sudo apt install tmux
+
+<span class="cmt"># 1) 新建一个名叫 claude 的会话</span>
+<span class="pr">$ </span>tmux new -s claude
+
+<span class="cmt"># 2) 进去之后，照常干活：进项目、跑 Claude Code</span>
+<span class="pr">$ </span>cd ~/workspace/DC-AIino
+<span class="pr">$ </span>claude
+
+<span class="cmt"># 3) 想离开但让它继续跑 —— 按下「分离」快捷键：</span>
+<span class="cmt">#    先按 Ctrl+B，松手，再单独按 d</span></code></pre>
+      </div>
+      <p>分离之后，你可以放心关掉 VS Code、断网、合盖。等下次重新连上服务器，再「接回去」：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 回来接管会话</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 看看现在有哪些会话</span>
+<span class="pr">$ </span>tmux ls
+
+<span class="cmt"># 接回名叫 claude 的会话，一切原样还在</span>
+<span class="pr">$ </span>tmux attach -t claude
+
+<span class="cmt"># 真正用完了、确认不要了，再杀掉它</span>
+<span class="pr">$ </span>tmux kill-session -t claude</code></pre>
+      </div>
+
+      <h3><span class="h3-mark"></span>⚠ 那些「反人类」的地方</h3>
+      <p>tmux 的设计有些反直觉，提前知道能少踩很多坑：</p>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 1 · 所有快捷键都是「两段式」</div>
+        <p>tmux 的命令<strong>不是同时按</strong>。标准动作是：先按住 <span class="kbd">Ctrl+B</span>（这叫「前缀键」），<strong>整个松开</strong>，<strong>再单独按</strong>第二个键。比如分离是「<span class="kbd">Ctrl+B</span> 松手 <span class="kbd">d</span>」，不是 Ctrl+B+D 一起按。新手最常卡在这——三个键一起摁，什么都不会发生。</p>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 2 · 「分离」和「退出」是两码事</div>
+        <p><strong>分离（detach）</strong>：<span class="kbd">Ctrl+B</span> 然后 <span class="kbd">d</span> —— 会话<em>继续活着</em>，这才是你想要的。<br><strong>退出（exit）</strong>：在里面输 <code class="inline">exit</code> 或按 <span class="kbd">Ctrl+D</span> —— 会话<em>被关闭、内容丢失</em>。<br>记牢：<strong>要走就「分离」，绝不要 exit。</strong>直接关终端窗口反而没事，会话还在。</p>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 3 · 鼠标滚轮翻不动历史</div>
+        <p>在 tmux 里直接滚滚轮往往翻不了上面的输出。要看历史得先进「复制模式」：按 <span class="kbd">Ctrl+B</span> 然后 <span class="kbd">[</span>，再用方向键 / PageUp 翻，看完按 <span class="kbd">q</span> 退出。忘了自己在复制模式里乱敲键盘 → 像卡住了一样没反应，这是最日常的困惑。（解法见下方「治本」小贴士。）</p>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 4 · 会话会偷偷堆积</div>
+        <p>分离后会话是「看不见」的，时间一长容易攒下一堆忘记关的会话，白白占内存。养成习惯：偶尔 <code class="inline">tmux ls</code> 看一眼，用不到的 <code class="inline">tmux kill-session -t 名字</code> 清掉。</p>
+      </div>
+
+      <div class="callout warn">
+        <div class=" co-label">⚠ 5 · 套娃问题（tmux 里又开了 tmux）</div>
+        <p>如果不小心在一个 tmux 会话里又进了另一个 tmux，前缀键会被<strong>外层</strong>抢走。这时要给<strong>内层</strong>发指令，得把前缀键按<strong>两次</strong>：<span class="kbd">Ctrl+B</span> <span class="kbd">Ctrl+B</span> 再按命令键。最简单的办法是别套娃——进去前先 <code class="inline">tmux ls</code> 确认自己在不在会话里。</p>
+      </div>
+
+      <div class="callout note">
+        <div class=" co-label">◷ 底部那条绿条是正常的</div>
+        <p>进入 tmux 后屏幕<strong>最下方会一直有一条绿色状态栏</strong>，那是「你正在 tmux 里、受保护」的标志。<strong>看不到这条绿条，就说明你不在会话里，工作没被保护</strong>——这是判断自己在不在 tmux 的最快方法。</p>
+      </div>
+
+      <div class="callout tip">
+        <div class=" co-label">✦ 治本：让滚轮能用</div>
+        <p>嫌滚动反人类，可以一劳永逸。在服务器上编辑 <code class="inline">~/.tmux.conf</code>，加一行 <code class="inline">set -g mouse on</code>，保存后新开会话即可用鼠标滚轮翻历史、点击切换窗格。对新手体验提升巨大。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>推荐的每日开场白</h3>
+      <p>把流程固定成一句，每天照敲就行——有会话就接回，没有就新建：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 一行搞定</span><button class="copy">复制</button></div>
+        <pre><code><span class="pr">$ </span>ssh dc-server
+<span class="pr">$ </span>tmux attach -t claude || tmux new -s claude
+<span class="pr">$ </span>cd ~/workspace/DC-AIino &amp;&amp; claude
+<span class="cmt"># 离开时：Ctrl+B 松手 d</span></code></pre>
+      </div>
+      <div class="callout note">
+        <div class=" co-label">◷ 配合 VS Code</div>
+        <p>VS Code 的集成终端里同样可以跑 tmux——在远程终端里执行上面的命令即可。VS Code 本身断开会自动重连，但终端里的进程只有放进 tmux 才不会被杀。所以：<strong>凡是要长时间跑 Claude Code，先 tmux，再 claude。</strong></p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 9 SKILLS ===== -->
+    <section id="s9">
+      <div class="sec-head"><span class="sec-num">09</span><h2>安装 Claude Code 技能（Skills）</h2></div>
+      <p class="sec-sub">技能（Skill）是一包包「专项本领」——比如处理 Word/PDF/PPT、做前端设计等。装上之后，Claude Code 在相关任务里会自动调用，特别适合我们这种又要写报告、又要做可视化系统的课题。</p>
+
+      <h3><span class="h3-mark"></span>从官方仓库安装（推荐）</h3>
+      <p>在 Claude Code 会话里（也就是启动 <code class="inline">claude</code> 之后），输入下面的斜杠命令：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">claude · 安装官方技能</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 1) 把 Anthropic 官方技能仓库注册为「插件市场」</span>
+/plugin marketplace add anthropics/skills
+
+<span class="cmt"># 2) 安装文档处理技能（Word / PDF / PPT / Excel）</span>
+/plugin install document-skills@anthropic-agent-skills
+
+<span class="cmt"># 3) 安装示例/常用技能合集</span>
+/plugin install example-skills@anthropic-agent-skills
+
+<span class="cmt"># 4) 查看已装好的技能</span>
+/skills</code></pre>
+      </div>
+      <p>装好后，<strong>不用做额外配置</strong>，在提问里提到相关任务就会自动触发，比如：「<em>用 PDF 技能把这份查新报告里的表格提取出来</em>」「<em>用 docx 技能帮我把研究报告排成正式的 Word 文档</em>」。</p>
+
+      <h3><span class="h3-mark"></span>从任意 GitHub 仓库手动安装</h3>
+      <p>如果想装某个 GitHub 上的开源技能，可以直接把它放进技能目录：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 手动安装</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 个人级（对所有项目生效）：克隆进 ~/.claude/skills/</span>
+<span class="pr">$ </span>git clone https://github.com/作者/技能名.git ~/.claude/skills/技能名
+
+<span class="cmt"># 项目级（只对当前仓库生效）：放进项目里的 .claude/skills/</span>
+<span class="pr">$ </span>git clone https://github.com/作者/技能名.git .claude/skills/技能名</code></pre>
+      </div>
+      <div class="callout warn">
+        <div class=" co-label">⚠ 三个常见坑</div>
+        <p>① <code class="inline">SKILL.md</code> 必须在技能文件夹的<strong>第一层</strong>（路径形如 <code class="inline">~/.claude/skills/技能名/SKILL.md</code>），不能再嵌一层。<br>② 安装非官方技能前，<strong>先大致看一眼它的内容</strong>，确认来源可信再用。<br>③ 装完用 <code class="inline">/skills</code> 确认是否加载成功；没出现就检查路径和 <code class="inline">SKILL.md</code> 的格式。</p>
+      </div>
+
+      <div class="callout tip">
+        <div class=" co-label">✦ 我们项目适合先装哪些</div>
+        <p>报告/查新材料多 → <strong>document-skills</strong>（Word/PDF/PPT/Excel）很实用；要做「可视化系统」的界面 → 可以找 <strong>frontend-design</strong> 相关技能。先把这两类装上，基本够用了。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 10 ===== -->
+    <section id="s10">
+      <div class="sec-head"><span class="sec-num">10</span><h2>使用 Hermes Agent 框架 · 接入 DeepSeek</h2></div>
+      <p class="sec-sub">Hermes Agent 是我们本地部署的 AI 智能体框架，跑在服务器上，支持接入各种大模型。它和 Claude Code 是<strong>同类工具但定位不同</strong>——Hermes 更偏向「全功能自主智能体」，能跨平台（终端、QQ、Telegram）、有持久记忆、可以调度子代理、还能安排定时任务。</p>
+
+      <p>我们已经在服务器上装好了 Hermes Agent（v0.15.1），并配置了 <strong>DeepSeek Chat</strong> 作为主模型。你在服务器上可以随时用，按需选择用 Claude Code 还是 Hermes。</p>
+
+      <h3><span class="h3-mark"></span>Hermes vs. Claude Code：怎么选</h3>
+      <p>两个都是「AI 编程助手」，但各有侧重点。了解它们各自擅长什么，方便你按场景选工具：</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>方面</th><th>Hermes Agent</th><th>Claude Code</th></tr></thead>
+          <tbody>
+            <tr><td><strong>底层模型</strong></td><td>DeepSeek Chat（目前），可随时切换</td><td>Claude（Anthropic）</td></tr>
+            <tr><td><strong>代码能力</strong></td><td>好用，适合中大型代码任务</td><td>顶尖，行业标杆</td></tr>
+            <tr><td><strong>记忆</strong></td><td>✅ 跨会话持久记忆，记住你的偏好</td><td>❌ 每次新会话从头开始</td></tr>
+            <tr><td><strong>技能系统</strong></td><td>✅ 自动保存工作流为 skills</td><td>✅ 也有 /skills 体系</td></tr>
+            <tr><td><strong>多平台</strong></td><td>✅ QQ、Telegram、Discord 等都能用</td><td>❌ 仅终端</td></tr>
+            <tr><td><strong>子代理调度</strong></td><td>✅ <code>delegate_task</code> 派并行子代理</td><td>❌ 单线程</td></tr>
+            <tr><td><strong>定时任务</strong></td><td>✅ 内置 cron 调度</td><td>❌ 无</td></tr>
+            <tr><td><strong>MCP 服务器</strong></td><td>✅ 原生支持</td><td>✅ 也支持</td></tr>
+            <tr><td><strong>开/闭源</strong></td><td>✅ 完全开源（Nous Research）</td><td>⚠ Anthropic 专有</td></tr>
+            <tr><td><strong>费用</strong></td><td>DeepSeek API 极便宜，走自己的 key</td><td>需 Claude 订阅或 API key</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <div class="co-label">✦ 典型用法推荐</div>
+        <p>写代码主力用 <strong>Claude Code</strong>（代码能力最强），需要记忆、跨平台推送、定时跑任务、并行子代理时切到 <strong>Hermes</strong>。两个互补，不冲突。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>① 快速启动 Hermes</h3>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 在终端启动 Hermes</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 直接启动（进入交互式对话）</span>
+<span class="pr">$ </span>hermes
+
+<span class="cmt"># 带项目上下文启动（建议在项目目录里）</span>
+<span class="pr">$ </span>cd ~/workspace/DC-AIino
+<span class="pr">$ </span>hermes
+
+<span class="cmt"># 查看当前模型和 Provider</span>
+<span class="pr">$ </span>hermes config get model.default
+<span class="pr">$ </span>hermes config get model.provider</code></pre>
+      </div>
+      <p>启动后你会在一个交互式终端里和 Hermes 对话。它的工具比 Claude Code 更丰富——可以读文件、写代码、跑 shell、搜网络、看图片等。</p>
+
+      <h3><span class="h3-mark"></span>② 单次查询（非交互）</h3>
+      <p>不想进对话界面，只想让 Hermes 做一件事就走，用 <code class="inline">-q</code> 模式：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 一次查询</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 单次提问</span>
+<span class="pr">$ </span>hermes chat -q <span class="fl">"这个项目有哪些 Python 文件？帮我梳理一下结构"</span>
+
+<span class="cmt"># 让 Hermes 在后台执行一个任务</span>
+<span class="pr">$ </span>hermes chat -q <span class="fl">"把 data/ 目录下的 CSV 按月份聚合，输出到 output/agg.csv"</span></code></pre>
+      </div>
+      <div class="callout note">
+        <div class="co-label">◷ 同样建议先开 tmux 再跑</div>
+        <p>和 Claude Code 一样，长时间运行的 Hermes 任务也建议放到 tmux 会话里跑，防止断网中断。用法完全一样——<code class="inline">tmux new -s hermes</code> 再启动 <code class="inline">hermes</code>。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>③ 配置 DeepSeek 模型</h3>
+      <p>服务器上已经配好的默认就是 DeepSeek Chat。如果你想自己从头配一个新实例，步骤很简单：</p>
+      <ol class="steps">
+        <li>注册 <a class="link" href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开发者平台</a>，登录后在 API Keys 页面生成一个 key。</li>
+        <li>充值（DeepSeek 极其便宜，首次注册通常送几十万 token，之后约 ¥1/百万 token，一个项目跑下来也就几毛钱）。</li>
+        <li>把 API key 填入服务器上的环境变量：</li>
+      </ol>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 在服务器上配置 DeepSeek key</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 编辑 .env 文件</span>
+<span class="pr">$ </span>hermes config env-path
+<span class="cmt"># 会输出 ~/.hermes/.env</span>
+<span class="pr">$ </span>nano ~/.hermes/.env
+<span class="cmt"># 添加（或修改）下面两行：</span>
+DEEPSEEK_API_KEY=<span class="fl">sk-你的key</span>
+DEEPSEEK_BASE_URL=<span class="fl">https://api.deepseek.com</span>
+
+<span class="cmt"># 设置默认 model</span>
+<span class="pr">$ </span>hermes config set model.default deepseek-chat
+<span class="pr">$ </span>hermes config set model.provider deepseek
+
+<span class="cmt"># 验证配置</span>
+<span class="pr">$ </span>hermes doctor
+<span class="pr">$ </span>hermes chat -q <span class="fl">"你好，请用一句话介绍自己"</span></code></pre>
+      </div>
+      <div class="callout note">
+        <div class="co-label">◷ DeepSeek 的优势</div>
+        <p>① 价格低——约为 Claude 的 1/20~1/50；② 中文能力强——原生支持中文，在代码和中文混合场景下表现稳定；③ 上下文窗口大（1M tokens，可以一次性读入大量代码文件）；④ 支持 <strong>FIM（Fill-In-the-Middle）</strong> 代码补全，适合 IDE 集成。缺点是综合推理和复杂代码生成仍不及 Claude Opus。</p>
+      </div>
+
+      <h3><span class="h3-mark"></span>④ 切换模型 / Provider</h3>
+      <p>Hermes 最大的优势之一是<strong>模型和 Provider 解耦</strong>——你可以在不改变任何工作流的前提下，一键切换不同的模型：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">bash · 交互式切换模型</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 交互式选择（推荐——会列出所有可用模型）</span>
+<span class="pr">$ </span>hermes model
+
+<span class="cmt"># 或直接指定 Provider + 模型</span>
+<span class="pr">$ </span>hermes config set model.default deepseek-chat
+<span class="pr">$ </span>hermes config set model.provider deepseek
+
+<span class="cmt"># 如果想用 OpenRouter 的多模型路由</span>
+<span class="pr">$ </span>hermes config set model.provider openrouter
+<span class="pr">$ </span>hermes config set model.default <span class="fl">"anthropic/claude-sonnet-4"</span>
+
+<span class="cmt"># 临时指定模型（不修改配置）</span>
+<span class="pr">$ </span>hermes chat -m <span class="fl">"openai/gpt-4o"</span> -q <span class="fl">"帮我写一个快速排序"</span></code></pre>
+      </div>
+      <p>支持的 Provider 包括：DeepSeek、OpenRouter（可路由到 200+ 模型）、Anthropic、OpenAI、Google Gemini、xAI/Grok、本地 Ollama、HuggingFace 等 20+。</p>
+
+      <h3><span class="h3-mark"></span>⑤ Hermes 的独有功能——持久记忆</h3>
+      <p>Claude Code 每次新开会话都是"从零开始"，但 Hermes 有跨会话的<strong>持久记忆</strong>。你告诉它的事情它会记住，下次打开还能记起：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">hermes · 会话内</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 告诉 Hermes 记住你的偏好</span>
+<span class="fl">"记住我喜欢用 pytest 运行测试"</span>
+<span class="fl">"项目里的 climate 数据在 data/raw/climate/ 目录下"</span>
+
+<span class="cmt"># 下次新会话，Hermes 会自动载入这些记忆</span>
+<span class="cmt"># 不需要重复说明</span></code></pre>
+      </div>
+      <p>它还自带<strong>技能（Skills）</strong>系统——当 Hermes 完成一个复杂任务并踩过坑之后，可以把整个过程存为一个 Skill，下次同类任务直接复用。</p>
+
+      <h3><span class="h3-mark"></span>⑥ Hermes Skills 速查</h3>
+      <p>Hermes 自带了大量实用技能，可以在会话中随时加载：</p>
+      <div class="code">
+        <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="code-label">hermes · 技能操作</span><button class="copy">复制</button></div>
+        <pre><code><span class="cmt"># 列出所有可用技能</span>
+<span class="pr">$ </span>hermes skills list
+
+<span class="cmt"># 浏览技能市场</span>
+<span class="pr">$ </span>hermes skills browse
+
+<span class="cmt"># 在会话中加载一个技能</span>
+/skill github-pr-workflow
+
+<span class="cmt"># 搜索相关技能</span>
+<span class="pr">$ </span>hermes skills search <span class="fl">"document"</span></code></pre>
+      </div>
+
+      <h3><span class="h3-mark"></span>⑦ 常用 Hermes 命令一览</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>hermes</code></td><td>启动交互式对话</td></tr>
+            <tr><td><code>hermes chat -q "xxx"</code></td><td>单次查询，非交互</td></tr>
+            <tr><td><code>hermes model</code></td><td>交互式切换模型</td></tr>
+            <tr><td><code>hermes config set ...</code></td><td>修改配置</td></tr>
+            <tr><td><code>hermes doctor</code></td><td>检查环境是否正常</td></tr>
+            <tr><td><code>hermes skills list</code></td><td>列出已安装技能</td></tr>
+            <tr><td><code>hermes skills browse</code></td><td>浏览技能市场</td></tr>
+            <tr><td><code>hermes sessions list</code></td><td>查看历史会话</td></tr>
+            <tr><td><code>hermes cron list</code></td><td>查看定时任务</td></tr>
+            <tr><td><code>hermes setup</code></td><td>配置向导</td></tr>
+            <tr><td><code>/help</code></td><td>在会话中查看所有斜杠命令</td></tr>
+            <tr><td><code>/quit</code> 或 <code>/exit</code></td><td>退出 Hermes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <div class="co-label">⚠ 两个易混淆的点</div>
+        <p>① <strong>Hermes 的 Skills 和 Claude Code 的 Skills 不是同一个东西</strong>——它们各自有一套技能体系，不能混用。如果你在 Hermes 里装了 skill，Claude Code 是看不到的，反之亦然。<br>
+        ② <strong>Hermes 不是 Claude Code 的替代品</strong>——它们是互补工具。纯代码场景 Claude Code 更强；需要持久记忆、跨平台推送、子代理并行、定时任务时用 Hermes。</p>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ===== 11 ===== -->
+    <section id="s11">
+      <div class="sec-head"><span class="sec-num">11</span><h2>命令速查表</h2></div>
+      <p class="sec-sub">忘了的时候回来翻一翻。左边敲哪、右边干嘛。</p>
+
+      <h3><span class="h3-mark"></span>服务器 / 终端</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>cd 路径</code></td><td>进入某个文件夹</td></tr>
+            <tr><td><code>ls</code></td><td>列出当前目录里的文件</td></tr>
+            <tr><td><code>pwd</code></td><td>显示当前所在路径</td></tr>
+            <tr><td><code>mkdir 名字</code></td><td>新建文件夹</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span class="h3-mark"></span>SSH 与 tmux</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令 / 按键</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>ssh-keygen -t ed25519</code></td><td>在本机生成 SSH 密钥对</td></tr>
+            <tr><td><code>ssh-copy-id 用户@IP</code></td><td>把公钥送到服务器</td></tr>
+            <tr><td><code>ssh dc-server</code></td><td>用 config 里的昵称连接服务器</td></tr>
+            <tr><td><code>tmux new -s claude</code></td><td>新建常驻会话</td></tr>
+            <tr><td><code>Ctrl+B 松手 d</code></td><td>分离会话（会话继续运行）</td></tr>
+            <tr><td><code>tmux ls</code></td><td>列出所有会话</td></tr>
+            <tr><td><code>tmux attach -t claude</code></td><td>接回会话</td></tr>
+            <tr><td><code>tmux kill-session -t claude</code></td><td>关闭会话</td></tr>
+            <tr><td><code>Ctrl+B 松手 [</code></td><td>进复制模式翻历史（q 退出）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span class="h3-mark"></span>Git</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>git clone 地址</code></td><td>下载远程仓库到本地</td></tr>
+            <tr><td><code>git pull</code></td><td>同步 GitHub 上的最新改动</td></tr>
+            <tr><td><code>git status</code></td><td>查看改动状态</td></tr>
+            <tr><td><code>git add .</code></td><td>暂存所有改动</td></tr>
+            <tr><td><code>git commit -m "说明"</code></td><td>本地存档</td></tr>
+            <tr><td><code>git push</code></td><td>上传到 GitHub</td></tr>
+            <tr><td><code>git checkout -b 名字</code></td><td>新建并切换分支</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span class="h3-mark"></span>Claude Code</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude</code></td><td>在当前项目目录启动 Claude Code</td></tr>
+            <tr><td><code>/init</code></td><td>生成项目说明文件 CLAUDE.md</td></tr>
+            <tr><td><code>/help</code></td><td>查看全部命令</td></tr>
+            <tr><td><code>/clear</code></td><td>清空上下文，开新任务</td></tr>
+            <tr><td><code>/plugin marketplace add anthropics/skills</code></td><td>添加官方技能市场</td></tr>
+            <tr><td><code>/plugin install document-skills@anthropic-agent-skills</code></td><td>安装文档处理技能</td></tr>
+            <tr><td><code>/skills</code></td><td>查看已安装的技能</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout note">
+        <div class=" co-label">◷ 卡住了怎么办</div>
+        <p>任何一步报错或没头绪，先把<strong>你敲的命令</strong>和<strong>完整的报错信息</strong>截图，发到团队群里。说清「我在第几步、想做什么、出现了什么」，会比单说「连不上」好排查很多。欢迎加入 🌱</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="fdisplay">Welcome aboard, DC-AIino.</div>
+  <p>基于多模态的极端气候下我国粮食生产风险的核心因子识别与韧性提升可视化系统</p>
+  <p style="margin-top:8px;opacity:.7">仓库：<a href="https://github.com/xkwd-DC/DC-AIino" target="_blank" rel="noopener">github.com/xkwd-DC/DC-AIino</a></p>
+</footer>
+
+<script>
+  // copy buttons
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var code = btn.closest('.code').querySelector('code');
+      var text = code.innerText.replace(/^\$\s/gm,'').replace(/^\$\s?/g,'');
+      navigator.clipboard.writeText(code.innerText).then(function(){
+        var old = btn.textContent;
+        btn.textContent = '已复制 ✓';
+        btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = old; btn.classList.remove('done'); }, 1600);
+      });
+    });
+  });
+
+  // scroll progress
+  var prog = document.getElementById('progress');
+  window.addEventListener('scroll', function(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (window.scrollY / h * 100) + '%';
+  }, {passive:true});
+
+  // active TOC highlight
+  var links = Array.from(document.querySelectorAll('nav.toc a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var id = '#' + e.target.id;
+        links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === id); });
+      }
+    });
+  }, {rootMargin:'-30% 0px -65% 0px'});
+  sections.forEach(function(s){ if(s) io.observe(s); });
+</script>
+</body>
+</html>
