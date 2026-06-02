@@ -48,6 +48,10 @@ data/processed/
 !data/interim/paper_panel_v1.parquet
 !data/interim/paper_panel_v2.parquet
 !data/interim/paper_panel_v3.parquet
+!data/interim/paper_panel_v4.parquet
+!data/interim/paper_panel_v4_metadata.csv
+!data/interim/train_v4.csv
+!data/interim/test_v4.csv
 !data/interim/yield_detrend_report.md
 !data/interim/modis_province_monthly.parquet
 !data/interim/nasa_power_annual.csv
