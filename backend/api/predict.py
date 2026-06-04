@@ -46,7 +46,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from collections import deque
+from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from flask import Blueprint, request
@@ -57,6 +61,15 @@ from limiter import limiter
 logger = logging.getLogger(__name__)
 
 predict_bp = Blueprint("predict", __name__)
+
+# ─── In-memory ring buffer for /api/predict trace (M05 推演监控面板) ───────
+# 保存最近 N 次 /api/predict 调用的完整 trace,供前端 M05 面板拉取展示。
+# 进程内 only,不落盘;gunicorn 多 worker 时各 worker 各自保留。
+# 锁保护写入:Flask 默认 thread-per-request,deque.append 本身 atomic,
+# 但 list(_PREDICT_HISTORY) 在 reader 期间若 append 会触发 RuntimeError,
+# 故 reader / writer 都走 _HISTORY_LOCK 简化推理。
+_PREDICT_HISTORY: deque[dict[str, Any]] = deque(maxlen=50)
+_HISTORY_LOCK = Lock()
 
 # ─── 启动时加载省份基线 ─────────────────────────────────────────────────
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -72,6 +85,42 @@ _FEATURE_LABELS = {
 }
 _FEATURES = list(_FEATURE_LABELS.keys())
 _VALID_MODELS = {"xgboost", "lstm", "ensemble"}
+
+# ─── SUBSET 子集划分(地理 + 国家公布粮食主产区)──────────────────────────
+# M02-A 全局重要性 4-button selector 用,聚合 subset 内所有省份 SHAP 的
+# abs 贡献求和,归一化作为全局 importance 展示。
+# "all" 在文件加载时填充为 sorted(_PROVINCES.keys())。
+_SUBSET_PROVINCES: dict[str, list[str]] = {
+    "all": [],
+    "north": [
+        "北京", "天津", "河北", "山西", "内蒙古",
+        "辽宁", "吉林", "黑龙江", "山东", "河南",
+        "陕西", "甘肃", "宁夏", "青海",
+    ],  # 14 省
+    "south": [
+        "上海", "江苏", "浙江", "福建", "江西",
+        "湖北", "湖南", "广东", "广西", "海南",
+        "重庆", "四川",
+    ],  # 12 省
+    "major": [
+        "黑龙江", "吉林", "辽宁", "内蒙古",
+        "河北", "河南", "山东", "江苏", "安徽",
+        "江西", "湖北", "湖南", "四川",
+    ],  # 13 省(国家公布粮食主产区)
+}
+_SUBSET_PROVINCES["all"] = sorted(_PROVINCES.keys())
+
+_SUBSET_LABELS = {
+    "all":   f"全样本 ({len(_SUBSET_PROVINCES['all'])} 省)",
+    "north": f"北方 ({len(_SUBSET_PROVINCES['north'])} 省)",
+    "south": f"南方 ({len(_SUBSET_PROVINCES['south'])} 省)",
+    "major": f"主产区 ({len(_SUBSET_PROVINCES['major'])} 省)",
+}
+
+# Cache: subset key → aggregated result (进程内 only, 单 worker fine;
+# 多 worker 时各 worker 各自缓存,首次访问代价均摊)。
+_SUBSET_CACHE: dict[str, dict] = {}
+_SUBSET_CACHE_LOCK = Lock()
 
 # ─── yield → risk 映射常量 ──────────────────────────────────────────────
 _BASELINE_RISK = 0.0235      # 基线 yield 对应的 risk 中枢
@@ -293,13 +342,36 @@ def _predict_real(params: dict[str, float], model: str, province: str) -> tuple[
 # perturbation 估计:把每个特征替换为该省 baseline,看 XGB 预测 yield 的变化,
 # 反算成 risk 的变化。轻量级,够前端 top-5 高亮用,不替代 shap.TreeExplainer。
 # ────────────────────────────────────────────────────────────────────────
+_DATASET_MEAN: dict[str, float] | None = None
+
+
+def _get_dataset_mean() -> dict[str, float]:
+    """Lazy compute 跨 31 省 baseline 的特征均值, 用作 SHAP perturbation reference。
+
+    用 dataset mean 而非省 baseline 做 perturbation:
+    - 让"省内当前值 vs 跨省平均"的差异显现为非零贡献
+    - 避免 caller 传入 == 省 baseline 时所有 contribs 退化为 0(原 bug)
+    """
+    global _DATASET_MEAN
+    if _DATASET_MEAN is None:
+        n = len(_PROVINCES)
+        _DATASET_MEAN = {
+            k: sum(p[k] for p in _PROVINCES.values()) / n for k in _FEATURES
+        }
+    return _DATASET_MEAN
+
+
 def _approx_contribs(params: dict[str, float], province: str) -> dict[str, float]:
-    """单特征扰动估计每个特征对 risk 的边际贡献(正 = 加风险)。"""
+    """单特征扰动估计每个特征对 risk 的边际贡献(正 = 加风险)。
+
+    Perturbation reference 用**跨 31 省 dataset mean**(不是该省 baseline),
+    确保 caller 传 baseline params(M02 ShapDashboard 常见用法)也能拿到非零贡献。
+    """
     from services import inference
 
     models = _get_models()
     baseline_yield = _baseline_yield_for(province)
-    baseline_params_full = _fill_from_baseline(province, {})
+    dataset_mean = _get_dataset_mean()
 
     training_full = inference.to_training_keys(params)
     full_yield = inference.predict_xgb_yield(
@@ -309,25 +381,56 @@ def _approx_contribs(params: dict[str, float], province: str) -> dict[str, float
 
     contribs = {}
     for k in _FEATURES:
-        # 把第 k 个特征替换成该省 baseline,其它保留当前值
-        perturbed = {**params, k: baseline_params_full[k]}
+        # 把第 k 个特征替换成 dataset mean,其它保留当前值
+        perturbed = {**params, k: dataset_mean[k]}
         perturbed_training = inference.to_training_keys(perturbed)
         perturbed_yield = inference.predict_xgb_yield(
             perturbed_training, xgb=models["xgb"], x_scaler=models["xgb_x_scaler"]
         )
         perturbed_risk = _yield_to_risk(perturbed_yield, baseline_yield)
-        # full_risk - perturbed_risk = 该特征(从 baseline 偏离到 current)带来的 risk 增量
+        # full_risk - perturbed_risk = 该特征(从 mean 偏离到 current)带来的 risk 增量
         contribs[k] = round(full_risk - perturbed_risk, 6)
     return contribs
 
 
-def _shap_top(contribs: dict[str, float], top_n: int = 5) -> list[dict]:
+def _shap_top(contribs: dict[str, float], top_n: int = 11) -> list[dict]:
+    """返按 abs 排序的 contribs(默认全 11 维)。
+
+    M02 视觉:前端 bar chart 需要全 11 维真值才能视觉饱满,故默认 top_n=11。
+    向后兼容:caller 可显式传 top_n=5 限制为只取前 5 强因子。
+    """
     items = sorted(contribs.items(), key=lambda kv: abs(kv[1]), reverse=True)[:top_n]
     return [
         {
             "feature": _FEATURE_LABELS[k],
             "value": round(v, 6),
             "direction": "harm" if v > 0 else "protect",
+        }
+        for k, v in items
+    ]
+
+
+def _shap_normalized(contribs: dict[str, float]) -> list[dict]:
+    """归一化 11 维 SHAP 重要性:abs(value) / sum(abs(values))。
+
+    用 mean(|SHAP|) 标准化,与公开文献的 'global importance' 口径一致。
+    前端 bar chart 直接用,xAxis 自适应即可视觉饱满展示。
+
+    每项包含:
+      - feature: 中文 label
+      - importance: 0-1 归一化权重(按 abs 降序;sum ≈ 1.0)
+      - raw_abs: 原始 abs 贡献值, 保留供 tooltip 展示
+      - direction: harm(贡献为正 → 推风险) | protect(贡献为负 → 降风险)
+    """
+    abs_vals = {k: abs(v) for k, v in contribs.items()}
+    total = sum(abs_vals.values()) or 1.0
+    items = sorted(abs_vals.items(), key=lambda kv: kv[1], reverse=True)
+    return [
+        {
+            "feature": _FEATURE_LABELS[k],
+            "importance": round(v / total, 4),
+            "raw_abs": round(v, 6),
+            "direction": "harm" if contribs[k] > 0 else "protect",
         }
         for k, v in items
     ]
@@ -370,6 +473,7 @@ def _fill_from_baseline(province: str, params: dict[str, float]) -> dict[str, fl
 @predict_bp.post("/api/predict")
 @limiter.limit("100 per hour")  # Issue #26 HIGH#3 - 真模型 CPU-heavy, DoS 防护 (按 IP)
 def predict():
+    start_ts = time.perf_counter()
     body = request.get_json(silent=True) or {}
     province = body.get("province")
     params_in = body.get("params", {})
@@ -402,10 +506,144 @@ def predict():
         "delta": round(risk_payload["risk_score"] - baseline, 6),
         "confidence": 0.78,  # 当前固定值;后续可用 MC dropout / 预测区间替换
         "shap_top": _shap_top(contribs),
+        "shap_normalized": _shap_normalized(contribs),
         "recommendations": _recommendations(contribs),
         "params_used": {k: round(params[k], 4) for k in _FEATURES},
         "params_filled_from_baseline": sorted(set(_FEATURES) - set(params_in.keys())),
         "_mock": False,  # Issue #39 后改为 False;真模型生效
     }
     data.update(risk_payload)
+
+    # ─── Append trace 到 ring buffer (供 M05 推演监控面板拉取) ────────────
+    trace = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "province": province,
+        "model": model,
+        "params": data["params_used"],
+        "params_filled_from_baseline": data["params_filled_from_baseline"],
+        "baseline": baseline,
+        "delta": data["delta"],
+        "risk_score": data["risk_score"],
+        "xgboost_risk": data.get("xgboost_risk"),
+        "lstm_risk": data.get("lstm_risk"),
+        "att_lstm_risk": data.get("att_lstm_risk"),
+        "xgboost_yield_kg_per_ha": data.get("xgboost_yield_kg_per_ha"),
+        "lstm_yield_kg_per_ha": data.get("lstm_yield_kg_per_ha"),
+        "att_lstm_yield_kg_per_ha": data.get("att_lstm_yield_kg_per_ha"),
+        "yield_kg_per_ha": data.get("yield_kg_per_ha"),
+        "consensus": data.get("consensus"),
+        "divergence": data.get("divergence"),
+        "shap_top": data["shap_top"],
+        "shap_normalized": data["shap_normalized"],
+        "recommendations": data["recommendations"],
+        "latency_ms": round((time.perf_counter() - start_ts) * 1000, 1),
+    }
+    with _HISTORY_LOCK:
+        _PREDICT_HISTORY.append(trace)
+
     return envelope(data=data)
+
+
+@predict_bp.get("/api/admin/predicts")
+@limiter.exempt
+def list_predicts():
+    """返回最近 50 次 /api/predict 调用 trace(in-memory ring buffer)。
+
+    供 M05 推演监控面板拉取。最新调用在前。
+    数据进程内 only,gunicorn 多 worker 时各 worker 各自保留。
+    """
+    with _HISTORY_LOCK:
+        items = list(_PREDICT_HISTORY)
+    return envelope(data={
+        "count": len(items),
+        "max": _PREDICT_HISTORY.maxlen,
+        "items": list(reversed(items)),  # 最新在前
+    })
+
+
+# ============================================================================
+# SUBSET 聚合 SHAP — M02-A 全局重要性 4-button selector backend
+# ----------------------------------------------------------------------------
+# 语义:对 subset 内的每个省份用 baseline params 调 _approx_contribs,
+# 把 abs 贡献按特征求和后归一化,作为该子集的"全局重要性"。
+#
+# 注意:聚合后 sign 已无单方向意义(同一特征不同省份可能 push/pull 互抵),
+# direction 一律返 "neutral",前端用中性色或保留 harm/protect 二色但不强调
+# 信号方向。
+#
+# 性能:首次调用某 subset 需 N×11 = N×11 次 XGB predict(单省 _approx_contribs
+# 已 11 次)。31 省 × 11 ≈ 341 次,~3-5s/cold;后续 cache 命中 instant。
+# ============================================================================
+@predict_bp.get("/api/shap/subset")
+@limiter.limit("100 per hour")
+def shap_subset():
+    """聚合 subset 内所有省份的 SHAP,返 11 维 abs normalized importance。
+
+    Query:
+      key — one of {all, north, south, major}
+
+    Returns(envelope data):
+      {
+        "subset": "all",
+        "label": "全样本 (31 省)",
+        "province_count": 31,
+        "features": [
+          {"feature": "灌溉率", "importance": 0.13, "mean_abs": ..., "direction": "neutral"},
+          ...
+        ]
+      }
+    """
+    key = (request.args.get("key") or "all").lower()
+    if key not in _SUBSET_PROVINCES:
+        return envelope(
+            error={
+                "code": 400,
+                "message": (
+                    f"unknown subset: {key!r}; "
+                    f"allowed: {sorted(_SUBSET_PROVINCES.keys())}"
+                ),
+            },
+            status=400,
+        )
+
+    with _SUBSET_CACHE_LOCK:
+        cached = _SUBSET_CACHE.get(key)
+    if cached is not None:
+        return envelope(data=cached)
+
+    sum_abs_contribs: dict[str, float] = {f: 0.0 for f in _FEATURES}
+    province_count = 0
+    for province in _SUBSET_PROVINCES[key]:
+        if province not in _PROVINCES:
+            continue
+        baseline_params = _fill_from_baseline(province, {})
+        try:
+            contribs = _approx_contribs(baseline_params, province)
+        except Exception as e:
+            logger.warning(f"shap_subset: skipping {province}: {e}")
+            continue
+        for f, v in contribs.items():
+            sum_abs_contribs[f] += abs(v)
+        province_count += 1
+
+    total = sum(sum_abs_contribs.values()) or 1.0
+    items = sorted(sum_abs_contribs.items(), key=lambda kv: kv[1], reverse=True)
+
+    result = {
+        "subset": key,
+        "label": _SUBSET_LABELS[key],
+        "province_count": province_count,
+        "features": [
+            {
+                "feature": _FEATURE_LABELS[f],
+                "importance": round(v / total, 4),
+                "mean_abs": round(v / province_count if province_count else 0, 6),
+                "direction": "neutral",
+            }
+            for f, v in items
+        ],
+    }
+
+    with _SUBSET_CACHE_LOCK:
+        _SUBSET_CACHE[key] = result
+    return envelope(data=result)

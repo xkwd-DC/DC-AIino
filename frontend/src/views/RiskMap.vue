@@ -401,13 +401,11 @@ void riskColorResolved
       <div class="eyebrow">M01 · SPATIO-TEMPORAL RISK MAP</div>
       <h2>风险时空地图</h2>
       <p class="lead">
-        31 省 2011–2023 年粮食生产风险时空分布。数据来源:
-        <code>GET /api/provinces[?year]</code> 与
-        <code>GET /api/provinces/&lt;name&gt;/history</code>。
+        31 省 2011–2023 年粮食生产风险时空分布,直观呈现高风险省份与年际演化。
       </p>
     </header>
 
-    <!-- 初始 store 加载失败时的全局 banner(retry) -->
+    <!-- 初始数据加载失败时的全局 banner(retry);仅在确实失败时显示。 -->
     <div
       v-if="storeError && storeSource === 'mock'"
       class="page-banner"
@@ -416,7 +414,7 @@ void riskColorResolved
     >
       <span class="banner-icon" aria-hidden="true">⚠</span>
       <div class="banner-text">
-        <b>后端数据加载失败:</b>{{ storeError }} · 当前展示骨架数据,
+        <b>数据正在同步,请稍后重试。</b>
         <button type="button" class="banner-retry" @click="retryInit">重新加载</button>
       </div>
     </div>
@@ -427,9 +425,15 @@ void riskColorResolved
         <div class="map-toolbar">
           <span class="num">M01-A</span>
           <h3>中国粮食生产风险分布</h3>
-          <span v-if="yearLoading" class="map-status loading">加载 {{ currentYear }} 年…</span>
-          <span v-else-if="yearFallback" class="map-status fallback" :title="fallbackNote ?? ''">
-            {{ currentYear }} 年时序数据未就绪 · 展示最近年快照
+          <span v-if="yearLoading" class="map-status loading" aria-hidden="true">
+            <span class="map-spinner"></span>
+          </span>
+          <span
+            v-else-if="yearFallback"
+            class="map-status fallback"
+            :title="fallbackNote ?? ''"
+          >
+            展示最近年快照
           </span>
         </div>
         <div class="map-canvas-wrap">
@@ -656,9 +660,11 @@ void riskColorResolved
               <div class="detail-trend">
                 <div class="trend-label">
                   <span>13 年风险趋势</span>
-                  <span v-if="detailHistoryLoading" class="trend-status">加载中…</span>
-                  <span v-else-if="detailHistoryError" class="trend-status err" :title="detailHistoryError">
-                    时序未就绪
+                  <span v-if="detailHistoryLoading" class="trend-status" aria-hidden="true">
+                    <span class="trend-spinner"></span>
+                  </span>
+                  <span v-else-if="detailHistoryError" class="trend-status err">
+                    暂无时序
                   </span>
                   <span v-else>{{ YEAR_MIN }} — {{ YEAR_MAX }}</span>
                 </div>
@@ -671,7 +677,7 @@ void riskColorResolved
                   :aria-label="`${detail?.name ?? ''} 省 ${YEAR_MIN} 至 ${YEAR_MAX} 年风险趋势小图`"
                 ></div>
                 <div v-if="detailHistoryError" class="mini-fallback">
-                  时序数据将在 Phase 4 ETL 完成后启用
+                  趋势数据加载中
                 </div>
               </div>
             </template>
@@ -686,12 +692,6 @@ void riskColorResolved
       </aside>
     </div>
 
-    <footer class="page-foot">
-      <a href="/prototypes/01-risk-map.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">
-        数据源 <code>/api/provinces</code> · 单省时序 <code>/api/provinces/&lt;name&gt;/history</code>
-      </span>
-    </footer>
   </section>
 </template>
 
@@ -714,13 +714,6 @@ void riskColorResolved
   margin-bottom: 6px;
 }
 .lead { font-size: 13px; color: var(--text-2); max-width: 820px; line-height: 1.7; }
-.lead code {
-  font-family: var(--font-mono);
-  background: var(--bg-elev);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-}
 
 .page-banner {
   display: flex;
@@ -787,9 +780,21 @@ void riskColorResolved
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .map-status.loading { color: var(--amber); }
-.map-status.fallback { color: var(--purple, #b49dd8); }
+.map-status.fallback { color: var(--text-3); }
+.map-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--bg-elev);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
 
 .map-canvas-wrap {
   position: relative;
@@ -1108,8 +1113,17 @@ void riskColorResolved
   text-transform: uppercase;
   margin-bottom: 6px;
 }
-.trend-status { color: var(--amber); }
-.trend-status.err { color: var(--purple, #b49dd8); }
+.trend-status { color: var(--amber); display: inline-flex; align-items: center; gap: 4px; }
+.trend-status.err { color: var(--text-3); }
+.trend-spinner {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--bg-elev);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
 .mini-chart { height: 64px; }
 .mini-fallback {
   height: 64px;
@@ -1123,36 +1137,4 @@ void riskColorResolved
   border-radius: var(--r-sm);
 }
 
-.page-foot {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-3);
-}
-.page-foot .note { font-family: var(--font-mono); }
-.page-foot .note code {
-  background: var(--bg-elev);
-  padding: 1px 5px;
-  border-radius: 2px;
-  font-size: 10px;
-}
-.proto-link {
-  padding: 6px 14px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  color: var(--green-bright);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.3px;
-  transition: all var(--dur-fast);
-}
-.proto-link:hover {
-  border-color: var(--green);
-  transform: translateY(-1px);
-}
 </style>

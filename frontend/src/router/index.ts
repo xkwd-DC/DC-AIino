@@ -3,7 +3,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/risk-map' },
+    { path: '/', redirect: '/overview' },
+    {
+      path: '/overview',
+      name: 'overview',
+      component: () => import('@/views/Overview.vue'),
+      meta: { title: '系统总览', code: 'M00' },
+    },
     {
       path: '/risk-map',
       name: 'risk-map',
@@ -27,6 +33,12 @@ const router = createRouter({
       name: 'pathway',
       component: () => import('@/views/ResiliencePath.vue'),
       meta: { title: '韧性路径推荐', code: 'M04' },
+    },
+    {
+      path: '/monitor',
+      name: 'monitor',
+      component: () => import('@/views/InferenceTrace.vue'),
+      meta: { title: '推演监控', code: 'M05' },
     },
   ],
 })

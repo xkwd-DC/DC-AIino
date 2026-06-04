@@ -39,8 +39,8 @@ const SLIDERS: SliderDef[] = [
   { key: 'spei', label: 'SPEI 干旱', icon: 'D', iconCls: 'purple', unit: '', min: -3, max: 3, step: 0.05, hint: '↑ 越湿润风险越低' },
 ]
 
-// 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维 mock 公式。
-// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（无延迟），后端记录 + Phase 2 切真模型。
+// 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维瞬时反馈公式。
+// 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（200ms 瞬时反馈，无网络延迟），真模型（XGBoost/LSTM/Attention-LSTM ensemble）异步覆盖（#45 已接通）。
 const FORMULA_BASE = 0.0235
 const MEANS: Record<SliderDef['key'], number> = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 }
 const WEIGHTS: Record<SliderDef['key'], number> = {
@@ -345,9 +345,8 @@ onBeforeUnmount(() => {
       <div class="eyebrow">M03 · COUNTERFACTUAL SCENARIO SIMULATION</div>
       <h2>参数情景模拟</h2>
       <p class="lead">
-        在选定省份基线值之上调节 5 个核心干预参数（灌溉率 / 洪涝占比 / 日照 / 气温 / SPEI），
-        实时计算模拟风险 Y 与基线差值。前端走线性近似公式（与 <code>backend/api/predict.py</code> 一致），
-        Phase 2 接入熊鑫 .pkl/.h5 真模型后改为 POST <code>/api/predict</code>。
+        调节灌溉率、洪涝占比、日照、气温、SPEI 等关键干预参数,
+        实时查看风险变化与基线对比,辅助政策与投入方案设计。
       </p>
     </header>
 
@@ -357,7 +356,7 @@ onBeforeUnmount(() => {
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="num">M03-A · TARGET</div>
+              <div class="num">M03-A</div>
               <h3 id="scenario-target-heading">选择省份</h3>
             </div>
             <button
@@ -390,7 +389,7 @@ onBeforeUnmount(() => {
         <div class="card sliders-card">
           <div class="card-head">
             <div>
-              <div class="num">M03-B · CONTROLS</div>
+              <div class="num">M03-B</div>
               <h3 id="controls-heading">5 维干预参数</h3>
             </div>
           </div>
@@ -443,7 +442,7 @@ onBeforeUnmount(() => {
           <div class="card gauge-card">
             <div class="card-head">
               <div>
-                <div class="num">M03-C · BASELINE</div>
+                <div class="num">M03-C</div>
                 <h3>基线风险 Y</h3>
               </div>
             </div>
@@ -459,20 +458,26 @@ onBeforeUnmount(() => {
           <div class="card gauge-card">
             <div class="card-head">
               <div>
-                <div class="num">M03-D · SIMULATED</div>
+                <div class="num">M03-D</div>
                 <h3>模拟风险 Y</h3>
               </div>
               <div class="sim-head-right">
-                <span v-if="isLoadingBackend" class="backend-tag loading" role="status" aria-live="polite">COMPUTING…</span>
-                <span v-else-if="backendUnavailable" class="backend-tag fallback" aria-label="使用线性近似估算,后端不可用">ESTIMATE</span>
-                <span v-else-if="!isEstimate" class="backend-tag real" aria-label="使用真实模型计算">MODEL</span>
+                <span
+                  v-if="isLoadingBackend"
+                  class="backend-tag loading"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="正在计算"
+                >
+                  <span class="backend-spinner" aria-hidden="true"></span>
+                </span>
                 <!-- a11y SC 1.4.1:WORSE/BETTER 不只靠色,文字 + 上下箭头双通道 -->
                 <span
                   class="sim-tag"
                   :class="{ worse: isWorse, better: !isWorse }"
-                  :aria-label="isWorse ? '风险上升 worse' : '风险下降 better'"
+                  :aria-label="isWorse ? '风险上升' : '风险下降'"
                 >
-                  <span aria-hidden="true">{{ isWorse ? '▲ ' : '▼ ' }}</span>{{ isWorse ? 'WORSE' : 'BETTER' }}
+                  <span aria-hidden="true">{{ isWorse ? '▲ ' : '▼ ' }}</span>{{ isWorse ? '风险上升' : '风险下降' }}
                 </span>
               </div>
             </div>
@@ -495,7 +500,7 @@ onBeforeUnmount(() => {
           aria-atomic="true"
         >
           <div class="delta-head">
-            <span class="num">M03-E · DELTA</span>
+            <span class="num">M03-E</span>
             <span class="label">基线 → 模拟</span>
           </div>
           <div class="delta-body">
@@ -506,8 +511,7 @@ onBeforeUnmount(() => {
             <div class="delta-sub">
               较基线 <span class="pct">{{ isWorse ? '+' : '−' }}{{ Math.abs(deltaPct).toFixed(1) }}%</span>
               <span class="dot" aria-hidden="true">·</span>
-              {{ isWorse ? '风险上升，建议复核干预方向' : '风险下降，韧性提升' }}
-              <span v-if="backendUnavailable" class="fallback-note">（线性近似 estimate · 后端不可用）</span>
+              {{ isWorse ? '风险上升,建议复核干预方向' : '风险下降,韧性提升' }}
             </div>
           </div>
         </div>
@@ -515,7 +519,7 @@ onBeforeUnmount(() => {
         <div class="card contrib-card">
           <div class="card-head">
             <div>
-              <div class="num">M03-F · CONTRIBUTION</div>
+              <div class="num">M03-F</div>
               <h3>各参数对风险的边际贡献</h3>
             </div>
             <div class="contrib-legend">
@@ -535,12 +539,6 @@ onBeforeUnmount(() => {
       </section>
     </div>
 
-    <footer class="page-foot">
-      <a href="/prototypes/03-scenario-sim.html" target="_blank" class="proto-link">查看原型 HTML ↗</a>
-      <span class="note">
-        滑块实时使用前端线性公式；200ms 防抖后由 POST <code>/api/predict</code> 真模型覆盖（Issue #45）
-      </span>
-    </footer>
   </section>
 </template>
 
@@ -551,7 +549,6 @@ onBeforeUnmount(() => {
 .eyebrow { font-family: var(--font-mono); font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
 .page-head h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
-.lead code { font-family: var(--font-mono); background: var(--bg-elev); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
 
 .grid {
   display: grid;
@@ -733,22 +730,22 @@ onBeforeUnmount(() => {
 .sim-tag.better { background: rgba(160, 183, 133, 0.12); color: var(--green-bright); }
 
 .backend-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 2px 7px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
   border-radius: 8px;
-  letter-spacing: 0.5px;
 }
-.backend-tag.loading { background: rgba(230, 182, 85, 0.12); color: var(--amber); }
-.backend-tag.fallback { background: rgba(180, 157, 216, 0.12); color: var(--purple); }
-.backend-tag.real { background: rgba(100, 180, 200, 0.12); color: var(--blue, #6ab4c8); }
-
-.fallback-note {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--purple, #b49dd8);
-  margin-left: 4px;
+.backend-tag.loading { background: rgba(230, 182, 85, 0.10); }
+.backend-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(230, 182, 85, 0.25);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============ delta ============ */
 .delta-card { padding: 18px 20px; }
@@ -806,30 +803,4 @@ onBeforeUnmount(() => {
 .contrib-legend .swatch.dn { background: var(--green); }
 .contrib-canvas { flex: 1; min-height: 220px; }
 
-.page-foot {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-3);
-  gap: 16px;
-}
-.page-foot .note { font-family: var(--font-mono); text-align: right; }
-.page-foot .note code { background: var(--bg-elev); padding: 1px 5px; border-radius: 2px; font-size: 10px; }
-.proto-link {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  color: var(--green-bright);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.3px;
-  transition: all var(--dur-fast);
-}
-.proto-link:hover { border-color: var(--green); transform: translateY(-1px); }
 </style>

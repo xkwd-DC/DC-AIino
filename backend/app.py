@@ -161,8 +161,35 @@ def province_history(province):
         return envelope(error={"code": 503, "message": str(e)}, status=503)
 
 
+# SPA 静态 serve — production demo single-port 部署
+# 路由先 /api/* (blueprint),再 SPA catch-all,所以 API 优先匹配。
+_FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"
+if _FRONTEND_DIST.exists():
+    from flask import send_from_directory
+
+    @app.get("/")
+    @limiter.exempt
+    def spa_root():
+        return send_from_directory(_FRONTEND_DIST, "index.html")
+
+    @app.get("/<path:path>")
+    @limiter.exempt
+    def spa_assets(path: str):
+        target = _FRONTEND_DIST / path
+        if target.is_file():
+            return send_from_directory(_FRONTEND_DIST, path)
+        # SPA fallback — 让 vue-router handle 客户端路由
+        return send_from_directory(_FRONTEND_DIST, "index.html")
+
+
 @app.errorhandler(404)
 def not_found(_):
+    # API 路径 404 返 JSON,其他路径让 SPA fallback 处理
+    if request.path.startswith("/api/"):
+        return envelope(error={"code": 404, "message": "endpoint not found"}, status=404)
+    if _FRONTEND_DIST.exists():
+        from flask import send_from_directory
+        return send_from_directory(_FRONTEND_DIST, "index.html")
     return envelope(error={"code": 404, "message": "endpoint not found"}, status=404)
 
 

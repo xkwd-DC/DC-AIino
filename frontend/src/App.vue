@@ -5,13 +5,11 @@ import { fetchHealth } from '@/api/health'
 
 const route = useRoute()
 const healthState = ref<'loading' | 'ok' | 'fail'>('loading')
-const apiVersion = ref('')
 
 onMounted(async () => {
   try {
-    const h = await fetchHealth()
+    await fetchHealth()
     healthState.value = 'ok'
-    apiVersion.value = `v${h.version}`
   } catch (e) {
     healthState.value = 'fail'
     console.error('[health] failed', e)
@@ -19,10 +17,12 @@ onMounted(async () => {
 })
 
 const tabs = [
+  { code: 'M00', name: '系统总览', path: '/overview' },
   { code: 'M01', name: '风险时空地图', path: '/risk-map' },
   { code: 'M02', name: 'SHAP 归因看板', path: '/shap' },
   { code: 'M03', name: '参数情景模拟', path: '/scenario' },
   { code: 'M04', name: '韧性路径推荐', path: '/pathway' },
+  { code: 'M05', name: '推演监控', path: '/monitor' },
 ]
 
 // a11y(WCAG SC 1.4.1 Use of Color):健康状态不能只靠颜色。
@@ -33,9 +33,9 @@ const healthIcon = computed(() => {
   return '…'
 })
 const healthLabel = computed(() => {
-  if (healthState.value === 'ok') return `后端服务正常 ${apiVersion.value}`
-  if (healthState.value === 'fail') return '后端服务离线'
-  return '正在检测后端服务'
+  if (healthState.value === 'ok') return '系统运行正常'
+  if (healthState.value === 'fail') return '系统暂时不可达'
+  return '系统就绪中'
 })
 </script>
 
@@ -48,7 +48,7 @@ const healthLabel = computed(() => {
       <div class="brand-logo" aria-hidden="true">粮</div>
       <div class="brand-text">
         <h1>极端气候下粮食生产风险智能分析</h1>
-        <div class="sub">FOOD-RISK INTELLIGENCE PLATFORM · v0.1</div>
+        <div class="sub">FOOD-RISK INTELLIGENCE PLATFORM</div>
       </div>
     </div>
 
@@ -70,8 +70,8 @@ const healthLabel = computed(() => {
 
     <div class="header-right">
       <!-- a11y(SC 1.4.1 Use of Color + SC 4.1.3 Status Messages):
-           健康状态双通道 = 色(.health) + icon(✓/✗/…) + 文本;
-           role="status" + aria-live="polite" 让屏幕阅读器朗读状态变化。 -->
+           健康状态依然通过 aria-live 朗读;视觉上仅在异常时显示文字 chip,
+           正常 / 加载态只显示一个柔和的状态点,避免对外演示出现"检测中"字样。 -->
       <span
         class="health"
         :class="healthState"
@@ -80,12 +80,8 @@ const healthLabel = computed(() => {
         :aria-label="healthLabel"
       >
         <span class="dot" aria-hidden="true"></span>
-        <span class="icon" aria-hidden="true">{{ healthIcon }}</span>
-        <span class="label">
-          <template v-if="healthState === 'ok'">Backend OK {{ apiVersion }}</template>
-          <template v-else-if="healthState === 'fail'">Backend Offline</template>
-          <template v-else>Checking...</template>
-        </span>
+        <span v-if="healthState === 'fail'" class="icon" aria-hidden="true">{{ healthIcon }}</span>
+        <span v-if="healthState === 'fail'" class="label">系统暂时不可达</span>
       </span>
     </div>
   </header>
@@ -173,13 +169,20 @@ const healthLabel = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
+  padding: 6px 10px;
   border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.5px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all var(--dur-fast);
+}
+/* 仅在失败时露出 chip 外观,正常/加载态保持极简 */
+.health.fail {
+  padding: 6px 14px;
+  background: var(--bg-elev);
+  border-color: rgba(184, 111, 77, 0.3);
 }
 .health .dot {
   width: 6px;

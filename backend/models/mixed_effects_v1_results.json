@@ -1,0 +1,394 @@
+{
+  "issue": 42,
+  "model": "MixedLM (y ~ X + (1|province))",
+  "data_path": "data/interim/paper_panel_v3.parquet",
+  "data_md5_12": "7f2070282216",
+  "n_rows": 403,
+  "n_features": 11,
+  "n_groups": 31,
+  "feature_cols_raw": [
+    "irr",
+    "flood",
+    "sun",
+    "temp",
+    "spei",
+    "prec",
+    "mech",
+    "fert",
+    "drou_a",
+    "flood_a",
+    "ndvi"
+  ],
+  "feature_cols_display": [
+    "Irr",
+    "Flood_R",
+    "Sun",
+    "Temp",
+    "SPEI",
+    "Prec",
+    "Mech",
+    "Fert",
+    "Drou_A",
+    "Flood_A",
+    "NDVI"
+  ],
+  "target": "yield_kg_per_ha",
+  "group_key": "province",
+  "estimator": {
+    "reml": true,
+    "optimizer": "lbfgs",
+    "converged": true,
+    "x_standardization": "z-score (pandas std ddof=1, full-data fit)"
+  },
+  "variance_components": {
+    "sigma_alpha_sq": 1699394.6801282186,
+    "sigma_eps_sq": 50683.508361932385
+  },
+  "icc": {
+    "point": 0.9710392891613268,
+    "ci_lo_95": 0.9495587628392463,
+    "ci_hi_95": 0.9804991011174569,
+    "bootstrap_n_used": 200,
+    "bootstrap_n_failed": 0,
+    "bootstrap_n_target": 200,
+    "bootstrap_seed": 2026
+  },
+  "lrt": {
+    "ll_pooled_ols": -3213.684788584719,
+    "ll_mixed_ml": -2842.8877380942263,
+    "lr_statistic": 741.5941009809858,
+    "p_value_chibar": 1.3493677828020223e-163,
+    "p_value_chi2_1": 2.6987355656040445e-163,
+    "df_chibar": 1,
+    "note": "Self & Liang 1987 边界 chi-bar-square 修正"
+  },
+  "intercept_fixed": 3645.759408267177,
+  "loglik_mixed_reml": -2785.702240978704,
+  "alpha_summary": {
+    "min": -2234.073566514963,
+    "max": 3254.4363176091006,
+    "range": 5488.509884124063,
+    "std": 1284.972708163037
+  },
+  "beta": [
+    {
+      "feature": "Irr",
+      "feature_raw": "irr",
+      "beta_hat": 57.46733813252428,
+      "se": 40.256061789118945,
+      "p_value": 0.1534228753765747,
+      "ci_lo": -21.4330931335679,
+      "ci_hi": 136.36776939861647,
+      "significant_05": false
+    },
+    {
+      "feature": "Flood_R",
+      "feature_raw": "flood",
+      "beta_hat": 15.885643407054,
+      "se": 15.02398765202779,
+      "p_value": 0.2903509689066308,
+      "ci_lo": -13.560831295094959,
+      "ci_hi": 45.33211810920296,
+      "significant_05": false
+    },
+    {
+      "feature": "Sun",
+      "feature_raw": "sun",
+      "beta_hat": 57.75000693006126,
+      "se": 61.083144964987824,
+      "p_value": 0.3444379788113737,
+      "ci_lo": -61.97075726375401,
+      "ci_hi": 177.47077112387655,
+      "significant_05": false
+    },
+    {
+      "feature": "Temp",
+      "feature_raw": "temp",
+      "beta_hat": 219.2988945765191,
+      "se": 133.94795465769786,
+      "p_value": 0.10158977363426612,
+      "ci_lo": -43.234272355372866,
+      "ci_hi": 481.8320615084111,
+      "significant_05": false
+    },
+    {
+      "feature": "SPEI",
+      "feature_raw": "spei",
+      "beta_hat": 11.762560645333261,
+      "se": 16.90812189955944,
+      "p_value": 0.48663227626864425,
+      "ci_lo": -21.37674932401621,
+      "ci_hi": 44.90187061468273,
+      "significant_05": false
+    },
+    {
+      "feature": "Prec",
+      "feature_raw": "prec",
+      "beta_hat": 48.52731283876336,
+      "se": 49.063278450708744,
+      "p_value": 0.322625942585414,
+      "ci_lo": -47.634945888085916,
+      "ci_hi": 144.68957156561262,
+      "significant_05": false
+    },
+    {
+      "feature": "Mech",
+      "feature_raw": "mech",
+      "beta_hat": -201.33746774475995,
+      "se": 42.030325484012884,
+      "p_value": 1.665400473783455e-06,
+      "ci_lo": -283.7153919519212,
+      "ci_hi": -118.95954353759868,
+      "significant_05": true
+    },
+    {
+      "feature": "Fert",
+      "feature_raw": "fert",
+      "beta_hat": -262.1469063063445,
+      "se": 97.16588050480703,
+      "p_value": 0.006977176020976075,
+      "ci_lo": -452.5885326218888,
+      "ci_hi": -71.70527999080014,
+      "significant_05": true
+    },
+    {
+      "feature": "Drou_A",
+      "feature_raw": "drou_a",
+      "beta_hat": -46.634730187166646,
+      "se": 15.421127024728229,
+      "p_value": 0.002493900343590167,
+      "ci_lo": -76.85958375665129,
+      "ci_hi": -16.409876617682,
+      "significant_05": true
+    },
+    {
+      "feature": "Flood_A",
+      "feature_raw": "flood_a",
+      "beta_hat": 113.89553623137257,
+      "se": 33.674449265996,
+      "p_value": 0.0007189367160813264,
+      "ci_lo": 47.894828470799155,
+      "ci_hi": 179.896243991946,
+      "significant_05": true
+    },
+    {
+      "feature": "NDVI",
+      "feature_raw": "ndvi",
+      "beta_hat": 90.3528598341353,
+      "se": 158.95016777783252,
+      "p_value": 0.5697395397383929,
+      "ci_lo": -221.18374434701542,
+      "ci_hi": 401.889464015286,
+      "significant_05": false
+    }
+  ],
+  "alpha": [
+    {
+      "province": "海南省",
+      "alpha_hat": -2234.073566514963,
+      "rank": 1
+    },
+    {
+      "province": "贵州省",
+      "alpha_hat": -1891.6515478740355,
+      "rank": 2
+    },
+    {
+      "province": "广西壮族自治区",
+      "alpha_hat": -1546.801812399655,
+      "rank": 3
+    },
+    {
+      "province": "青海省",
+      "alpha_hat": -1359.6314599431628,
+      "rank": 4
+    },
+    {
+      "province": "云南省",
+      "alpha_hat": -1183.2854344921989,
+      "rank": 5
+    },
+    {
+      "province": "广东省",
+      "alpha_hat": -1163.0243531194394,
+      "rank": 6
+    },
+    {
+      "province": "重庆市",
+      "alpha_hat": -987.0051565952282,
+      "rank": 7
+    },
+    {
+      "province": "福建省",
+      "alpha_hat": -970.516525277405,
+      "rank": 8
+    },
+    {
+      "province": "浙江省",
+      "alpha_hat": -858.7692766540483,
+      "rank": 9
+    },
+    {
+      "province": "上海市",
+      "alpha_hat": -736.469424163794,
+      "rank": 10
+    },
+    {
+      "province": "陕西省",
+      "alpha_hat": -640.0977122824862,
+      "rank": 11
+    },
+    {
+      "province": "甘肃省",
+      "alpha_hat": -441.6629108424413,
+      "rank": 12
+    },
+    {
+      "province": "四川省",
+      "alpha_hat": -400.13063134986857,
+      "rank": 13
+    },
+    {
+      "province": "湖南省",
+      "alpha_hat": -388.99858124244804,
+      "rank": 14
+    },
+    {
+      "province": "宁夏回族自治区",
+      "alpha_hat": -341.22909725111396,
+      "rank": 15
+    },
+    {
+      "province": "湖北省",
+      "alpha_hat": -333.71853087964814,
+      "rank": 16
+    },
+    {
+      "province": "江西省",
+      "alpha_hat": -320.09694762512345,
+      "rank": 17
+    },
+    {
+      "province": "北京市",
+      "alpha_hat": -307.46649483170046,
+      "rank": 18
+    },
+    {
+      "province": "新疆维吾尔自治区",
+      "alpha_hat": -250.04869935961597,
+      "rank": 19
+    },
+    {
+      "province": "山西省",
+      "alpha_hat": 174.1126050316334,
+      "rank": 20
+    },
+    {
+      "province": "内蒙古自治区",
+      "alpha_hat": 427.6051778986667,
+      "rank": 21
+    },
+    {
+      "province": "安徽省",
+      "alpha_hat": 739.7225094572553,
+      "rank": 22
+    },
+    {
+      "province": "天津市",
+      "alpha_hat": 1011.0037652982742,
+      "rank": 23
+    },
+    {
+      "province": "河北省",
+      "alpha_hat": 1150.7504855284888,
+      "rank": 24
+    },
+    {
+      "province": "江苏省",
+      "alpha_hat": 1199.3726347739578,
+      "rank": 25
+    },
+    {
+      "province": "河南省",
+      "alpha_hat": 1469.5075164933435,
+      "rank": 26
+    },
+    {
+      "province": "西藏自治区",
+      "alpha_hat": 1597.466397776195,
+      "rank": 27
+    },
+    {
+      "province": "黑龙江省",
+      "alpha_hat": 1662.0758478562034,
+      "rank": 28
+    },
+    {
+      "province": "山东省",
+      "alpha_hat": 1707.9651875744762,
+      "rank": 29
+    },
+    {
+      "province": "辽宁省",
+      "alpha_hat": 1960.6597174012156,
+      "rank": 30
+    },
+    {
+      "province": "吉林省",
+      "alpha_hat": 3254.4363176091006,
+      "rank": 31
+    }
+  ],
+  "high_corr_pairs": [
+    {
+      "f1": "sun",
+      "f2": "prec",
+      "rho": -0.763861588629856
+    },
+    {
+      "f1": "temp",
+      "f2": "prec",
+      "rho": 0.7922874217055892
+    },
+    {
+      "f1": "temp",
+      "f2": "ndvi",
+      "rho": 0.7333744855570997
+    },
+    {
+      "f1": "prec",
+      "f2": "ndvi",
+      "rho": 0.7725108973319535
+    }
+  ],
+  "x_zscore_stats": {
+    "mean": {
+      "irr": 56.69324267990074,
+      "flood": 2.9699751861042185,
+      "sun": 3161.0906307514265,
+      "temp": 14.052406947890821,
+      "spei": -0.07671488833746898,
+      "prec": 972.4461290322579,
+      "mech": 0.7037617866004963,
+      "fert": 180.936476426799,
+      "drou_a": 323.0948387096774,
+      "flood_a": 285.05449131513643,
+      "ndvi": 0.557897801534148
+    },
+    "std": {
+      "irr": 24.437933745908587,
+      "flood": 3.1410624607714053,
+      "sun": 363.89706477862046,
+      "temp": 5.429922386877532,
+      "spei": 0.9613099102572908,
+      "prec": 543.0263477815587,
+      "mech": 0.36199974963404125,
+      "fert": 143.16859887896678,
+      "drou_a": 474.3853584005699,
+      "flood_a": 323.77532695866563,
+      "ndvi": 0.1682724224096552
+    }
+  },
+  "generated_at": "2026-05-27T13:38:40",
+  "script": "scripts/mixed_effects_poc.py"
+}

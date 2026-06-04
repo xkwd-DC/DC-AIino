@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>稷韧云图 · 答辩讲解参考手册</title>
+<style>
+  :root{
+    --green:#1F4D2E; --green-2:#2c6b42; --blue:#1E5A8E; --orange:#D97606;
+    --gray:#4A5552; --ink:#262B2A; --mint:#E8F0E6; --bluet:#EAF1F8; --orgt:#FBEFD9;
+    --paper:#FAFAF7; --line:#e4e7e2; --red:#b3402f; --teal:#0f7d77;
+    --shadow:0 1px 2px rgba(31,77,46,.06),0 8px 24px rgba(31,77,46,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+    line-height:1.7; font-size:15px;
+  }
+  a{color:var(--blue);text-decoration:none}
+  .wrap{display:grid;grid-template-columns:248px 1fr;max-width:1320px;margin:0 auto;gap:0}
+  /* sidebar */
+  nav.side{
+    position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    padding:22px 16px;border-right:1px solid var(--line);background:#fff;
+  }
+  nav.side .brand{font-weight:800;color:var(--green);font-size:18px;letter-spacing:.5px}
+  nav.side .brand small{display:block;font-weight:500;color:var(--gray);font-size:11px;margin-top:4px;letter-spacing:0}
+  nav.side h4{margin:20px 0 8px;font-size:11px;letter-spacing:1px;color:var(--orange);text-transform:uppercase}
+  nav.side a{display:block;padding:5px 9px;border-radius:7px;color:var(--gray);font-size:13px;margin:1px 0}
+  nav.side a:hover{background:var(--mint);color:var(--green)}
+  nav.side a .n{display:inline-block;width:22px;color:var(--blue);font-weight:700;font-variant-numeric:tabular-nums}
+  /* main */
+  main{padding:34px 40px 90px;min-width:0}
+  header.hero{
+    background:linear-gradient(120deg,var(--green) 0%,#16401f 60%,#123419 100%);
+    color:var(--paper);border-radius:18px;padding:30px 34px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  header.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;
+    background:radial-gradient(circle,rgba(217,118,6,.35),transparent 70%);}
+  header.hero .kicker{color:#f3c585;font-weight:700;letter-spacing:2px;font-size:12px}
+  header.hero h1{margin:8px 0 6px;font-size:27px;line-height:1.3}
+  header.hero p{margin:6px 0 0;color:#cfddd6;max-width:760px}
+  header.hero .meta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  header.hero .meta span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+    padding:5px 12px;border-radius:999px;font-size:12.5px}
+  .tip{background:var(--orgt);border-left:4px solid var(--orange);padding:14px 18px;border-radius:0 12px 12px 0;margin:22px 0}
+  .tip b{color:var(--orange)}
+  /* slide card */
+  .slide{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0;margin:26px 0;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:14px}
+  .slide > .head{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,var(--mint),#fff)}
+  .slide > .head .num{flex:none;width:42px;height:42px;border-radius:11px;background:var(--green);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:18px}
+  .slide.k > .head .num{background:var(--orange)}
+  .slide > .head h2{margin:0;font-size:18px;color:var(--green)}
+  .slide > .head .sec{font-size:12px;color:var(--gray);font-weight:600;margin-top:2px}
+  .slide > .head .time{margin-left:auto;font-size:12px;color:var(--blue);background:var(--bluet);
+    border-radius:999px;padding:4px 12px;font-weight:700;flex:none}
+  .body{padding:8px 22px 20px}
+  .block{padding:13px 0;border-bottom:1px dashed var(--line)}
+  .block:last-child{border-bottom:0}
+  .block .lab{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:12.5px;letter-spacing:.5px;
+    padding:2px 0;margin-bottom:6px}
+  .lab.pos{color:var(--blue)} .lab.talk{color:var(--green-2)} .lab.term{color:var(--orange)}
+  .lab.prin{color:var(--teal)} .lab.ask{color:var(--red)}
+  .lab .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .pos .dot{background:var(--blue)} .talk .dot{background:var(--green-2)} .term .dot{background:var(--orange)}
+  .prin .dot{background:var(--teal)} .ask .dot{background:var(--red)}
+  .talk-script{background:var(--mint);border-radius:10px;padding:12px 15px;color:#234}
+  .talk-script .q{color:var(--gray);font-style:normal}
+  ul.clean{margin:6px 0 2px;padding-left:0;list-style:none}
+  ul.clean li{padding:3px 0 3px 18px;position:relative}
+  ul.clean li::before{content:"▸";position:absolute;left:0;color:var(--orange);font-weight:700}
+  .terms{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;margin-top:4px}
+  @media(max-width:1050px){.terms{grid-template-columns:1fr}}
+  .terms .t{padding:4px 0}
+  .terms .t b{color:var(--ink)}
+  .terms .t span{color:var(--gray)}
+  .qa{padding:10px 0;border-bottom:1px solid var(--line)}
+  .qa:last-child{border:0}
+  .qa .q{font-weight:800;color:var(--green)}
+  .qa .q::before{content:"Q";display:inline-grid;place-items:center;width:20px;height:20px;background:var(--blue);
+    color:#fff;border-radius:6px;font-size:12px;margin-right:8px;vertical-align:1px}
+  .qa .a{margin-top:6px;padding-left:28px;color:#2c322f}
+  .qa .a::before{content:"A";display:inline-grid;place-items:center;width:20px;height:20px;background:var(--orange);
+    color:#fff;border-radius:6px;font-size:12px;margin-right:8px;margin-left:-28px;vertical-align:1px}
+  .qa .warn{margin-top:6px;padding-left:28px;font-size:13px;color:var(--red)}
+  .section-title{display:flex;align-items:center;gap:12px;margin:46px 0 6px}
+  .section-title h2{font-size:22px;color:var(--green);margin:0}
+  .section-title .bar{width:34px;height:5px;border-radius:3px;background:var(--orange)}
+  .glossary{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+    padding:10px 24px 20px;display:grid;grid-template-columns:1fr 1fr;gap:0 34px}
+  @media(max-width:1050px){.glossary{grid-template-columns:1fr}}
+  .glossary dl{margin:0}
+  .glossary dt{font-weight:800;color:var(--blue);margin-top:14px;font-size:14.5px}
+  .glossary dt small{color:var(--gray);font-weight:600;margin-left:6px;font-size:12px}
+  .glossary dd{margin:3px 0 0;color:#333}
+  .kbd{background:#eef2ee;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12.5px;color:var(--green);font-weight:700}
+  .danger{background:#fbeae7;border-left:4px solid var(--red);padding:14px 18px;border-radius:0 12px 12px 0;margin:14px 0}
+  .danger b{color:var(--red)}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--gray);font-size:13px}
+  @media print{
+    nav.side{display:none} .wrap{grid-template-columns:1fr} main{padding:0}
+    .slide,.glossary,header.hero{box-shadow:none} .slide{break-inside:avoid}
+    header.hero{color:#000;background:#fff;border:2px solid var(--green)}
+    header.hero .kicker{color:var(--orange)} header.hero p,header.hero .meta span{color:#333}
+  }
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav.side{display:none}main{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="side">
+  <div class="brand">稷韧云图<small>答辩讲解参考手册 · 16 页</small></div>
+  <h4>讲解逐页</h4>
+  <a href="#s1"><span class="n">01</span>封面 · 开场</a>
+  <a href="#s2"><span class="n">02</span>研究背景</a>
+  <a href="#s3"><span class="n">03</span>三大瓶颈</a>
+  <a href="#s4"><span class="n">04</span>一分钟看懂</a>
+  <a href="#s5"><span class="n">05</span>目标与内容</a>
+  <a href="#s6"><span class="n">06</span>技术路线 ★</a>
+  <a href="#s7"><span class="n">07</span>数据集构建</a>
+  <a href="#s8"><span class="n">08</span>双引擎验证 ★</a>
+  <a href="#s9"><span class="n">09</span>互补与增益 ★</a>
+  <a href="#s10"><span class="n">10</span>可视化系统</a>
+  <a href="#s11"><span class="n">11</span>四大创新</a>
+  <a href="#s12"><span class="n">12</span>应用前景</a>
+  <a href="#s13"><span class="n">13</span>问题与改进</a>
+  <a href="#s14"><span class="n">14</span>参考文献</a>
+  <a href="#s15"><span class="n">15</span>总结致谢</a>
+  <a href="#s16"><span class="n">16</span>技术路线详图</a>
+  <h4>专题</h4>
+  <a href="#glossary">📖 术语表（必懂名词）</a>
+  <a href="#qa">🛡 答辩问答防御</a>
+  <a href="#flow">⏱ 节奏与开场白</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="kicker">CRAIC · 2026 第二十八届中国机器人及人工智能创新大赛</div>
+  <h1>基于多模态的极端气候下我国粮食生产风险<br>核心因子识别与韧性提升可视化系统</h1>
+  <p>本手册帮助你「逐页讲清、术语答得上、追问顶得住」。每页含：一句话定位 · 讲稿 · 必懂名词 · 原理要点 · 可能追问。★ 为评委最可能深挖的三页，请重点准备。</p>
+  <div class="meta">
+    <span>团队 · 潘妙齐 / 熊鑫 / 常宇璇</span>
+    <span>建议讲解 8–10 分钟</span>
+    <span>核心叙事：数据多模态 × 方法可解释 × 应用可落地</span>
+  </div>
+</header>
+
+<div class="tip">
+  <b>一句话记住整套逻辑：</b>用 <b>4 类异构数据</b>（统计+遥感+气象+GIS）喂给 <b>两个原理不同的模型</b>（XGBoost-SHAP 做横截面归因、Attention-LSTM 做时序验证），让它们 <b>交叉印证</b> 出稳健的核心因子，再封装成 <b>一个能用的可视化决策系统</b>。——背景(为什么) → 方法(怎么做) → 结果(发现了什么) → 系统(怎么用) → 价值(有什么用)。
+</div>
+
+<!-- ================= SLIDE 1 ================= -->
+<section class="slide" id="s1">
+  <div class="head"><div class="num">1</div><div><h2>封面 · 开场自我介绍</h2><div class="sec">封面页</div></div><div class="time">~30 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>报出题目、团队、以及项目的「一句话亮点」，让评委 10 秒内知道你做了什么。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">各位评委老师好，我们是「稷韧云图」团队。我们的项目是<b>《基于多模态的极端气候下我国粮食生产风险核心因子识别与韧性提升可视化系统》</b>。简单说，我们把<b>多模态数据</b>、<b>可解释 AI</b> 和<b>可视化决策</b>三者打通，做成一个能识别风险、又能给出对策的系统。下面由我为大家汇报。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>多模态</b> <span>—— 把来源/形态不同的数据（统计表、卫星影像、气象站、地图矢量）融合在一起使用。</span></div>
+        <div class="t"><b>核心因子</b> <span>—— 对粮食产量风险影响最大的少数关键变量。</span></div>
+        <div class="t"><b>韧性 (Resilience)</b> <span>—— 农业系统在极端气候冲击下「抗住 + 恢复」的能力。</span></div>
+        <div class="t"><b>稷韧云图</b> <span>—— 队名：「稷」=谷物/粮食，「韧」=韧性，「云图」=可视化系统。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 2 ================= -->
+<section class="slide" id="s2">
+  <div class="head"><div class="num">2</div><div><h2>研究背景：政策牵引 · 现实痛点 · 趋势加剧</h2><div class="sec">为什么做这件事</div></div><div class="time">~50 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>从「国家要、现实痛、趋势紧」三个角度论证选题的必要性——这是答辩的「立意」。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">我们的选题有三重背景。<b>政策上</b>，二十大、十四五规划、历年中央一号文件都强调「夯实粮食安全根基」，IPCC AR6 也指出气候变化在加剧农业脆弱性。<b>现实上</b>，2023 年京津冀「23·7」极端暴雨，河北 24 万公顷农田受灾、绝产 13 万公顷、玉米损失 22 万吨。<b>趋势上</b>，2023 年全国均温 10.7℃ 创 1961 年来新高，13 个省破历史最高温纪录，旱涝急转频发。所以「极端气候 × 粮食安全」是真问题、紧问题。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>IPCC AR6</b> <span>—— 联合国政府间气候变化专门委员会第六次评估报告，全球气候科学最权威结论之一。</span></div>
+        <div class="t"><b>旱涝急转</b> <span>—— 短时间内由干旱迅速转为洪涝（或反向），对作物冲击远大于单一灾害。</span></div>
+        <div class="t"><b>「23·7」暴雨</b> <span>—— 2023 年 7 月京津冀特大暴雨，海河流域 1963 年来首次流域性洪水。</span></div>
+      </div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>关键数字要背熟（24 万公顷 / 绝产 13 万 / 玉米 22 万吨 / 10.7℃ / 13 省）。评委常考你对自己引用数据的来源是否清楚——答：来自应急管理部灾情通报与国家气候中心年度公报。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 3 ================= -->
+<section class="slide" id="s3">
+  <div class="head"><div class="num">3</div><div><h2>现有研究的三大瓶颈</h2><div class="sec">问题诊断 → 破题思路</div></div><div class="time">~45 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>指出前人研究的三处不足，正好对应你后面「数据层 / 方法层 / 应用层」的三个创新——形成「痛点—对策」一一映射。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">现有研究有三大瓶颈：<b>一是数据维度单一</b>，多依赖统计数据，缺乏遥感、气象、空间矢量的多模态融合，难以做宏观—中观—微观多粒度刻画；<b>二是模型可解释性不足</b>，传统机器学习「黑箱化」、多用单一模型，因子的影响路径和贡献度难以量化；<b>三是研究成果难以落地</b>，多停留在算法和论文层面，缺乏面向决策者的工程化工具。我们正是针对这三点，从数据层、方法层、应用层系统性破题。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>黑箱模型</b> <span>—— 只给结果、说不清「为什么」的模型；可解释 AI 就是要打开黑箱。</span></div>
+        <div class="t"><b>多粒度</b> <span>—— 在不同空间尺度（全国宏观、区域中观、省域微观）上刻画风险。</span></div>
+        <div class="t"><b>多模型协同验证</b> <span>—— 用两个及以上不同模型互相印证结论，提升可信度。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 4 ================= -->
+<section class="slide" id="s4">
+  <div class="head"><div class="num">4</div><div><h2>一分钟看懂我们做了什么</h2><div class="sec">Data × Method × Application 端到端闭环</div></div><div class="time">~40 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>用「数据 / 方法 / 应用」三张牌，把整个项目的规模和能力一次说清，给评委一个全局锚点。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">用三句话概括：<b>数据上</b>，我们融合 4 类异构数据（统计+遥感+气象+GIS），覆盖全国 31 省、2011–2023 年、共 403 个样本；<b>方法上</b>，用 XGBoost-SHAP 和 Attention-LSTM 双引擎协同验证，同时拿到「非线性归因」和「时序响应」两个视角；<b>应用上</b>，做成 Vue + Flask 的可视化决策系统，四大模块在线交互，单次推理不超过 2 秒。这就破解了前面说的三大瓶颈。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>异构数据</b> <span>—— 结构和格式都不同的数据（表格/栅格影像/站点序列/矢量），融合难点在「对齐」。</span></div>
+        <div class="t"><b>端到端闭环</b> <span>—— 从原始数据一路打通到决策输出，中间不断链。</span></div>
+        <div class="t"><b>403 样本</b> <span>—— 31 省 × 13 年 ≈ 403 条「省-年」面板记录（个别缺失）。</span></div>
+      </div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>「403 样本会不会太少？」→ 见 <a href="#qa">问答防御 Q3</a>：面板数据 + 正则化 + 双模型交叉验证，且我们看重的是<b>归因可解释性</b>而非纯预测精度。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 5 ================= -->
+<section class="slide" id="s5">
+  <div class="head"><div class="num">5</div><div><h2>研究目标 与 四大研究内容</h2><div class="sec">风险识别→因子归因→韧性评估→可视化决策</div></div><div class="time">~50 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>把项目拆成四块研究内容，对应一条完整研究链条；这页是后面 7–10 页的「目录」。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">研究目标是覆盖「风险识别 → 因子归因 → 韧性评估 → 可视化决策」全链条，拆成四大内容：① <b>多模态融合数据集构建</b>，把统计、MODIS 遥感、气象站点、GIS 矢量做线性插值、Butterworth 滤波、时空对齐和 Z-score 标准化；② <b>XGBoost-SHAP 非线性归因</b>，用梯度提升树建模，再用 SHAP 做全局/个体/交互三维度归因；③ <b>Attention-LSTM 时序验证</b>，用注意力机制聚焦极端气候敏感时点，作为独立的第二个模型验证 XGBoost 的结论；④ <b>可视化决策支持系统</b>，Vue+Flask 四大模块，做成可操作工具。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>线性插值</b> <span>—— 用前后已知值按比例补上中间缺失值。</span></div>
+        <div class="t"><b>Butterworth 滤波</b> <span>—— 一种平滑滤波器，去掉时间序列里的高频噪声、保留趋势。</span></div>
+        <div class="t"><b>时空对齐</b> <span>—— 让不同数据在「同一时间、同一行政区」上能对应起来。</span></div>
+        <div class="t"><b>Z-score 标准化</b> <span>—— (x−均值)/标准差，消除量纲差异，让不同单位变量可比。</span></div>
+        <div class="t"><b>SHAP 三维度</b> <span>—— 全局（整体重要性）、个体（单条样本解释）、交互（两两因子耦合）。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 6 ★ ================= -->
+<section class="slide k" id="s6">
+  <div class="head"><div class="num">6</div><div><h2>总体技术路线（已替换为新图）★</h2><div class="sec">四阶段流水线 + 双引擎交叉印证 + 三大创新贯穿</div></div><div class="time">~70 秒</div></div>
+  <div class="body">
+    <div class="tip" style="margin:10px 0"><b>本页已用新图替换：</b>新图把四个阶段（数据采集→预处理→双引擎建模→系统集成）做成流水线，中间放大「双引擎交叉印证」核心，底部用「数据层/方法层/应用层」三大创新贯穿全程。讲解时<b>从左讲到右</b>，重点停在中间的双引擎。</div>
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>这是全场的「方法地图」。评委靠这页判断你的技术逻辑是否自洽，请讲得最流畅。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考（顺图讲）</div>
+      <div class="talk-script">整个技术路线分四步。<b>第一步数据采集</b>：从国家统计局、CMDC 气象、MODIS 遥感、GIS 矢量四个来源拿数据，产出一张 403×11 的多模态面板。<b>第二步预处理</b>：经过完整性清洗、线性插值补缺、Butterworth 滤波、时空对齐、Z-score 标准化五道工序。<b>第三步是核心——双引擎建模</b>：引擎一 XGBoost-SHAP 做横截面归因，测试集 R² 约 0.63；引擎二 Attention-LSTM 做时序验证，R² 约 0.66；两个原理完全不同的模型独立建模、再<b>交叉印证</b>，锁定稳健的核心因子——<b>灌溉率 ＞ 洪涝占比 ＞ 日照时数</b>。<b>第四步系统集成</b>：Flask 后端 + Vue 前端，四大模块、推理不超过 2 秒。而<b>数据多模态、方法可解释、应用可落地</b>这三大创新贯穿了全程。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词（务必分清）</div>
+      <div class="terms">
+        <div class="t"><b>横截面归因</b> <span>—— 不看时间、把所有「省-年」样本放一起，问「哪个因子整体上更重要」（XGBoost-SHAP 的视角）。</span></div>
+        <div class="t"><b>时序验证</b> <span>—— 沿时间轴看「哪个时间点/哪段时期」对结果更关键（Attention-LSTM 的视角）。</span></div>
+        <div class="t"><b>交叉印证</b> <span>—— 两个视角都指向同一批关键因子，结论才算稳。</span></div>
+        <div class="t"><b>核心闭环</b> <span>—— 独立建模 → 交叉印证 → 系统化输出决策建议。</span></div>
+      </div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>「为什么非要两个模型？一个不够吗？」→ 见 <a href="#qa">Q4</a>。「两个模型结论不一致怎么办？」→ 见 <a href="#qa">Q5</a>（重点：我们取的是<b>重叠/稳健</b>的因子，不一致之处恰好是「互补信息」）。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 7 ================= -->
+<section class="slide" id="s7">
+  <div class="head"><div class="num">7</div><div><h2>多模态数据集构建（变量表）</h2><div class="sec">被解释变量 + 四类解释变量</div></div><div class="time">~55 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>展示数据集的「变量清单」，证明数据扎实、口径清楚。不必逐行念，按「五类」概括即可。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">被解释变量是<b>粮食单产 Y（kg/ha）</b>。解释变量分四类：<b>气候因子</b>——平均气温 Temp、干旱指数 SPEI、降水量 Prec、日照时数 Sun；<b>致灾因子</b>——洪涝占比、旱灾受灾面积、水灾受灾面积；<b>生产韧性</b>——灌溉率、农机总动力、化肥施用量；<b>遥感因子</b>——MODIS 植被指数 NDVI。所有变量都做了统一口径和标准化，构成 31 省 × 13 年的面板。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词（评委最爱问的两个）</div>
+      <div class="terms">
+        <div class="t"><b>SPEI</b> <span>—— 标准化降水蒸散指数。同时考虑「降水」和「蒸发」，比只看降水更能刻画干旱；正值偏湿、负值偏旱。</span></div>
+        <div class="t"><b>NDVI</b> <span>—— 归一化植被指数 =(近红外−红)/(近红外+红)，取值 −1~1，越高表示植被越茂盛、长势越好。</span></div>
+        <div class="t"><b>面板数据</b> <span>—— 同时有「横截面（多个省）+ 时间序列（多年）」两个维度的数据。</span></div>
+        <div class="t"><b>kg/ha · khm²</b> <span>—— 公斤/公顷（单产）；千公顷（受灾面积）。</span></div>
+        <div class="t"><b>灌溉率 Irr</b> <span>—— 有效灌溉面积 ÷ 耕地面积，衡量水利保障水平（本研究最关键因子）。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 8 ★ ================= -->
+<section class="slide k" id="s8">
+  <div class="head"><div class="num">8</div><div><h2>双引擎协同验证机制 ★</h2><div class="sec">XGBoost-SHAP × Attention-LSTM · 原理与公式</div></div><div class="time">~75 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>全场技术含量最高的一页，必须把两个模型的「原理 + 为什么互补」讲透，公式能解释清楚。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">我们用两个原理完全不同的模型。<b>引擎一 XGBoost+SHAP</b>：XGBoost 是梯度提升树，本质是<b>加法模型</b> ŷ=∑fₖ(x)，目标函数 Obj=∑L(y,ŷ)+∑Ω(fₖ)，前一项是预测误差、后一项 Ω 是正则惩罚来抗过拟合；它能捕捉气温×灌溉×降水的非线性耦合，在 403 样本下仍稳健，测试集 R²=0.6293，解释了约 63% 的风险波动。再用 SHAP 基于博弈论的 Shapley 值，做全局排序、单样本瀑布图、交互依赖图三维归因。<b>引擎二 Attention-LSTM</b>：LSTM 用三道门控记忆时序信息，注意力机制用 softmax 给不同时点加权，自动聚焦极端气候敏感时点；它从<b>时序角度</b>独立验证。以河南 2022 为例，真实单产 4615，模型预测 4657.6，误差仅 +42.6 kg/ha。两条路径殊途同归，结论就稳。</div>
+    </div>
+    <div class="block"><div class="lab prin"><span class="dot"></span>公式速记</div>
+      <ul class="clean">
+        <li><b>加法模型</b> ŷᵢ = ∑ fₖ(xᵢ)：最终预测 = 很多棵树的预测相加。</li>
+        <li><b>目标函数</b> Obj = ∑ L(yᵢ,ŷᵢ) + ∑ Ω(fₖ)：拟合误差 + 复杂度惩罚（Ω 越大模型越简单、越不容易过拟合）。</li>
+        <li><b>注意力</b> αₜ = softmax(eₜ)：把一串「重要性打分」归一成权重，重要时点权重大。</li>
+      </ul>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>梯度提升树 (XGBoost)</b> <span>—— 一棵棵树接力，每棵新树专门去纠正前面的残差错误。</span></div>
+        <div class="t"><b>Shapley 值 / SHAP</b> <span>—— 源自合作博弈论，把一次预测「公平地」分摊到每个特征上，得到该特征的贡献值（可正可负）。</span></div>
+        <div class="t"><b>LSTM 门控</b> <span>—— 遗忘门/输入门/输出门，决定「忘掉什么、记住什么、输出什么」，解决长序列遗忘问题。</span></div>
+        <div class="t"><b>注意力机制</b> <span>—— 让模型自己学会「该重点看哪一段」，而不是平均对待所有时间步。</span></div>
+        <div class="t"><b>正则化 Ω / 过拟合</b> <span>—— 过拟合=死记训练集、换数据就崩；正则化通过惩罚复杂度来抑制它。</span></div>
+        <div class="t"><b>R² / RMSE</b> <span>—— R² 越接近 1 解释力越强；RMSE 是平均预测误差，越小越好。</span></div>
+      </div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>「R²=0.63 是不是偏低？」→ 见 <a href="#qa">Q2</a>。「单个案例误差小能说明什么？会不会挑了好例子？」→ 坦诚回答：单点是<b>示意</b>，整体看测试集 R²/RMSE 才是依据。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 9 ★ ================= -->
+<section class="slide k" id="s9">
+  <div class="head"><div class="num">9</div><div><h2>双引擎归因互补验证 与 多模态融合增益 ★</h2><div class="sec">互补性 · SHAP 交互 · 融合带来的 R² 提升</div></div><div class="time">~70 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>这页给出三个「实证发现」，是项目最硬的结果证据。<b>注意措辞</b>：这里强调的是「互补」，与前面「交叉印证稳健」要能自洽解释（见追问）。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">这页有三个发现。<b>第一，双引擎归因互补</b>：XGBoost-SHAP 偏重 NDVI、降水、气温这类<b>状态型</b>因子，Attention-LSTM 偏重旱灾面积、SPEI、气温这类<b>过程型</b>因子，两者都指向<b>气温</b>这个共同核心，其余则相互补充、拼出更完整的机理。<b>第二，SHAP 交互效应揭示非线性</b>：灌溉率×气温的交互显示——低温环境下灌溉显著降低风险，但<b>高温环境下灌溉的缓解作用被削弱</b>，这是单看主效应发现不了的。<b>第三，多模态融合带来显著增益</b>：仅统计数据 R²=0.498，加遥感升到 0.522，加气象 0.547，全模态融合 0.565，提升 4.9–6.7 个百分点，证明融合是<b>实质性有用</b>而非堆数据。</div>
+    </div>
+    <div class="block"><div class="lab prin"><span class="dot"></span>关键数据（背下来）</div>
+      <ul class="clean">
+        <li>融合增益：统计 <b>0.498</b> → +遥感 <b>0.522</b> → +气象 <b>0.547</b> → 全模态 <b>0.565</b>（约 +5~7 pp）。</li>
+        <li>SHAP Top3：NDVI · Prec · Temp；LSTM Top3：Drou_A · SPEI · Temp；重叠项＝<b>Temp</b>。</li>
+        <li>交互结论：灌溉的降险作用<b>随气温升高而减弱</b>。</li>
+      </ul>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>SHAP 交互依赖图</b> <span>—— 横轴一个因子、颜色另一个因子，看两者「搭配」如何共同影响结果。</span></div>
+        <div class="t"><b>互补性 vs 一致性</b> <span>—— 一致=都说同一件事（增可信）；互补=各说一部分（增完整）。两者并不矛盾。</span></div>
+        <div class="t"><b>pp（百分点）</b> <span>—— percentage point，0.498→0.565 即提升约 6.7 个百分点。</span></div>
+      </div>
+    </div>
+    <div class="danger"><b>叙事一致性提醒：</b>第 6/8 页强调「交叉印证 → 对模型选择稳健」，本页强调「互补 / 各有侧重」。若评委追问「到底是一致还是不一致」，<b>统一口径</b>这样答：<i>「两个模型在<b>最核心的少数因子（如气温）上高度重叠 → 证明结论稳健</b>；在<b>次级因子上各有侧重 → 提供互补视角</b>。我们取的核心结论建立在重叠因子上，互补部分用于丰富机理解释。」</i> 切忌一边说「完全一致」一边说「各不相同」。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 10 ================= -->
+<section class="slide" id="s10">
+  <div class="head"><div class="num">10</div><div><h2>可视化决策系统 · 四大模块</h2><div class="sec">Vue 3 + Flask · 已部署可访问</div></div><div class="time">~55 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>把「研究」变成「能用的产品」，这是落地创新的证据。最好能<b>现场演示或给出访问链接</b>。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">研究成果落地为一个 Vue3+Flask 的可视化决策系统，已部署、可在线访问，单次推理不超过 2 秒。四大核心模块：<b>M01 风险时空地图</b>——全国/省域风险一张图；<b>M02 SHAP 归因看板</b>——点开任一省看哪个因子在推高风险；<b>M03 参数情景模拟</b>——调灌溉率、施肥等参数，实时看产量风险怎么变；<b>M04 韧性路径推荐</b>——针对不同区域给出差异化的韧性提升建议。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>情景模拟 (What-if)</b> <span>—— 改变输入参数，预测「如果……会怎样」，支持决策预演。</span></div>
+        <div class="t"><b>Flask / Vue</b> <span>—— Flask=Python 后端框架（跑模型、出 API）；Vue=前端框架（做交互界面）。</span></div>
+        <div class="t"><b>Leaflet / ECharts</b> <span>—— 地图可视化库 / 图表可视化库。</span></div>
+      </div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>「现在能打开吗？」→ 准备好<b>可访问链接或离线录屏</b>兜底。「M04 的推荐是模型给的还是规则给的？」→ 坦诚：目前以专家规则+归因结果为主，未来引入因果推断（见第 13 页）。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 11 ================= -->
+<section class="slide" id="s11">
+  <div class="head"><div class="num">11</div><div><h2>四大创新点</h2><div class="sec">数据层 · 方法层 · 应用层 · 贡献层</div></div><div class="time">~45 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>提炼亮点，每条对应前面一段工作。评分表常按「创新性」打分，这页要讲得有底气。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">四大创新：<b>数据层</b>——首次构建覆盖统计+MODIS 遥感+气象+GIS 四类异构源的全国尺度融合体系；<b>方法层</b>——首次把可解释机器学习与注意力时序深度学习结合，做双引擎协同验证，破解黑箱；<b>应用层</b>——把「多模态识别+可解释 AI+决策支持」三位一体集成到单一平台，实现工程化落地；<b>贡献层</b>——把数据集构建与处理流程规范化输出，形成可复用的数据与方法参考。</div>
+    </div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>可能追问</div>「『首次』有依据吗？」→ <b>措辞收一收更安全</b>：可说「据我们调研，在<b>全国省域尺度</b>上将这套组合用于粮食风险的研究较少」，避免与评委就「绝对首次」硬碰。XGBoost、SHAP、LSTM、Attention 本身都是成熟方法，创新在于<b>组合方式 + 应用场景 + 工程闭环</b>，要讲清这一点。</div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 12 ================= -->
+<section class="slide" id="s12">
+  <div class="head"><div class="num">12</div><div><h2>应用前景 与 社会价值</h2><div class="sec">从技术到价值</div></div><div class="time">~40 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>把技术抬升到国家战略与社会价值高度，呼应第 2 页背景，首尾闭合。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">应用价值有五点：<b>一</b>服务国家粮食安全战略，为农业管理部门提供风险预警与资源调配依据；<b>二</b>赋能农业保险与产业，支持差异化产品设计、费率精算与赔付决策；<b>三</b>推动可解释 AI 在农业落地，做全国尺度的三位一体示范；<b>四</b>支撑区域差异化政策，针对北方旱区、长江洪涝区、西南旱涝急转区给不同韧性路径；<b>五</b>促进研究开放协作，数据集与 API 开放，便于跨学科对比。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 13 ================= -->
+<section class="slide" id="s13">
+  <div class="head"><div class="num">13</div><div><h2>存在问题 与 今后改进方向</h2><div class="sec">模型 / 数据 / 系统 / 应用 四维</div></div><div class="time">~45 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>主动暴露局限 = 学术诚实，评委很看重。<b>很多追问的答案就藏在这页</b>，提前把它和问答防御对应起来。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">我们也清楚四点不足：<b>模型上</b>，对罕见极端事件识别能力有限，计划引入 Transformer + 多模型 Stacking，并用贝叶斯神经网络给出不确定性区间；<b>数据上</b>，省级粒度偏粗、西部站点稀疏，计划下沉到地市/县域并引入 Sentinel-2 等高分辨率遥感；<b>系统上</b>，移动端适配弱、反事实推理基于静态规则，计划做响应式+小程序，并用 Do-Calculus、合成控制法增强因果推断；<b>应用上</b>，韧性路径与政策工具对接还不够精细，计划与地方农业局、保险机构试点合作。</div>
+    </div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必懂名词</div>
+      <div class="terms">
+        <div class="t"><b>Stacking</b> <span>—— 集成学习：用多个模型的输出再训练一个「元模型」融合。</span></div>
+        <div class="t"><b>贝叶斯神经网络</b> <span>—— 输出不只是一个值，还给出「置信区间」，量化不确定性。</span></div>
+        <div class="t"><b>Do-Calculus / 合成控制法</b> <span>—— 因果推断工具，帮助从「相关」走向「因果」。</span></div>
+        <div class="t"><b>Sentinel-2</b> <span>—— 欧空局高分辨率光学卫星，比 MODIS 空间分辨率高得多。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 14 ================= -->
+<section class="slide" id="s14">
+  <div class="head"><div class="num">14</div><div><h2>参考文献</h2><div class="sec">10 篇 · 知道关键 4 篇即可</div></div><div class="time">一带而过</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>通常不讲，但要能说出方法出处，体现你读过原文。</div>
+    <div class="block"><div class="lab term"><span class="dot"></span>必须认得的 4 篇</div>
+      <div class="terms">
+        <div class="t"><b>[2] XGBoost</b> <span>—— Chen & Guestrin, KDD 2016。梯度提升树的工程实现奠基作。</span></div>
+        <div class="t"><b>[3] SHAP</b> <span>—— Lundberg & Lee, NeurIPS 2017。统一的模型解释框架。</span></div>
+        <div class="t"><b>[4] LSTM</b> <span>—— Hochreiter & Schmidhuber, 1997。长短期记忆网络原始论文。</span></div>
+        <div class="t"><b>[1] IPCC AR6</b> <span>—— 2022。气候变化对农业脆弱性的权威背景支撑。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 15 ================= -->
+<section class="slide" id="s15">
+  <div class="head"><div class="num">15</div><div><h2>总结与致谢 · Q&amp;A</h2><div class="sec">数据 / 方法 / 落地 三句收束</div></div><div class="time">~30 秒</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>用三句话回收全场，致谢，自然过渡到提问环节。语气从容、留出停顿。</div>
+    <div class="block"><div class="lab talk"><span class="dot"></span>讲稿参考</div>
+      <div class="talk-script">最后用三句话总结：<b>数据上</b>，我们构建了覆盖全国 31 省、13 年的多模态融合数据集；<b>方法上</b>，建立了 XGBoost-SHAP × Attention-LSTM 双引擎协同验证与 SHAP 三维归因；<b>落地上</b>，开发了端到端可视化决策系统，推动可解释 AI 在农业落地。感谢指导老师和团队的支持，以上是我们的全部汇报，<b>敬请各位评委批评指正，谢谢！</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 16 ================= -->
+<section class="slide" id="s16">
+  <div class="head"><div class="num">16</div><div><h2>总体技术路线 · 详图（备用/附录）</h2><div class="sec">含完整时间线的提案级详图</div></div><div class="time">备用</div></div>
+  <div class="body">
+    <div class="block"><div class="lab pos"><span class="dot"></span>一句话定位</div>这是含完整时间线（2026.5–2027.4）和各阶段细节的「详版」技术路线图。<b>新版第 6 页就是从这页提炼而来</b>。本页可作为答辩追问时的「放大细节」备用页。</div>
+    <div class="block"><div class="lab ask"><span class="dot"></span>使用建议</div>第 6 页讲「逻辑骨架」，若评委想看更细的阶段产出/交付物，再翻到本页展开。注意本页的时间线说明这是<b>研究计划/路线</b>口径——若评委问「都做完了吗」，如实区分「已完成（数据集+双模型+系统）」与「规划中（地市级下沉、因果增强等）」。</div>
+  </div>
+</section>
+
+<!-- ================= GLOSSARY ================= -->
+<div class="section-title" id="glossary"><div class="bar"></div><h2>📖 术语表 · 必懂名词速查</h2></div>
+<div class="glossary">
+  <dl>
+    <dt>XGBoost <small>梯度提升树</small></dt>
+    <dd>一种把很多棵决策树「接力相加」的集成模型，每棵新树专门纠正前面的残差。擅长捕捉非线性与变量交互，在中小样本上配合正则化很稳健。</dd>
+    <dt>SHAP <small>Shapley Additive exPlanations</small></dt>
+    <dd>基于合作博弈论 Shapley 值的模型解释方法，把单次预测「公平分摊」到每个特征，得到正/负贡献值。可做全局重要性排序、单样本瀑布图、特征交互依赖图。</dd>
+    <dt>LSTM <small>长短期记忆网络</small></dt>
+    <dd>一种循环神经网络，用遗忘门/输入门/输出门来「记住关键、忘掉无关」，解决长序列梯度消失问题，适合时间序列建模。</dd>
+    <dt>Attention <small>注意力机制</small></dt>
+    <dd>让模型自动学习「该重点关注序列里哪些时间步」，用 softmax 把重要性打分归一为权重。本项目用它聚焦极端气候敏感时点。</dd>
+    <dt>MODIS</dt>
+    <dd>搭载在 Terra/Aqua 卫星上的中分辨率成像光谱仪，提供 NDVI、地表温度 LST 等遥感产品，时间序列长、覆盖全国。</dd>
+    <dt>NDVI <small>归一化植被指数</small></dt>
+    <dd>(近红外−红)/(近红外+红)，范围 −1~1，越高植被越茂盛，是反映作物长势的核心遥感指标。</dd>
+    <dt>SPEI <small>标准化降水蒸散指数</small></dt>
+    <dd>同时考虑降水与潜在蒸散的干旱指数，正值偏湿、负值偏旱，比单纯看降水更能刻画「热 + 旱」叠加。</dd>
+    <dt>Butterworth 滤波</dt>
+    <dd>频率响应平坦的低通滤波器，用于平滑时间序列、滤掉高频噪声而保留趋势。</dd>
+    <dt>Z-score 标准化</dt>
+    <dd>(x−均值)/标准差，把不同量纲变量转到同一尺度，均值 0、方差 1，便于建模与比较。</dd>
+  </dl>
+  <dl>
+    <dt>多模态 / 异构数据</dt>
+    <dd>来源与结构都不同的数据：统计表（结构化）、卫星栅格影像、气象站点序列、GIS 矢量。难点是时空对齐。</dd>
+    <dt>面板数据 <small>Panel data</small></dt>
+    <dd>同时含横截面（多个省）与时间序列（多年）两个维度，本项目即 31 省 × 13 年 ≈ 403 样本。</dd>
+    <dt>横截面归因 vs 时序归因</dt>
+    <dd>横截面：跨省/跨样本比「哪个因子整体更重要」（XGBoost-SHAP）；时序：沿时间看「哪个时点更关键」（Attention-LSTM）。二者视角互补。</dd>
+    <dt>加法模型 / 目标函数 / 正则化 Ω</dt>
+    <dd>ŷ=∑fₖ(x) 是把多棵树相加；Obj=∑L+∑Ω 中 L 是拟合误差、Ω 是复杂度惩罚；正则化越强模型越简单、越抗过拟合。</dd>
+    <dt>R² / RMSE</dt>
+    <dd>R²（决定系数）衡量模型解释了多少比例的波动，越接近 1 越好；RMSE（均方根误差）衡量平均预测偏差，越小越好。</dd>
+    <dt>交叉印证 / 协同验证</dt>
+    <dd>两个原理不同的模型独立得到结论后相互验证：核心因子上重叠→结论稳健，次级因子上互补→机理更全。</dd>
+    <dt>韧性 (Resilience)</dt>
+    <dd>系统遭受冲击后「抵抗 + 恢复 + 适应」的综合能力；本项目用灌溉率、农机动力等代理生产韧性。</dd>
+    <dt>反事实 / 情景模拟</dt>
+    <dd>「如果改变某个输入会怎样」的预测推演，支撑 M03 参数模拟与政策预演。</dd>
+    <dt>因子贡献度</dt>
+    <dd>某个变量对预测结果（风险/单产）的影响大小与方向，由 SHAP 值定量给出。</dd>
+  </dl>
+</div>
+
+<!-- ================= Q&A DEFENSE ================= -->
+<div class="section-title" id="qa"><div class="bar"></div><h2>🛡 答辩问答防御 · 高频追问与参考答案</h2></div>
+<div class="slide" style="margin-top:14px"><div class="body">
+  <div class="qa"><div class="q">Q1 · 你们识别风险，到底是「相关」还是「因果」？SHAP 能说明因果吗？</div>
+    <div class="a">坦诚回答：SHAP 和 XGBoost 给出的是<b>数据驱动的相关性归因</b>，反映「在数据里哪些因子与风险共同变化」，<b>不等同于严格因果</b>。我们通过<b>两个独立模型交叉印证</b>提高结论可信度，并用 SHAP 交互图揭示机理。要做严格因果，是我们第 13 页规划的下一步——引入 Do-Calculus 与合成控制法。</div>
+    <div class="warn">⚠ 千万别把「灌溉率最重要」说成「灌溉一定导致……」。用「显著相关 / 贡献度最高」措辞。</div>
+  </div>
+  <div class="qa"><div class="q">Q2 · R² 只有 0.63（融合 0.565），是不是偏低、模型不够好？</div>
+    <div class="a">三点回应：①这是<b>省域年度面板</b>，单产受品种、管理、价格等大量未观测因素影响，能用气候+遥感+致灾因子解释约 60% 已属合理区间；②我们的目标是<b>可解释归因</b>而非冲预测精度排行榜，R² 够支撑因子排序的稳定性即可；③更有说服力的是<b>融合增益</b>——从仅统计 0.498 提升到全模态 0.565，证明多模态确有实质价值。</div>
+  </div>
+  <div class="qa"><div class="q">Q3 · 只有 403 个样本，会不会过拟合？结论可靠吗？</div>
+    <div class="a">我们用了三重保险：①<b>面板数据</b>，403 条「省-年」已能覆盖区域与年际变化；②XGBoost 的<b>正则项 Ω</b> 主动惩罚复杂度抗过拟合，并在<b>独立测试集</b>报告 R²；③最关键——<b>两个原理完全不同的模型</b>（树模型 vs 深度时序）在核心因子上结论一致，这种一致性是单模型过拟合很难「碰巧」造出来的。</div>
+  </div>
+  <div class="qa"><div class="q">Q4 · 为什么要两个模型？用一个最好的不行吗？</div>
+    <div class="a">因为单一模型有「方法偏见」：树模型擅长横截面非线性、但不显式建模时间；LSTM 擅长时序、但解释性弱。<b>用两个互不依赖的视角</b>，若它们仍指向同一批核心因子，就说明结论不是某个模型的「人造产物」，而是数据里的稳健信号。这正是我们「双引擎协同验证」的方法论价值。</div>
+  </div>
+  <div class="qa"><div class="q">Q5 · 两个模型的 Top 因子并不完全一样，这不矛盾吗？</div>
+    <div class="a">不矛盾，要分两层说：<b>核心层高度重叠</b>（如气温 Temp 都进 Top3）——这部分作为<b>稳健结论</b>；<b>次级层各有侧重</b>（SHAP 偏 NDVI/降水的状态因子，LSTM 偏旱灾/SPEI 的过程因子）——这部分是<b>互补信息</b>，拼出更完整机理。我们对外的核心因子结论只建立在<b>重叠且稳健</b>的因子上。</div>
+    <div class="warn">⚠ 这是全场最容易被抓「自相矛盾」的点（第 6/8 页说稳健、第 9 页说互补）。务必用「核心重叠=稳健，次级差异=互补」一句话统一。</div>
+  </div>
+  <div class="qa"><div class="q">Q6 · 模型换个省份、换个年份还准吗？空间/时间外推能力如何？</div>
+    <div class="a">如实回答边界：当前是<b>省域面板内</b>的归因与拟合，跨省、跨年的<b>外推泛化能力是有限的</b>，因为省级粒度较粗、且不同区域机理差异大。这也是我们清醒认识到的局限（第 13 页）：下一步会<b>下沉到地市/县域</b>、引入高分辨率遥感，并做<b>分区域建模 + 时间外推验证</b>来提升泛化。</div>
+    <div class="warn">⚠ 不要吹「全国通用、年年都准」。承认外推局限反而显专业、可信。</div>
+  </div>
+  <div class="qa"><div class="q">Q7 · 「灌溉率最重要」是不是反直觉/数据偶然？</div>
+    <div class="a">有机理支撑：灌溉率代表<b>水利保障能力</b>，是抵御旱灾、平抑气候波动最直接的人为韧性手段，所以贡献度高是合理的。而且 SHAP 交互图进一步显示它<b>与气温存在非线性耦合</b>（高温下灌溉缓解作用减弱），这种「有方向、有条件」的发现不是随机噪声能给出的。</div>
+  </div>
+  <div class="qa"><div class="q">Q8 · 数据来源、口径、缺失值处理，会不会引入偏差？</div>
+    <div class="a">数据来自国家统计局、CMDC 气象、MODIS、GIS 等<b>权威公开源</b>，统一了时间（年度）与空间（省域）口径；缺失值用线性插值并配合 Butterworth 平滑、Z-score 标准化。我们承认插值会引入一定平滑偏差，因此<b>不在缺失密集的西部站点上做强结论</b>，这也是后续提高分辨率的动因。</div>
+  </div>
+  <div class="qa"><div class="q">Q9 · 你们的「首次/创新」站得住吗？这些方法都是现成的。</div>
+    <div class="a">方法本身（XGBoost/SHAP/LSTM/Attention）确实成熟，我们的创新在<b>组合与场景</b>：在<b>全国省域尺度的粮食气候风险</b>问题上，把「多模态融合 + 可解释双引擎交叉验证 + 工程化可视化决策」三者打通成闭环，据我们调研尚不多见。我们强调的是<b>系统集成创新与应用创新</b>，而非发明新算法。</div>
+    <div class="warn">⚠ 用「据我们调研较少见」替代「绝对首次」，避免被一篇反例直接驳倒。</div>
+  </div>
+  <div class="qa"><div class="q">Q10 · 系统是真的部署了吗？能现场看吗？</div>
+    <div class="a">是，Vue3+Flask 已部署、可在线访问，单次推理 ≤ 2 秒。<b>（务必提前准备：可访问链接 / 二维码 / 离线录屏，三选一兜底，防止现场断网。）</b>四大模块都可交互演示，重点可演示 M03 参数情景模拟，直观展示「调灌溉率→风险变化」。</div>
+  </div>
+  <div class="qa"><div class="q">Q11 · 韧性路径推荐（M04）的建议是怎么生成的？可信吗？</div>
+    <div class="a">目前以<b>归因结果 + 区域专家规则</b>为主：根据各省主导风险因子（旱区缺水、洪涝区排涝、旱涝急转区调蓄）给差异化建议；它是<b>决策辅助</b>而非自动决策。下一步用因果推断（Do-Calculus/合成控制）把「建议」从相关升级到可量化干预效应。</div>
+  </div>
+  <div class="qa"><div class="q">Q12 · 这个项目和「人工智能创新大赛」的契合点在哪？AI 含量够吗？</div>
+    <div class="a">AI 含量体现在三处：①<b>可解释机器学习</b>（XGBoost-SHAP 的博弈论归因）；②<b>注意力深度时序模型</b>（Attention-LSTM）；③两者的<b>协同验证方法论</b>。更重要的是，我们把 AI 的「黑箱预测」改造成「<b>可解释 + 可交互 + 可决策</b>」，正切中「让 AI 服务真实国计民生」的赛事导向。</div>
+  </div>
+</div></div>
+
+<!-- ================= FLOW ================= -->
+<div class="section-title" id="flow"><div class="bar"></div><h2>⏱ 讲解节奏 · 开场白 · 临场提醒</h2></div>
+<div class="slide"><div class="body">
+  <div class="block"><div class="lab talk"><span class="dot"></span>建议时间分配（按 8–10 分钟）</div>
+    <ul class="clean">
+      <li>开场 + 背景（P1–P2）：约 1.5 分钟 —— 立意要稳，数字要准。</li>
+      <li>瓶颈 + 概览（P3–P5）：约 2 分钟 —— 建立「痛点→对策」映射。</li>
+      <li><b>核心方法（P6、P8、P9）：约 3.5 分钟</b> —— 全场重心，慢讲、讲透。</li>
+      <li>数据 + 系统（P7、P10）：约 1.5 分钟 —— 系统尽量演示。</li>
+      <li>创新 + 价值 + 局限 + 总结（P11–P15）：约 1.5 分钟 —— 节奏加快、收束有力。</li>
+    </ul>
+  </div>
+  <div class="block"><div class="lab pos"><span class="dot"></span>万能开场白</div>
+    <div class="talk-script">各位评委老师好！极端气候正在威胁我国粮食安全，但现有研究普遍存在「数据单一、模型黑箱、难以落地」三大瓶颈。我们「稷韧云图」团队用<b>多模态数据</b> + <b>可解释 AI 双引擎</b> + <b>可视化决策系统</b>，做了一次系统性的回答。下面开始汇报。</div>
+  </div>
+  <div class="block"><div class="lab ask"><span class="dot"></span>临场五条铁律</div>
+    <ul class="clean">
+      <li><b>口径统一：</b>核心因子「重叠=稳健、差异=互补」一句话兜住，别自相矛盾（见 Q5）。</li>
+      <li><b>诚实加分：</b>R² 不高、样本不大、外推有限——主动承认 + 给改进方向，比硬撑可信。</li>
+      <li><b>相关≠因果：</b>全程用「贡献度/显著相关」，不说「导致」。</li>
+      <li><b>系统兜底：</b>提前备好可访问链接 / 二维码 / 录屏，防断网。</li>
+      <li><b>数字背熟：</b>403 样本、R²=0.629/0.662、融合 0.498→0.565、灌溉率＞洪涝占比＞日照时数。</li>
+    </ul>
+  </div>
+</div></div>
+
+<footer>
+  稷韧云图 · 答辩讲解参考手册　|　配套文件：<span class="kbd">人工智能答辩_终版.pptx</span>（第 6 页已替换为新技术路线图并取消隐藏）　|　原始备份：<span class="kbd">人工智能答辩_F_原始备份.pptx</span><br>
+  本手册据 PPT 16 页内容整理，含必懂名词、原理与高频追问参考答案；★ 标记为评委最可能深挖的页面。祝答辩顺利！
+</footer>
+
+</main>
+</div>
+</body>
+</html>
