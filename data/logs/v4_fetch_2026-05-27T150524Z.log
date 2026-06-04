@@ -1,0 +1,20 @@
+[v4_fetch] REPO_ROOT=/home/slz/workspace/DC-AIino
+[v4_fetch] PY_BIN=/usr/bin/python3
+[v4_fetch] PHASE=8b
+[v4_fetch] MODE=dry-run
+[v4_fetch] LOG_FILE=/home/slz/workspace/DC-AIino/data/logs/v4_fetch_2026-05-27T150524Z.log
+[v4_fetch] 开始时间 2026-05-27T15:05:24Z
+[v4_fetch] 
+[v4_fetch] *** DRY-RUN 模式 — 只打印将做什么，不实际下载 ***
+[v4_fetch] *** 实跑请加 --execute ***
+[v4_fetch] 
+[v4_fetch] === Phase 8b: MODIS 耕地像元加权 sanity ===
+[v4_fetch] 8b 无新增下载需求 — CLCD_2022 已在 data/raw/gis_cropland/
+[v4_fetch] 主战场为脚本开发：scripts/data/05b_modis_cropland_weighted.py (W26 起，见 v4 plan §1.2)
+[v4_fetch] 
+[v4_fetch] [MISS] CLCD 2022 不在库 — 需先跑 01_download_cropland.py --year 2022
+[v4_fetch] [MISS] MODIS NDVI 目录不存在 — M1 任务未完成？
+[v4_fetch] 
+[v4_fetch] === 完成 ===
+[v4_fetch] 结束时间 2026-05-27T15:05:24Z
+[v4_fetch] 日志    /home/slz/workspace/DC-AIino/data/logs/v4_fetch_2026-05-27T150524Z.log
