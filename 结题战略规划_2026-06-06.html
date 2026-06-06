@@ -293,9 +293,10 @@ footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--border);font-
     <h3>把"认识深化"正式化的窗口：中期检查</h3>
     <p>国家级中期检查（日期待教务处确认）是你<strong>合法地、主动地</strong>讲述叙事演进的最佳场合：「立项时设想气候直接高精度预测单产；研究中通过严格交叉验证与混合效应模型，<strong>发现</strong>省级尺度气候边际效应被省份固定效应主导，据此<strong>升级</strong>为'因子识别 + 韧性决策系统'定位」。这不是认错，这是<strong>科研过程的正常深化</strong>，评委爱看这个。把这段写进中期报告，过时申报书与诚实现状之间的张力就被一笔勾销了。</p>
   </div>
-  <div class="box risk">
-    <h3>仍需澄清的遗留矛盾（指派处理）</h3>
-    <p>答辩材料里<strong>仍有旧叙事残留</strong>需清扫：<code>slidev/slides.md</code> 第 120/156/163 行仍写"协同验证/交叉印证/对模型选择稳健"，与结果页"1/3 互补"自相矛盾。<strong>这是会被评委当场抓住的硬伤，必须本周改。</strong>（论文/网站 R² 口径已对齐到 0.907/0.816，但 slidev 与论文正文叙事文字尚未全清。）</p>
+  <div class="box good">
+    <h3>叙事一致性现状（2026-06-06 复核）</h3>
+    <p><strong>✓ slidev 答辩 deck 已闭环</strong>：<code>slidev/slides.md</code>（含原 120/156/163 行）+ pptx 生成脚本已于 5/29 全部改为"互补而非简单一致（Top-3 仅 1/3 重合, ρ≈0）"口径，PDF/pptx 已重导出、无旧叙事残留。10 种子精度页的"稳健"表述正确保留。<br>
+    <strong>🟡 仍待终审</strong>：① <strong>论文正文</strong>（<code>docs/papers/v1_draft.md</code> / craic 研究报告）的实验叙事需逐段对齐省份记忆 + 混合效应 finding；② 部署网站内嵌 deck（<code>frontend/public/deck/</code>）是旧 build，如需同步要重 build slidev 覆盖（此前约定暂不动线上）。</p>
   </div>
 </section>
 
@@ -340,16 +341,17 @@ footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--border);font-
     <div class="tm">
       <div class="hd"><div class="av" style="background:var(--green)">石</div><div><div class="nm">石灵子 · 数据组</div><div class="rl">数据采集 / 多模态补全</div></div></div>
       <ul>
-        <li>合并 <code>worktree-slz-multimodal-task-update</code> 到 main <span class="due"> · 本周</span></li>
-        <li>多模态补全（CLCD 逐年掩膜 / 极端事件 / LST 做实），收口 M1 <span class="due"> · 7/31</span></li>
+        <li><s style="color:var(--faint)">合并 slz worktree</s> <span style="color:var(--green)">✓ §0 多模态补全令已并入 main (fdc13b2)</span></li>
+        <li>执行 §0 补全令 A：CLCD 2011–2023 逐年耕地掩膜 + 加权重聚合 NDVI/LST <span class="due"> · 1–2 天</span></li>
+        <li>§0 补全令 B：逐日气象→极端事件特征；收口 M1 多模态面板 <span class="due"> · 7/31</span></li>
         <li>写 prec_50mm_days 聚合脚本（NASA POWER daily 已在本地）<span class="due"> · ~1 天</span></li>
       </ul>
     </div>
     <div class="tm">
       <div class="hd"><div class="av" style="background:var(--purple)">常</div><div><div class="nm">常宇璇 · 文档 / 可视化</div><div class="rl">slidev / 答辩 PPT / 图表</div></div></div>
       <ul>
-        <li><strong>清掉 slidev/slides.md 旧叙事</strong>（行 120/156/163 协同验证表述）<span class="due"> · 本周硬伤</span></li>
-        <li>答辩 PPT 与论文/网站口径三处对齐复核 <span class="due"> · 6 月</span></li>
+        <li><s style="color:var(--faint)">清掉 slidev 旧叙事</s> <span style="color:var(--green)">✓ 已闭环 5/29</span>，无需再做 <span class="due"></span></li>
+        <li>论文正文叙事终审：对齐省份记忆 + 混合效应口径 <span class="due"> · 6 月</span></li>
         <li>整理软著《软件设计说明书》配图（系统架构 / 模块图已有）<span class="due"> · 8–9 月</span></li>
       </ul>
     </div>
@@ -379,11 +381,11 @@ footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--border);font-
     <div>
       <h3>本周（高优先级）</h3>
       <ul>
-        <li>清掉 slidev/slides.md 旧叙事硬伤（120/156/163 行） <span class="who">常宇璇</span></li>
-        <li>合并 worktree-slz-multimodal-task-update 到 main <span class="who">石灵子 / 潘</span></li>
-        <li>问教务处：中期检查日期 + 结题细则 + 报销 <span class="who">潘</span></li>
+        <li>问教务处：中期检查日期 + 结题细则 + 报销 <span class="who">潘 · 需本人</span></li>
+        <li>问邱老师：学校软著代办批次时间窗 <span class="who">潘 · 需本人</span></li>
         <li>熊鑫给出 LST/极端降水 是否进 11 维的结论 <span class="who">熊鑫</span></li>
-        <li>问邱老师：学校软著代办批次时间窗 <span class="who">潘</span></li>
+        <li>论文正文叙事终审（省份记忆 + 混合效应口径）<span class="who">潘 + 熊鑫</span></li>
+        <li>决策：是否恢复线上 Overview 的 O3 鲁棒性披露板块（见下）<span class="who">潘</span></li>
       </ul>
     </div>
     <div>
@@ -397,7 +399,12 @@ footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--border);font-
       </ul>
     </div>
   </div>
-  <div class="box gold" style="margin-top:22px">
+  <div class="box info" style="margin-top:22px">
+    <h3>⟳ 待你拍板：线上系统的 O3 鲁棒性披露板块要不要恢复</h3>
+    <p>线上 Overview 的「O3 · 鲁棒性透明披露」板块（v6 关键创新区）在 5/29 被 <code>v-if="false"</code> 隐藏，目的是 AI 大赛"强结论版"答辩。<strong>大赛已结束（省三）</strong>，而本规划的主线是<strong>诚实披露</strong>——主动量化并展示局限正是国家级结题/中期检查/盲审看重的科研诚信。<br>
+    <strong>建议：</strong>面向结题/中期检查，<strong>恢复显示</strong>（删 1 行 <code>v-if="false"</code>）。<strong>例外：</strong>若近期还要拿同一套系统去报互联网+/挑战杯（upside 竞赛），则保留隐藏的"强版"。<span class="hl">这是一个对外可见的改动，说一声我就改；不擅自动线上。</span></p>
+  </div>
+  <div class="box gold" style="margin-top:14px">
     <h3>一句话给你自己的提醒</h3>
     <p>别被"省级数据不准"的焦虑拖住——<strong>结题的确定性不在模型精度上，在那份 9/30 必交的软著上。</strong>把软著当成第一优先级推进，论文当成可以慢慢冲的奖金，过时申报书当成一份已归档、不必再爱的旧文件。这样你就从"迫不得已草草了事"的心态，回到"地板已铺好、只管往上盖"的主动位。</p>
   </div>
