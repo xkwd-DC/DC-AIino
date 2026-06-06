@@ -1,0 +1,18 @@
+{
+  "name": "jirenyuntu-defense-8min",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "slidev --port 3030 --remote",
+    "build": "slidev build",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "^0.50.0",
+    "@slidev/theme-seriph": "^0.25.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.60.0"
+  }
+}

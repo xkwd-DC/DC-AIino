@@ -555,6 +555,10 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(360px, 1fr) minmax(0, 1.3fr);
   gap: 20px;
 }
+/* 平板竖屏:左侧控制面板 360px 硬下限会把右侧结果区挤到很窄,改上下堆叠 */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
 
 .left-col, .right-col { display: flex; flex-direction: column; gap: 16px; }
 

@@ -747,6 +747,10 @@ void riskColorResolved
   grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
   gap: 20px;
 }
+/* 平板竖屏:右侧图例/Top10 面板 340px 硬下限会挤压地图,改上下堆叠 */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
 
 .map-panel {
   background: var(--bg-card);

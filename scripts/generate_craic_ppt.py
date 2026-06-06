@@ -287,7 +287,7 @@ def slide_overview(prs):
         ("01", "数据 DATA",
          "融合 4 类异构数据\n（统计 + 遥感 + 气象 + GIS）\n全国 31 省 · 2011–2023 · 403 样本"),
         ("02", "方法 METHOD",
-         "XGBoost-SHAP × Attention-LSTM\n双引擎协同验证\n非线性归因 + 时序响应 双视角"),
+         "XGBoost-SHAP × Attention-LSTM\n双引擎互补归因\n非线性归因 + 时序响应 双视角"),
         ("03", "应用 APPLICATION",
          "Vue + Flask 可视化决策系统\n四大模块 · 在线交互\n单次推理 ≤ 2 秒"),
     ]
@@ -355,7 +355,7 @@ def slide_three_gaps(prs):
          "依赖单一统计数据\n缺乏遥感、气象、空间矢量等多模态融合",
          "宏观—中观—微观多粒度刻画不足"),
         ("模型可解释性不足",
-         "传统机器学习「黑箱化」\n多采用单一模型,缺乏多模型协同验证",
+         "传统机器学习「黑箱化」\n多采用单一模型,缺乏多模型互补归因",
          "因子影响路径与贡献度难以量化"),
         ("研究成果难以落地",
          "多停留在算法与论文层面\n缺乏面向决策者的工程化工具",
@@ -422,7 +422,7 @@ def slide_pipeline(prs):
     s = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(s)
     add_page_chrome(s, 6, section_label="技术路线")
-    add_title(s, "总体技术路线", "多模态数据驱动 + 双引擎协同验证 + 可视化系统集成")
+    add_title(s, "总体技术路线", "多模态数据驱动 + 双引擎互补归因 + 可视化系统集成")
 
     # 4-stage horizontal pipeline
     stages = [
@@ -462,7 +462,7 @@ def slide_pipeline(prs):
     add_text(s, Inches(0.9), Inches(5.85), Inches(11.7), Inches(0.4),
              "核心闭环", size=11, bold=True, color=ALERT_ORANGE)
     add_text(s, Inches(0.9), Inches(6.15), Inches(11.7), Inches(0.6),
-             "两个原理完全不同的模型独立建模 → 交叉印证核心因子 → 系统化输出决策建议",
+             "两个原理完全不同的模型独立建模 → 双视角互补识别核心因子 → 系统化输出决策建议",
              size=15, bold=True, color=DEEP_GREEN)
 
 
@@ -619,7 +619,7 @@ def slide_dual_engine(prs):
     s = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(s)
     add_page_chrome(s, 10, section_label="方法 · 核心创新")
-    add_title(s, "双引擎协同验证机制", "两个原理完全不同的模型 → 独立建模 → 交叉印证 → 结论稳健")
+    add_title(s, "双引擎互补归因机制", "两个原理完全不同的模型 → 独立建模 → 双视角互补 → 决策更全面")
 
     # center diagram: two engines feeding into a converge box
     # left engine
@@ -651,11 +651,11 @@ def slide_dual_engine(prs):
     # central converge
     add_rect(s, Inches(5.55), Inches(2.6), Inches(2.25), Inches(2.2), ALERT_ORANGE)
     add_text(s, Inches(5.55), Inches(2.8), Inches(2.25), Inches(0.5),
-             "交叉印证", size=11, bold=True, color=PAPER, align=PP_ALIGN.CENTER)
+             "双视角互补", size=11, bold=True, color=PAPER, align=PP_ALIGN.CENTER)
     add_text(s, Inches(5.55), Inches(3.1), Inches(2.25), Inches(0.6),
-             "稳健归因", size=20, bold=True, color=PAPER, align=PP_ALIGN.CENTER)
+             "互补归因", size=20, bold=True, color=PAPER, align=PP_ALIGN.CENTER)
     add_text(s, Inches(5.55), Inches(3.8), Inches(2.25), Inches(1.0),
-             "Top-K 因子\nRobust to\nmodel choice",
+             "Top-3 overlap 1/3\nρ ≈ 0\nnear-independent",
              size=10, color=PAPER, align=PP_ALIGN.CENTER, line_spacing=1.4, font="Arial")
 
     # bottom narrative
@@ -663,8 +663,8 @@ def slide_dual_engine(prs):
     add_text(s, Inches(0.85), Inches(5.55), Inches(11.7), Inches(0.4),
              "关键叙事", size=11, bold=True, color=ALERT_ORANGE)
     add_text(s, Inches(0.85), Inches(5.85), Inches(11.7), Inches(0.95),
-             "两个完全不同原理的模型相互印证 → 既看「数据生长状态」也看「灾害政策响应」\n"
-             "→ 「互补而非简单一致」,决策视角更全面、结论更稳健",
+             "两个完全不同原理的模型各自独立归因 → 既看「数据生长状态」也看「灾害政策响应」\n"
+             "→ 「互补而非简单一致」(Top-3 仅 1/3 重合, ρ≈0),决策视角更全面",
              size=15, bold=True, color=DEEP_GREEN, line_spacing=1.5)
 
 
@@ -897,7 +897,7 @@ def slide_innovations(prs):
          "首次构建覆盖统计 + MODIS 遥感 + 气象 + GIS 四类异构数据源的融合体系",
          DATA_BLUE),
         ("02", "方法层 ①",
-         "注意力增强的 XGBoost-SHAP × LSTM 双引擎协同验证",
+         "注意力增强的 XGBoost-SHAP × LSTM 双引擎互补归因",
          "首次将可解释机器学习与注意力深度学习时序模型相结合,破解黑箱困境",
          DEEP_GREEN),
         ("03", "方法层 ②",
@@ -1029,7 +1029,7 @@ def slide_closing(prs):
         ("数据",
          "构建覆盖全国 31 省 13 年的多模态融合数据集 paper_panel_v3"),
         ("方法",
-         "建立 XGBoost-SHAP × Attention-LSTM 双引擎协同验证 + SHAP 三维归因"),
+         "建立 XGBoost-SHAP × Attention-LSTM 双引擎互补归因 + SHAP 三维归因"),
         ("落地",
          "开发端到端可视化决策系统,四大模块、推理 ≤ 2s、推动可解释 AI 在农业落地"),
     ]

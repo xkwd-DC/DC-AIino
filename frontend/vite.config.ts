@@ -12,6 +12,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0',
+    // Cloudflare quick tunnel 走随机 *.trycloudflare.com 子域;前导点通配全部子域,
+    // 避免每次重启换 URL 都要改配置。vite 5.4.12+ 默认拦截非本地 Host。
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

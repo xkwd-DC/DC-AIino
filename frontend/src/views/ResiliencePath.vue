@@ -506,6 +506,10 @@ async function retryInit() {
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 20px;
 }
+/* 平板竖屏:侧栏与主区改上下堆叠,避免侧栏占满后主区过窄 */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
 
 /* ============ sidebar ============ */
 .sidebar { display: flex; flex-direction: column; gap: 16px; }

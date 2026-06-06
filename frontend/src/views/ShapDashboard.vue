@@ -892,6 +892,13 @@ onBeforeUnmount(() => {
   grid-template-rows: 420px 420px;
   gap: 16px;
 }
+/* 平板竖屏:2×2 图表网格改单列纵向堆叠,保留各图高度 */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 400px);
+  }
+}
 .chart-card { display: flex; flex-direction: column; position: relative; }
 .chart-card.full { grid-column: 1 / -1; }
 .chart-canvas { flex: 1; min-height: 0; }

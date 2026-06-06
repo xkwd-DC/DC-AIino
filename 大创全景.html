@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>稷韧云图 · 项目全景</title>
+<style>
+:root {
+  --bg:#080d18; --s1:#0f1626; --s2:#161f33; --s3:#1e2840;
+  --accent:#e6a23c; --ag:rgba(230,162,60,.15);
+  --green:#4ade80; --yellow:#fbbf24; --red:#f87171; --blue:#60a5fa; --purple:#c084fc;
+  --text:#dde4f0; --dim:#6b7fa3; --border:rgba(255,255,255,.07); --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.6}
+.page{max-width:1100px;margin:0 auto;padding:60px 24px 120px}
+
+header{text-align:center;padding:80px 0 60px;position:relative}
+header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:320px;background:radial-gradient(ellipse,rgba(230,162,60,.1) 0%,transparent 65%);pointer-events:none}
+.proj-en{font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:16px}
+h1{font-size:clamp(44px,8vw,76px);font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1.05}
+.dot{color:var(--accent)}
+.tagline{margin-top:14px;font-size:15px;color:var(--dim)}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+.chip{padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600;letter-spacing:.04em}
+.cg{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.22)}
+.cy{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.22)}
+.cr{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.22)}
+.cb{background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.22)}
+
+section{margin-bottom:60px}
+.sec-label{font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:6px}
+h2{font-size:22px;font-weight:700;color:#fff;margin-bottom:22px}
+hr{border:none;border-top:1px solid var(--border);margin:48px 0}
+
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.g2,.g4{grid-template-columns:1fr}}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+
+.ac{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;display:flex;gap:14px;align-items:flex-start;margin-bottom:10px;transition:border-color .2s}
+.ac:hover{border-color:rgba(255,255,255,.14)}
+.prio{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;flex-shrink:0;margin-top:3px}
+.p-now{background:rgba(248,113,113,.18);color:var(--red)}
+.p-week{background:rgba(74,222,128,.13);color:var(--green)}
+.p-next{background:rgba(96,165,250,.12);color:var(--blue)}
+.ac h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px}
+.ac p{font-size:13px;color:var(--dim);line-height:1.55}
+.ac-now{border-color:rgba(248,113,113,.25)!important;background:rgba(248,113,113,.04)!important}
+
+.kpi-n{font-size:34px;font-weight:800;color:var(--accent);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.kpi-l{font-size:12px;color:var(--dim)}
+.kpi-ok{font-size:11px;color:var(--green);margin-top:4px}
+.kpi-warn{font-size:11px;color:var(--red);margin-top:4px}
+
+.warn{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.22);border-radius:var(--r);padding:20px 24px}
+.warn h3{color:var(--red);font-size:15px;font-weight:700;margin-bottom:8px}
+.warn p{font-size:13px;color:#c8a0a0;line-height:1.65}
+.warn strong{color:#fff}
+
+.tier{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.th{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border)}
+.tb{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.t1{background:rgba(74,222,128,.14);color:var(--green)}
+.t2{background:rgba(251,191,36,.11);color:var(--yellow)}
+.t3{background:rgba(96,165,250,.11);color:var(--blue)}
+.tt{font-size:14px;font-weight:600;color:#fff}
+.ttime{margin-left:auto;font-size:12px;color:var(--dim)}
+.tr{display:flex;align-items:baseline;gap:10px;padding:8px 18px}
+.tr:hover{background:var(--s2)}
+.tr-n{font-size:13px;font-weight:600;color:#fff;min-width:190px;font-family:monospace}
+.tr-d{font-size:12px;color:var(--dim);flex:1}
+.tr-e{font-size:11px;color:var(--accent);flex-shrink:0}
+
+.tl{position:relative;padding-left:26px}
+.tl::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.tli{position:relative;margin-bottom:18px}
+.tld{position:absolute;left:-26px;top:5px;width:13px;height:13px;border-radius:50%;border:2px solid}
+.done .tld{background:var(--green);border-color:var(--green);box-shadow:0 0 7px rgba(74,222,128,.4)}
+.wip .tld{background:transparent;border-color:var(--yellow)}
+.todo .tld{background:transparent;border-color:var(--dim)}
+.tl-t{font-size:14px;font-weight:600;color:#fff}
+.done .tl-t{color:var(--dim)}
+.tl-s{font-size:12px;color:var(--dim);margin-top:1px}
+
+.person{display:flex;align-items:center;gap:12px}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.pn{font-size:14px;font-weight:600;color:#fff}
+.pr{font-size:12px;color:var(--dim)}
+.pt{font-size:12px;color:var(--accent);margin-top:2px}
+
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.feat{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-family:monospace;font-size:12px;color:#fff}
+.feat span{display:block;font-size:10px;color:var(--dim);font-family:sans-serif;margin-top:2px}
+.feat-new{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06)}
+.feat-new .feat-tag{font-size:9px;color:var(--green);background:rgba(74,222,128,.15);padding:1px 5px;border-radius:3px;font-family:sans-serif}
+
+.fade{opacity:0;transform:translateY(14px);transition:opacity .5s,transform .5s}
+.fade.vis{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="proj-en">GrainRisk · National UIEP 2025–2026</div>
+  <h1>稷韧云图<span class="dot">·</span></h1>
+  <p class="tagline">省级粮食单产异常预测 · 31省 × 2011–2023 · 国家级大创</p>
+  <div class="chips">
+    <span class="chip cg">✓ v4 数据完成 (2026-06-04)</span>
+    <span class="chip cg">✓ 8a / 8b / 8c 全部交付</span>
+    <span class="chip cg">✓ 国家级 (2026-05-26 升级)</span>
+    <span class="chip cy">⏳ 论文叙事修改中</span>
+    <span class="chip cy">⏳ M1 parquet 待构建</span>
+    <span class="chip cr">⚠ R²=0.91 是省份记忆</span>
+  </div>
+</header>
+
+<section class="fade">
+  <div class="sec-label">最高优先级</div>
+  <h2>现在该做什么</h2>
+
+  <div class="ac ac-now">
+    <span class="prio p-now">今天</span>
+    <div>
+      <h3>把本地暂存文件提交 git</h3>
+      <p>frontend/ 的 4 个 View 改动 + vite.config.ts + scripts/serve_demo.sh + docs/figures/ 都还没 stage。这是工作成果，先存档再说别的。<br><code style="font-size:11px;color:var(--accent)">cd /home/darcy/DC/DC && git add frontend/ scripts/serve_demo.sh docs/figures/ && git commit -m "chore: stage frontend views and demo assets"</code></p>
+    </div>
+  </div>
+
+  <div class="ac">
+    <span class="prio p-week">本周</span>
+    <div>
+      <h3>和熊鑫对齐：LST 进不进 11 维特征</h3>
+      <p>lst_day_growing_mean_k / lst_night_growing_mean_k 已在 paper_panel_v4，<strong style="color:#fff">采集工作量 = 0</strong>。只需熊鑫评估 VIF / SHAP 后做一个是/否决定。这是成本最低的特征扩展，今天发一条消息就够了。</p>
+    </div>
+  </div>
+
+  <div class="ac">
+    <span class="prio p-week">本周</span>
+    <div>
+      <h3>写 prec_50mm_days 聚合脚本（约 1 天工作量）</h3>
+      <p>NASA POWER daily 数据已在本地。按省统计生长季（4–10月）日降水 ≥ 50mm 天数，年度值，403 行。极端降水对产量影响与月均降水是完全不同的信号，SHAP 会给有故事性的结果。</p>
+    </div>
+  </div>
+
+  <div class="ac">
+    <span class="prio p-week">本周内</span>
+    <div>
+      <h3>处理 worktree-slz-multimodal-task-update</h3>
+      <p>石灵子的多模态任务更新 worktree 还没合入 main。检查内容后 merge 或关闭，保持 main 整洁。<br><code style="font-size:11px;color:var(--accent)">git worktree list</code> 可以看当前 worktree 状态。</p>
+    </div>
+  </div>
+
+  <div class="ac">
+    <span class="prio p-next">下一步</span>
+    <div>
+      <h3>重写论文 §4 实验叙事，对齐 R² 口径</h3>
+      <p>当前 slides.md 行 120/156/163 仍写"协同验证/交叉印证/对模型选择稳健"，但实测是"1/3 互补"。叙事必须改为：<strong style="color:#fff">省内时序预测准确（R²=0.907），跨省空间外推受限</strong>。PPT 数字已对齐（PR#47 前），叙事文字还没改。</p>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="fade">
+  <div class="sec-label">项目状态</div>
+  <h2>数字总览</h2>
+  <div class="g4">
+    <div class="card">
+      <div class="kpi-n">0.907</div>
+      <div class="kpi-l">最优模型 R²（省内 CV）</div>
+      <div class="kpi-warn">⚠ 省份记忆，外推失败</div>
+    </div>
+    <div class="card">
+      <div class="kpi-n">11</div>
+      <div class="kpi-l">当前特征维度</div>
+      <div class="kpi-ok">✓ v4 全部完整</div>
+    </div>
+    <div class="card">
+      <div class="kpi-n">403</div>
+      <div class="kpi-l">样本行（31省 × 13年）</div>
+      <div class="kpi-ok">✓ 100% 对齐率</div>
+    </div>
+    <div class="card">
+      <div class="kpi-n">国家级</div>
+      <div class="kpi-l">大创等级</div>
+      <div class="kpi-ok">✓ 2026-05-26 升级</div>
+    </div>
+  </div>
+</section>
+
+<section class="fade">
+  <div class="warn">
+    <h3>⚠ 核心风险：R²=0.91 是省份记忆，不是真实泛化能力</h3>
+    <p>严格省份 holdout CV（训练省 ≠ 测试省）暴露了<strong>空间外推完全失败</strong>的问题。模型"记住了"各省的均值偏差，而不是学到了可迁移的气候-产量规律。<br><br>
+    <strong>对外叙事必须修正</strong>：不能说"高精度预测全国粮食生产"，应该说"省内历史时序预测准确（R²=0.907），跨省空间迁移能力有限"。这个定位下，项目仍然有价值——省内预警就是真实需求。<br><br>
+    影响范围：论文 §4 实验结论、答辩 slides 方法部分、申报书摘要（已有 RMSE 口径陷阱另见 memory）。</p>
+  </div>
+</section>
+
+<hr>
+
+<section class="fade">
+  <div class="sec-label">当前特征</div>
+  <h2>11 维输入特征 + 待确认扩展</h2>
+  <div class="feat-grid">
+    <div class="feat">temp<span>NASA POWER 月均气温</span></div>
+    <div class="feat">prec<span>NASA POWER 月均降水</span></div>
+    <div class="feat">sun<span>NASA POWER 日照时数</span></div>
+    <div class="feat">spei<span>SPEIbase v2.10 干旱指数</span></div>
+    <div class="feat">flood<span>洪涝受灾面积（真实）</span></div>
+    <div class="feat">drou_a<span>干旱受灾面积（真实）</span></div>
+    <div class="feat">flood_a<span>洪涝受灾面积2（真实）</span></div>
+    <div class="feat">irr<span>灌溉面积</span></div>
+    <div class="feat">mech<span>农业机械化</span></div>
+    <div class="feat">fert<span>化肥施用量</span></div>
+    <div class="feat">ndvi<span>MODIS 生长季加权 NDVI</span></div>
+    <div class="feat feat-new">lst_day / night <span>已在 v4，待决策</span><span class="feat-tag">档一候选</span></div>
+    <div class="feat feat-new">prec_50mm_days<span>极端降水日数</span><span class="feat-tag">1天可做</span></div>
+  </div>
+</section>
+
+<hr>
+
+<section class="fade">
+  <div class="sec-label">数据扩展路线图</div>
+  <h2>如何引入更多数据</h2>
+
+  <div class="tier">
+    <div class="th">
+      <span class="tb t1">档一</span>
+      <span class="tt">高价值 · 可执行性强</span>
+      <span class="ttime">建议本月完成</span>
+    </div>
+    <div class="tr"><span class="tr-n">LST（地表温度）</span><span class="tr-d">已在 paper_panel_v4，lst_day/night 生长季均值，0 采集工作量，等熊鑫决策</span><span class="tr-e">0 天</span></div>
+    <div class="tr"><span class="tr-n">prec_50mm_days</span><span class="tr-d">极端降水日数（≥50mm），NASA POWER daily 已有，只写聚合脚本</span><span class="tr-e">1 天</span></div>
+    <div class="tr"><span class="tr-n">drou_severe_a / flood_severe_a</span><span class="tr-d">成灾面积（vs 受灾面积），8a 总表已有，灾害严重性代理，SHAP 有故事</span><span class="tr-e">2 天</span></div>
+  </div>
+
+  <div class="tier">
+    <div class="th">
+      <span class="tb t2">档二</span>
+      <span class="tt">中等工作量 · 有论文价值</span>
+      <span class="ttime">6–7 月</span>
+    </div>
+    <div class="tr"><span class="tr-n">SPI（标准化降水指数）</span><span class="tr-d">与 SPEI 互补：SPEI 含蒸散，SPI 纯降水；差值反映升温放大旱情，符合国家级叙事</span><span class="tr-e">2 天</span></div>
+    <div class="tr"><span class="tr-n">NDVI 趋势斜率</span><span class="tr-d">已有 156 个月时序，省级 Mann-Kendall，"绿化趋势 vs 单产提升"新维度</span><span class="tr-e">1 天</span></div>
+    <div class="tr"><span class="tr-n">LAI（叶面积指数）</span><span class="tr-d">MODIS MOD15A2H 月度 500m，与 NDVI 互补（冠层密度 vs 反射率），替换实验</span><span class="tr-e">4 天</span></div>
+  </div>
+
+  <div class="tier">
+    <div class="th">
+      <span class="tb t3">档三</span>
+      <span class="tt">高吸引力 · 工作量大</span>
+      <span class="ttime">7 月后 / 可选</span>
+    </div>
+    <div class="tr"><span class="tr-n">土壤湿度（SMAP）</span><span class="tr-d">2015+ 可用，9 年子集；做"有无土壤湿度的 R² 对比"实验，增量价值</span><span class="tr-e">1 周</span></div>
+    <div class="tr"><span class="tr-n">县级数据下沉</span><span class="tr-d">N: 403 → ~2000×13；直接解决省份记忆问题；需县级年鉴，根本性工程</span><span class="tr-e">2–3 月</span></div>
+  </div>
+</section>
+
+<hr>
+
+<section class="fade">
+  <div class="sec-label">进度</div>
+  <h2>里程碑时间线</h2>
+  <div class="g2">
+    <div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:14px;text-transform:uppercase;letter-spacing:.12em">已完成</p>
+      <div class="tl">
+        <div class="tli done"><div class="tld"></div><div class="tl-t">paper_panel v1 基础 11 维</div><div class="tl-s">气象 + 农业投入，403 行</div></div>
+        <div class="tli done"><div class="tld"></div><div class="tl-t">v2/v3 SPEI + NDVI 引入</div><div class="tl-s">遥感数据首次加入</div></div>
+        <div class="tli done"><div class="tld"></div><div class="tl-t">8a 致灾因子真实数据</div><div class="tl-s">替换 SPEI proxy，王天硕总表核验 403/403</div></div>
+        <div class="tli done"><div class="tld"></div><div class="tl-t">8b 耕地像元加权 NDVI</div><div class="tl-s">CLCD 掩膜精细聚合</div></div>
+        <div class="tli done"><div class="tld"></div><div class="tl-t">8c 多年 CLCD 动态 cropland_ratio</div><div class="tl-s">2011–2023 逐年，403 行，2026-06-04</div></div>
+        <div class="tli done"><div class="tld"></div><div class="tl-t">答辩 PPT R² 数字对齐</div><div class="tl-s">0.907/0.816，互补叙事（PR#47 后）</div></div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:14px;text-transform:uppercase;letter-spacing:.12em">进行中 / 待办</p>
+      <div class="tl">
+        <div class="tli wip"><div class="tld"></div><div class="tl-t">论文 §4 叙事修改</div><div class="tl-s">对齐省份记忆限制，删旧"高精度"表述</div></div>
+        <div class="tli wip"><div class="tld"></div><div class="tl-t">slides.md 方法 slides 修改</div><div class="tl-s">行 120/156/163 旧叙事待重写</div></div>
+        <div class="tli todo"><div class="tld"></div><div class="tl-t">档一数据扩展（LST + extreme prec）</div><div class="tl-s">本月可交付</div></div>
+        <div class="tli todo"><div class="tld"></div><div class="tl-t">multimodal_panel_v1.parquet（M1）</div><div class="tl-s">最终数据交付，deadline 2026-07-31</div></div>
+        <div class="tli todo"><div class="tld"></div><div class="tl-t">国家级中期检查材料</div><div class="tl-s">日期待确认，经费使用报告</div></div>
+        <div class="tli todo"><div class="tld"></div><div class="tl-t">结题报告</div><div class="tl-s">国家级硬指标，论文 + 软件著作权</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="fade">
+  <div class="sec-label">团队</div>
+  <h2>分工</h2>
+  <div class="g2">
+    <div class="card"><div class="person">
+      <div class="av" style="background:rgba(230,162,60,.18);color:var(--accent)">潘</div>
+      <div><div class="pn">潘妙齐</div><div class="pr">协调 · 后端 · 论文</div><div class="pt">→ 论文叙事修改 · git 提交 · 数据策略决策</div></div>
+    </div></div>
+    <div class="card"><div class="person">
+      <div class="av" style="background:rgba(96,165,250,.14);color:var(--blue)">熊</div>
+      <div><div class="pn">熊鑫</div><div class="pr">模型</div><div class="pt">→ 评估 LST/新特征 VIF · 跑实验 · 更新 R² 结果</div></div>
+    </div></div>
+    <div class="card"><div class="person">
+      <div class="av" style="background:rgba(74,222,128,.13);color:var(--green)">石</div>
+      <div><div class="pn">石灵子</div><div class="pr">数据</div><div class="pt">→ 8c 完成 · 档一数据扩展 · worktree 合并</div></div>
+    </div></div>
+    <div class="card"><div class="person">
+      <div class="av" style="background:rgba(192,132,252,.13);color:var(--purple)">常</div>
+      <div><div class="pn">常宇璇</div><div class="pr">文档 · 可视化</div><div class="pt">→ slidev 整理 · 答辩 PPT · 图表更新</div></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="fade" style="text-align:center;padding:32px 0">
+  <p style="font-size:11px;color:var(--dim)">稷韧云图 · 国家级大创 · 2025–2026 &nbsp;|&nbsp; 生成于 2026-06-06</p>
+</section>
+
+</div>
+<script>
+const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); }), {threshold:.08});
+document.querySelectorAll('.fade').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

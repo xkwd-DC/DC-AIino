@@ -204,8 +204,40 @@ const healthLabel = computed(() => {
 .health.loading { color: var(--amber); }
 .health.loading .dot { background: var(--amber); }
 
-.app-main { flex: 1; }
+.app-main { flex: 1; min-width: 0; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ============ 平板适配(≤900px:竖屏 iPad / Android) ============
+   桌面单行 header 的最小内容宽约 841px,在 768–834 竖屏会顶出页面级横向滚动。
+   这里让 header 换行:品牌行 + 状态点占第一行,导航条独占第二行(必要时条内横滑,
+   绝不外溢到整页)。品牌标题改省略号,避免 flex-shrink:0 撑宽。 */
+@media (max-width: 900px) {
+  .app-header {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 10px 16px;
+  }
+  /* 解除桌面端 flex-shrink:0,允许品牌区收缩 */
+  .brand { min-width: 0; flex-shrink: 1; }
+  .brand-text { min-width: 0; }
+  .brand-text h1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header-right { margin-left: auto; }
+  /* 导航条整体掉到第二行,占满整行;条内可横滑做兜底,不再撑开整页 */
+  .tabs {
+    order: 3;
+    flex: 1 1 100%;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .tab { flex-shrink: 0; }
+}
 </style>

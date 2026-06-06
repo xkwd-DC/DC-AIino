@@ -337,7 +337,9 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
     </div>
 
     <!-- ── 03 · ROBUSTNESS TRANSPARENCY · 鲁棒性透明披露(v6 关键创新区) ── -->
+    <!-- 2026-05-29 暂时隐藏整块:如需恢复,删除下方 v-if="false" 一行即可 -->
     <article
+      v-if="false"
       class="card robust-card"
       role="region"
       aria-labelledby="section-robust"

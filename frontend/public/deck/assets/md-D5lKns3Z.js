@@ -1,0 +1,5 @@
+import{R as n,f as l,aB as i,e as s,k as e,g as d,G as c,r as _,a8 as t}from"./modules/vue-4v_gMQzM.js";import{I as m}from"./slidev/center-CQMv5xeF.js";import{u as p,f as u}from"./slidev/context-D88Df9BB.js";import{a as f}from"./index-BWkGCS2g.js";import"./modules/shiki-7tqlHROO.js";const v={__name:"slides.md__slidev_12",setup(x){const{$clicksContext:o,$frontmatter:r}=p();return o.setup(),(k,a)=>(n(),l(m,c(_(t(u)(t(r),11))),{default:i(()=>[a[0]||(a[0]=s("div",{class:"end"},[s("h1",null,"稷韧云图 · 总结"),s("div",{class:"sum"},[s("div",{class:"si"},[s("b",null,"数据"),e(" 构建覆盖 31 省 13 年的多模态融合数据集 paper_panel_v3")]),s("div",{class:"si"},[s("b",null,"方法"),e(" XGBoost-SHAP × Attention-LSTM 双引擎协同验证 + 三维归因")]),s("div",{class:"si"},[s("b",null,"落地"),e(" 端到端可视化决策系统,四大模块、推理 ≤ 2s")])]),s("div",{class:"ty"},"感谢徐苗老师、邱东芳老师的悉心指导,感谢学院与团队的协作支持"),s("div",{class:"qa"},"Thanks · 敬请评委批评指正　|　潘妙齐 · 熊鑫 · 常宇璇")],-1)),d(`
+[7:40–8:00 · 总结致谢 20s]
+总结一下:数据上我们构建了 31 省 13 年的多模态数据集;方法上建立了双引擎协同验证;落地上做出了完整的决策系统。
+感谢两位指导老师和团队的支持,以上是我们的汇报,敬请各位评委批评指正,谢谢!
+`)]),_:1},16))}},I=f(v,[["__scopeId","data-v-4ee821cf"]]);export{I as default};
