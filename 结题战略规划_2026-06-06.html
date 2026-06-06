@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>稷韧云图 · 结题战略规划 2026-06-06</title>
+<style>
+:root{
+  --bg:#070b14; --s1:#0e1422; --s2:#151d30; --s3:#1d2740;
+  --accent:#e6a23c; --accent2:#f0c674;
+  --green:#4ade80; --yellow:#fbbf24; --red:#f87171; --blue:#60a5fa; --purple:#c084fc;
+  --text:#dfe6f2; --dim:#7286a8; --faint:#56688a;
+  --border:rgba(255,255,255,.07); --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.page{max-width:1080px;margin:0 auto;padding:0 22px 140px}
+a{color:var(--accent);text-decoration:none}
+
+/* header */
+header{padding:90px 0 50px;position:relative}
+header::before{content:'';position:absolute;top:-40px;left:0;width:560px;height:340px;background:radial-gradient(ellipse at left,rgba(230,162,60,.13),transparent 68%);pointer-events:none}
+.eyebrow{font-size:11px;letter-spacing:.28em;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:18px}
+h1{font-size:clamp(34px,5.5vw,58px);font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1.08}
+h1 .sub{display:block;font-size:clamp(15px,2vw,19px);font-weight:500;color:var(--dim);margin-top:14px;letter-spacing:0}
+.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.tag{padding:5px 13px;border-radius:100px;font-size:12px;font-weight:600;letter-spacing:.02em;border:1px solid}
+.tg{background:rgba(74,222,128,.1);color:var(--green);border-color:rgba(74,222,128,.25)}
+.ty{background:rgba(251,191,36,.09);color:var(--yellow);border-color:rgba(251,191,36,.24)}
+.tr{background:rgba(248,113,113,.09);color:var(--red);border-color:rgba(248,113,113,.24)}
+.tb{background:rgba(96,165,250,.09);color:var(--blue);border-color:rgba(96,165,250,.24)}
+
+/* nav */
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:16px 0 4px;border-top:1px solid var(--border);margin-top:10px}
+nav a{font-size:12.5px;color:var(--dim);padding:6px 11px;border-radius:7px;transition:.15s}
+nav a:hover{color:#fff;background:var(--s2)}
+
+/* sections */
+section{margin-top:64px;scroll-margin-top:20px}
+.label{font-size:10.5px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase;font-weight:700;margin-bottom:7px}
+h2{font-size:clamp(22px,3vw,28px);font-weight:750;color:#fff;letter-spacing:-.01em;margin-bottom:8px}
+.lead{font-size:15.5px;color:var(--dim);margin-bottom:26px;max-width:760px}
+h3{font-size:16px;font-weight:650;color:#fff;margin-bottom:6px}
+p{margin-bottom:12px}
+strong{color:#fff;font-weight:650}
+.hl{color:var(--accent2);font-weight:650}
+
+/* verdict cards */
+.verdicts{display:grid;gap:14px}
+.vc{background:var(--s1);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:22px 26px;position:relative}
+.vc .n{position:absolute;top:18px;right:22px;font-size:46px;font-weight:800;color:rgba(255,255,255,.04);line-height:1}
+.vc h3{font-size:18px;margin-bottom:8px;padding-right:50px}
+.vc p{font-size:14.5px;color:#bcc8de;margin-bottom:0}
+.vc.ok{border-left-color:var(--green)} .vc.ok h3{color:#cdf3da}
+.vc.cau{border-left-color:var(--yellow)} .vc.cau h3{color:#f6e6b8}
+
+/* callouts */
+.box{border-radius:var(--r);padding:20px 24px;margin:18px 0}
+.box h3{margin-bottom:8px}
+.box p:last-child{margin-bottom:0}
+.box.risk{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.22)} .box.risk h3{color:var(--red)}
+.box.good{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.2)} .box.good h3{color:var(--green)}
+.box.info{background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.2)} .box.info h3{color:var(--blue)}
+.box.gold{background:rgba(230,162,60,.06);border:1px solid rgba(230,162,60,.22)} .box.gold h3{color:var(--accent2)}
+
+/* metric strip */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:8px 0 22px}
+.metric{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.metric .v{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--accent)}
+.metric .v.g{color:var(--green)} .metric .v.r{color:var(--red)} .metric .v.b{color:var(--blue)}
+.metric .l{font-size:12px;color:var(--dim);margin-top:7px;line-height:1.4}
+.metric .note{font-size:11px;margin-top:5px}
+.note.warn{color:var(--red)} .note.okk{color:var(--green)}
+
+/* table */
+.tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--s2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:700}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--s1)}
+td .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:5px}
+.pill.g{background:rgba(74,222,128,.14);color:var(--green)}
+.pill.y{background:rgba(251,191,36,.13);color:var(--yellow)}
+.pill.r{background:rgba(248,113,113,.13);color:var(--red)}
+.pill.b{background:rgba(96,165,250,.13);color:var(--blue)}
+
+/* Q&A */
+.qa{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px;margin-bottom:14px}
+.qa .q{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+.qa .q::before{content:'Q · ';color:var(--accent)}
+.qa .a{font-size:14.5px;color:#bcc8de}
+.qa .a strong{color:var(--accent2)}
+
+/* timeline */
+.tl{position:relative;padding-left:28px;margin-top:8px}
+.tl::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.tli{position:relative;margin-bottom:22px}
+.tli .dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--dim);background:var(--bg)}
+.tli.done .dot{background:var(--green);border-color:var(--green);box-shadow:0 0 8px rgba(74,222,128,.4)}
+.tli.now .dot{border-color:var(--accent);background:var(--accent);box-shadow:0 0 9px rgba(230,162,60,.5)}
+.tli .date{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.03em}
+.tli .ev{font-size:15px;font-weight:650;color:#fff;margin-top:2px}
+.tli .ds{font-size:13.5px;color:var(--dim);margin-top:2px}
+
+/* team */
+.team{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.tm{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px}
+.tm .hd{display:flex;align-items:center;gap:13px;margin-bottom:12px}
+.tm .av{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#0a0e16;flex-shrink:0}
+.tm .nm{font-size:15px;font-weight:700;color:#fff}
+.tm .rl{font-size:12px;color:var(--dim)}
+.tm ul{list-style:none;font-size:13.5px;color:#bcc8de}
+.tm li{padding:5px 0 5px 18px;position:relative}
+.tm li::before{content:'→';position:absolute;left:0;color:var(--accent)}
+.tm li .due{color:var(--faint);font-size:12px}
+
+/* checklist */
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.chk h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px}
+.chk ul{list-style:none}
+.chk li{font-size:14px;padding:8px 0 8px 26px;position:relative;color:#cdd6e6;border-bottom:1px solid rgba(255,255,255,.04)}
+.chk li::before{content:'';position:absolute;left:2px;top:13px;width:13px;height:13px;border:2px solid var(--dim);border-radius:4px}
+.chk li .who{color:var(--accent);font-size:12px;font-weight:600}
+
+/* fund */
+.fund{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fund .f{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.fund .amt{font-size:22px;font-weight:800;color:var(--accent)}
+.fund .for{font-size:13px;color:#fff;margin:4px 0 2px;font-weight:600}
+.fund .d{font-size:12.5px;color:var(--dim)}
+
+hr{border:none;border-top:1px solid var(--border);margin:0}
+footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--faint);text-align:center}
+
+@media(max-width:720px){
+  .metrics,.fund{grid-template-columns:repeat(2,1fr)}
+  .team,.chk{grid-template-columns:1fr}
+  header{padding:60px 0 40px}
+}
+.fade{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease}
+.fade.vis{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">稷韧云图 · 协调中心战略简报</div>
+  <h1>结题战略规划
+    <span class="sub">基于多模态的极端气候下我国粮食生产风险核心因子识别与韧性提升可视化系统 · 国家级大创 2025–2026</span>
+  </h1>
+  <div class="meta">
+    <span class="tag tg">软著兜底 ≈ 已锁定</span>
+    <span class="tag ty">论文主推 · 在审风险</span>
+    <span class="tag tr">AI 大赛省三 · 不达结题线</span>
+    <span class="tag tb">系统已实装 6,284 行</span>
+  </div>
+  <nav>
+    <a href="#verdict">① 四条核心判断</a>
+    <a href="#science">② 诚实的科学现状</a>
+    <a href="#path">③ 结题路径决策</a>
+    <a href="#worries">④ 回答你的三个担忧</a>
+    <a href="#proposal">⑤ 过时申报书怎么办</a>
+    <a href="#timeline">⑥ 时间线</a>
+    <a href="#team">⑦ 团队分工</a>
+    <a href="#fund">⑧ 经费</a>
+    <a href="#actions">⑨ 行动清单</a>
+  </nav>
+</header>
+
+<!-- ① VERDICT -->
+<section id="verdict" class="fade">
+  <div class="label">TL;DR — 如果只看一屏</div>
+  <h2>四条核心判断</h2>
+  <p class="lead">你担心的三件事（数据不够好、预测不准、可能偏题）都是真问题，但它们<strong>都不决定能否结题</strong>。下面四条按重要性排序，是这份规划的全部结论。</p>
+  <div class="verdicts">
+    <div class="vc ok"><span class="n">01</span>
+      <h3>结题几乎是确定的 —— 通过软著，而且它不是"草草了事"</h3>
+      <p>学校结题官文白纸黑字：国家级创新训练项目，<strong>"项目负责人第一作者获软件著作权"</strong> 即满足硬指标之一。我们的系统已实装（Flask 后端 + Vue 前端，6,284 行，远超 CCPC 5K 行门槛），潘妙齐挂第一著作权人即可。9/30 提交 → 11 月初下证 → 比 2027.4 结题早 5 个月。成本 ~250 元或走学校代办几乎免费。<span class="hl">这条路在工程上几乎不可能失败。软著是国家级三条合规路径之一，不是失败兜底。</span></p>
+    </div>
+    <div class="vc ok"><span class="n">02</span>
+      <h3>项目<strong style="color:#fff">没有</strong>偏题 —— 真正会让你偏题的是旧叙事</h3>
+      <p>题目要的是「<strong>核心因子识别</strong>」+「<strong>韧性提升可视化系统</strong>」。题目里<strong>没有"高精度预测"四个字</strong>。因子识别（SHAP 相对重要性）做到了；可视化决策系统建成并能跑 demo。会让评委觉得"货不对板"的，恰恰是继续宣称"R²=0.91 高精度预测全国粮食"——那才偏题。<span class="hl">诚实重构 = 回到题目本身，不是远离它。</span></p>
+    </div>
+    <div class="vc cau"><span class="n">03</span>
+      <h3>数据"不够好"是真的，但这是 N=403 的数学宿命，不绑定结题</h3>
+      <p>省级 31 省 × 13 年 = 403 行，空间外推（跨省预测）<strong>必然失败</strong>——这不是你们采集得不好，是 31 个截面单元 + 13 个时点的统计上限。<strong>省内时序预测仍可用（R²=0.89）</strong>，因子识别可用，系统可用。唯一能真正修好空间外推的是县级下沉（403→~2000 行），那是 2–3 个月工程，<span class="hl">列为 v5 upside / 论文未来工作，不作为结题前置条件</span>。</p>
+    </div>
+    <div class="vc cau"><span class="n">04</span>
+      <h3>过时的申报书：别再去修它，把诚实叙事写进新材料</h3>
+      <p>N4 国家级批准版是<strong>法定冻结文本</strong>，改不了也不必改。验收看的是<strong>你们新写的东西</strong>：论文、软著说明书、结题报告、答辩 PPT。这些全部用诚实口径写。中期检查是把"认识深化 / 方法升级"讲出来的正式窗口。<span class="hl">停止跟一份冻结文档较劲，把精力放在新材料上。</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ② SCIENCE -->
+<section id="science" class="fade">
+  <div class="label">诚实的底牌 — 把"弱点"变成"发现"</div>
+  <h2>科学现状：模型究竟在做什么</h2>
+  <p class="lead">这是团队已达成共识的稳健性事实（来源 <code>strict_cv_v3_card</code> + <code>mixed_effects_v1_card</code>）。对外材料必须遵守，但它远没有你想的那么糟——它本身就是一个可发表的方法学结论。</p>
+  <div class="metrics">
+    <div class="metric"><div class="v">0.907</div><div class="l">随机 8:2 R²（论文协议）</div><div class="note warn">⚠ 含省份记忆</div></div>
+    <div class="metric"><div class="v g">0.894</div><div class="l">留一年 R²（时序泛化）</div><div class="note okk">✓ 省内可用</div></div>
+    <div class="metric"><div class="v r">−16.8</div><div class="l">留一省 R² 中位（空间外推）</div><div class="note warn">31 省仅 1 省 &gt;0</div></div>
+    <div class="metric"><div class="v b">0.971</div><div class="l">混合效应 ICC（省份方差占比）</div><div class="note">气候边际仅 ~3%</div></div>
+  </div>
+  <div class="box gold">
+    <h3>★ 关键认知：这是 finding，不是 bug</h3>
+    <p>混合效应模型给出 <strong>ICC = 0.971</strong>（LRT p ≈ 1.35×10⁻¹⁶³）：中国省级粮食单产面板里 <strong>97% 的方差来自省份固定效应</strong>，纯气候边际效应只占约 3%。换句话说——"用气候预测各省单产差异"这件事，在省级尺度上数学上就做不到，任何团队都做不到。<strong>你们不仅发现了这一点，还用 XGB 严格 CV + 混合效应双重定量证明了它。</strong>这是一篇中文核心论文完全拿得出手的实证贡献：<em>「省级面板粮食单产模型被省份固定效应主导，气候信号须经混合模型剥离方可识别」</em>。别人眼里的尴尬，是你们的论点。</p>
+  </div>
+  <div class="box risk">
+    <h3>对外叙事红线（所有材料 / 答辩话术统一遵守）</h3>
+    <p><strong>❌ 不能说：</strong>"climate→yield 高精度预测" · "R²=0.91 证明跨省预测能力" · "SHAP×Attention 一致性互相验证" · "NDVI 是核心驱动因子"</p>
+    <p><strong>✅ 必须说：</strong>"省内粮食风险因子<strong>相对重要性识别</strong>" · "省内历史时序预警准确（R²=0.907），跨省空间迁移能力有限并已诚实披露" · "SHAP 与 Attention 提供<strong>互补</strong>视角（ρ=−0.055，符合 2024 *TMLR*/*PNAS* 关于 XAI 方法分歧是常态的结论）"</p>
+  </div>
+</section>
+
+<!-- ③ PATH -->
+<section id="path" class="fade">
+  <div class="label">决策矩阵 — 怎么结、谁来扛</div>
+  <h2>结题路径：两条腿走路</h2>
+  <p class="lead">国家级创新训练项目<strong>三选一</strong>即可结题。你提的"要么发论文要么软著"是对的，但顺序应该反过来：先用软著锁死地板，再用论文冲天花板。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>路径</th><th>硬指标门槛</th><th>成本</th><th>时间 / 风险</th><th>定位</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>B · 软件著作权</strong></td>
+          <td>潘妙齐 = 第一著作权人（系统已实装）</td>
+          <td>~250 元 / 学校代办近乎免费</td>
+          <td><span class="pill g">极低</span> 9/30 交 → 11 月下证</td>
+          <td><strong style="color:var(--green)">锁死地板。9/30 必交，结题的确定性来源。</strong></td>
+        </tr>
+        <tr>
+          <td><strong>A · 学术论文</strong></td>
+          <td>潘妙齐 = <strong>第一作者</strong> + 广电总局第一/二批名单内中文核心</td>
+          <td>版面费 3,000–5,000 元（走经费）</td>
+          <td><span class="pill r">高</span> 退稿 60–70%，审稿跨 12 月–次年 3 月，可能赶不上 2027.4</td>
+          <td>冲天花板。声誉 + 经费消化口，<strong>但绝不单独依赖它结题</strong>。</td>
+        </tr>
+        <tr>
+          <td><strong>C · 学科竞赛</strong></td>
+          <td>潘妙齐 = 负责人 + 竞赛目录赛事 <strong>省银及以上</strong></td>
+          <td>报名 / 差旅</td>
+          <td><span class="pill r">不达标</span> AI 大赛已出 = 省三 ❌；CRAIC 待结果</td>
+          <td>纯 upside。可顺手报互联网+/挑战杯，<strong>不绑定结题</strong>。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box good">
+    <h3>策略结论</h3>
+    <p><strong>B 保证你一定能结题，A 决定你结得多漂亮，C 顺手白捡。</strong>立刻把软著作为第一优先级推进（材料指南已就绪 <code>docs/23</code>），论文并行投《农业工程学报》。即使论文被拒到天荒地老，软著一下证，结题就已经达成——你不会有"草草了事"的被动局面，因为地板早就铺好了。</p>
+  </div>
+</section>
+
+<!-- ④ WORRIES -->
+<section id="worries" class="fade">
+  <div class="label">正面回答 — 你原话里的三个焦虑</div>
+  <h2>回答你的三个担忧</h2>
+  <div class="qa">
+    <div class="q">"数据不够好" —— 还要不要继续堆数据？</div>
+    <div class="a">为<strong>结题</strong>：不需要，现有 v4（11 维 × 403 行，全部对齐）已足够支撑软著 + 一篇诚实的中文核心。为<strong>论文质量</strong>：做"档一"低成本扩展即可加分——<strong>LST（已在 v4，0 采集成本）+ 极端降水日数 prec_50mm_days（1 天脚本）+ 成灾面积代理（2 天）</strong>。这三项让 SHAP 故事更有说服力，不动结题节奏。<strong>县级下沉是唯一能修好空间外推的路，但 2–3 月工程，写进论文"未来工作"，不投到结题前。</strong></div>
+  </div>
+  <div class="qa">
+    <div class="q">"省级单位预测肯定不准" —— 这会不会毁掉项目？</div>
+    <div class="a">不会，因为<strong>你们的交付物从来不该是"预测准"</strong>。诚实账：跨省预测确实不准（数学必然），<strong>但省内时序预警准（R²=0.89）、因子识别有效、决策系统能用</strong>。把对外定位从"预测引擎"换成"<strong>因子识别 + 韧性决策可视化系统</strong>"，"不准"就从致命伤变成一句诚实的局限说明。评委反而会因为你们<strong>主动量化并披露了局限</strong>而加分——这是国家级评审看重的科研诚信。</div>
+  </div>
+  <div class="qa">
+    <div class="q">"是否偏离题目无法判断" —— 到底偏没偏？</div>
+    <div class="a"><strong>没偏，前提是停用旧叙事。</strong>逐字对题目：<strong>"核心因子识别"</strong> → SHAP 相对重要性 ✅；<strong>"韧性提升"</strong> → 12 条规则引擎给省级干预建议 ✅；<strong>"可视化系统"</strong> → M00–M05 六视图已上线 ✅；<strong>"多模态"</strong> → 气象+农业投入+遥感(NDVI)+灾害+GIS，实质 2.5–3 类（石灵子补全任务进行中）。<span class="hl">题目四个关键词你们全部命中。唯一的"偏题"风险来自申报书里残留的"高精度预测"承诺——删掉它，对齐就完整了。</span></div>
+  </div>
+</section>
+
+<!-- ⑤ PROPOSAL -->
+<section id="proposal" class="fade">
+  <div class="label">处理过时材料 — 你最不喜欢的部分</div>
+  <h2>过时的申报书怎么办</h2>
+  <p class="lead">你不喜欢申报书里那些过时表述（RMSE≤0.0055 的量纲陷阱、"高精度预测""双重验证一致性"等）。好消息：你<strong>不需要</strong>去捍卫它们。</p>
+  <div class="team" style="grid-template-columns:1fr 1fr">
+    <div class="box info" style="margin:0">
+      <h3>冻结的（不要碰）</h3>
+      <p><strong>N4 国家级批准版申报书</strong>是法定文本，已盖章批准，无法修改。里面的过时承诺停留在这份冻结文档里——验收时不会逐条拿它对质你，<strong>它只是立项凭证</strong>。别花一分钟去"修"它。</p>
+    </div>
+    <div class="box good" style="margin:0">
+      <h3>新写的（诚实口径，验收看这些）</h3>
+      <p>① <strong>论文</strong>（<code>docs/papers/v1_draft.md</code> 已初稿）<br>② <strong>软著《软件设计说明书》</strong>（<code>docs/23</code> outline 就绪）<br>③ <strong>结题报告</strong>（2027 初新写）<br>④ <strong>答辩 PPT / 讲解稿</strong>。<br>这四份<strong>全部</strong>用诚实叙事，是评审实际阅读的材料。</p>
+    </div>
+  </div>
+  <div class="box gold">
+    <h3>把"认识深化"正式化的窗口：中期检查</h3>
+    <p>国家级中期检查（日期待教务处确认）是你<strong>合法地、主动地</strong>讲述叙事演进的最佳场合：「立项时设想气候直接高精度预测单产；研究中通过严格交叉验证与混合效应模型，<strong>发现</strong>省级尺度气候边际效应被省份固定效应主导，据此<strong>升级</strong>为'因子识别 + 韧性决策系统'定位」。这不是认错，这是<strong>科研过程的正常深化</strong>，评委爱看这个。把这段写进中期报告，过时申报书与诚实现状之间的张力就被一笔勾销了。</p>
+  </div>
+  <div class="box risk">
+    <h3>仍需澄清的遗留矛盾（指派处理）</h3>
+    <p>答辩材料里<strong>仍有旧叙事残留</strong>需清扫：<code>slidev/slides.md</code> 第 120/156/163 行仍写"协同验证/交叉印证/对模型选择稳健"，与结果页"1/3 互补"自相矛盾。<strong>这是会被评委当场抓住的硬伤，必须本周改。</strong>（论文/网站 R² 口径已对齐到 0.907/0.816，但 slidev 与论文正文叙事文字尚未全清。）</p>
+  </div>
+</section>
+
+<!-- ⑥ TIMELINE -->
+<section id="timeline" class="fade">
+  <div class="label">从现在到结题 — N4 起止 2026.6 – 2027.5</div>
+  <h2>时间线</h2>
+  <div class="tl">
+    <div class="tli done"><span class="dot"></span><div class="date">2026-06-04 · 已完成</div><div class="ev">v4 数据交付（8a 致灾 / 8b 耕地像元 / 8c 多年 CLCD）</div><div class="ds">11 维 × 403 行全部对齐；答辩 PPT R² 口径已对齐 0.907/0.816。</div></div>
+    <div class="tli now"><span class="dot"></span><div class="date">2026-06（本月）· 进行中</div><div class="ev">叙事清扫 + 论文定稿冲刺 + 档一数据加分</div><div class="ds">清掉 slidev/论文旧叙事残留；合并石灵子多模态 worktree；LST/极端降水进 SHAP；论文 §4 重写对齐省份记忆。</div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2026-06 ~ 07 · 待定</div><div class="ev">国家级中期检查（日期问教务处）</div><div class="ds">中期报告写入"认识深化"叙事；经费使用阶段报告。<strong>这是把过时申报书张力一次性化解的窗口。</strong></div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2026-07-31 · 截止</div><div class="ev">multimodal_panel_v1.parquet（M1）最终数据交付</div><div class="ds">石灵子多模态补全收口；论文实验数据冻结。</div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2026-08 · 主推</div><div class="ev">论文投稿《农业工程学报》（潘第一作者）</div><div class="ds">中文核心，广电名单第一批。版面费走经费。投稿后即进入在审，与软著并行。</div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2026-09-15 ~ 09-30 · 硬截止</div><div class="ev">★ 软著材料定稿 + 提交 CCPC / 学校代办</div><div class="ds">《软件设计说明书》~30 页 + 源代码 60 页 + 申请表 + 立项证明。<strong>这一步完成，结题地板锁死。</strong></div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2026-11 · 预期</div><div class="ev">软著登记证书下证</div><div class="ds">结题硬指标已实质达成；论文若仍在审，转为纯加分。</div></div>
+    <div class="tli"><span class="dot"></span><div class="date">2027-04 ~ 05 · 结题</div><div class="ev">结题报告 + 答辩验收</div><div class="ds">提交：软著证书（兜底达成）+ 论文录用/发表（若成）+ 系统演示 + 结题报告。</div></div>
+  </div>
+</section>
+
+<!-- ⑦ TEAM -->
+<section id="team" class="fade">
+  <div class="label">分工 — 4 人开发团队（法定署名 5 人）</div>
+  <h2>团队下一步</h2>
+  <div class="team">
+    <div class="tm">
+      <div class="hd"><div class="av" style="background:var(--accent)">潘</div><div><div class="nm">潘妙齐 · 项目负责人</div><div class="rl">协调 / 后端 / 论文第一作者 / 软著第一著作权人</div></div></div>
+      <ul>
+        <li>推进<strong>软著申请</strong>（第一优先级，照 <code>docs/23</code> 走，问邱老师学校代办批次）<span class="due"> · 9/30</span></li>
+        <li>重写论文 §4 实验叙事，对齐省份记忆口径 <span class="due"> · 6 月</span></li>
+        <li>问教务处：中期检查日期 / 经费报销流程 / 结题细则 <span class="due"> · 本周</span></li>
+        <li>决策：档一数据是否做、邱vs徐谁主导师 <span class="due"> · 本周</span></li>
+      </ul>
+    </div>
+    <div class="tm">
+      <div class="hd"><div class="av" style="background:var(--blue)">熊</div><div><div class="nm">熊鑫 · 算法组</div><div class="rl">模型训练 / 评估 / 实验</div></div></div>
+      <ul>
+        <li>评估 <strong>LST + prec_50mm_days</strong> 进 11 维的 VIF / SHAP 增量 <span class="due"> · 本周内一个是/否</span></li>
+        <li>混合效应 ICC 结果整理成论文 §7 可引用段（这是核心卖点）<span class="due"> · 6 月</span></li>
+        <li>跑档一扩展特征后的 R² 复测，更新 model card <span class="due"> · 6–7 月</span></li>
+      </ul>
+    </div>
+    <div class="tm">
+      <div class="hd"><div class="av" style="background:var(--green)">石</div><div><div class="nm">石灵子 · 数据组</div><div class="rl">数据采集 / 多模态补全</div></div></div>
+      <ul>
+        <li>合并 <code>worktree-slz-multimodal-task-update</code> 到 main <span class="due"> · 本周</span></li>
+        <li>多模态补全（CLCD 逐年掩膜 / 极端事件 / LST 做实），收口 M1 <span class="due"> · 7/31</span></li>
+        <li>写 prec_50mm_days 聚合脚本（NASA POWER daily 已在本地）<span class="due"> · ~1 天</span></li>
+      </ul>
+    </div>
+    <div class="tm">
+      <div class="hd"><div class="av" style="background:var(--purple)">常</div><div><div class="nm">常宇璇 · 文档 / 可视化</div><div class="rl">slidev / 答辩 PPT / 图表</div></div></div>
+      <ul>
+        <li><strong>清掉 slidev/slides.md 旧叙事</strong>（行 120/156/163 协同验证表述）<span class="due"> · 本周硬伤</span></li>
+        <li>答辩 PPT 与论文/网站口径三处对齐复核 <span class="due"> · 6 月</span></li>
+        <li>整理软著《软件设计说明书》配图（系统架构 / 模块图已有）<span class="due"> · 8–9 月</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ⑧ FUND -->
+<section id="fund" class="fade">
+  <div class="label">经费 — 1 万元，不申请追加</div>
+  <h2>钱花在哪</h2>
+  <p class="lead">你说"花经费发论文"——对，经费主要消化口就是版面费。其余按确定性排序。</p>
+  <div class="fund">
+    <div class="f"><div class="amt">~4,000</div><div class="for">论文版面费</div><div class="d">中文核心《农业工程学报》等，3,000–5,000，经费核心用途。</div></div>
+    <div class="f"><div class="amt">~250</div><div class="for">软著登记费</div><div class="d">学生普通申请；走学校代办可能近乎免费。结题地板成本极低。</div></div>
+    <div class="f"><div class="amt">~2,000</div><div class="for">数据 / 算力（可选）</div><div class="d">县级年鉴采购 / GCP 实例（M3）。仅在做 v5 县级下沉时启用。</div></div>
+    <div class="f"><div class="amt">~1,500</div><div class="for">竞赛差旅（upside）</div><div class="d">互联网+/挑战杯报名差旅，纯加分项。</div></div>
+    <div class="f"><div class="amt">~1,000</div><div class="for">软著加急（备选）</div><div class="d">若 9/30 错过普通批次，电子加急 7 工作日下证的保险。</div></div>
+    <div class="f"><div class="amt">~1,000+</div><div class="for">印刷 / 杂项 / 余量</div><div class="d">结题材料打印、海报、机动余量。</div></div>
+  </div>
+</section>
+
+<!-- ⑨ ACTIONS -->
+<section id="actions" class="fade">
+  <div class="label">立即执行 — 不需要再开会就能做</div>
+  <h2>行动清单</h2>
+  <div class="chk">
+    <div>
+      <h3>本周（高优先级）</h3>
+      <ul>
+        <li>清掉 slidev/slides.md 旧叙事硬伤（120/156/163 行） <span class="who">常宇璇</span></li>
+        <li>合并 worktree-slz-multimodal-task-update 到 main <span class="who">石灵子 / 潘</span></li>
+        <li>问教务处：中期检查日期 + 结题细则 + 报销 <span class="who">潘</span></li>
+        <li>熊鑫给出 LST/极端降水 是否进 11 维的结论 <span class="who">熊鑫</span></li>
+        <li>问邱老师：学校软著代办批次时间窗 <span class="who">潘</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>本月（6 月）</h3>
+      <ul>
+        <li>论文 §4 重写，对齐省份记忆 + 混合效应 finding <span class="who">潘 + 熊鑫</span></li>
+        <li>写 prec_50mm_days 聚合脚本，跑 SHAP <span class="who">石灵子 / 熊鑫</span></li>
+        <li>中期检查报告写入"认识深化"叙事 <span class="who">潘 + 常</span></li>
+        <li>启动软著《软件设计说明书》正文（按 docs/23 §3）<span class="who">潘</span></li>
+        <li>论文/网站/PPT 三处 R² 口径终审 <span class="who">常宇璇</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="box gold" style="margin-top:22px">
+    <h3>一句话给你自己的提醒</h3>
+    <p>别被"省级数据不准"的焦虑拖住——<strong>结题的确定性不在模型精度上，在那份 9/30 必交的软著上。</strong>把软著当成第一优先级推进，论文当成可以慢慢冲的奖金，过时申报书当成一份已归档、不必再爱的旧文件。这样你就从"迫不得已草草了事"的心态，回到"地板已铺好、只管往上盖"的主动位。</p>
+  </div>
+</section>
+
+<footer>
+  稷韧云图 · 国家级大创 2025–2026 · 结题战略规划　|　由协调中心生成于 2026-06-06<br>
+  口径来源：docs/national/19 · docs/22 · docs/23 · strict_cv_v3_card · mixed_effects_v1_card · AGENT_BRIEFING §4
+</footer>
+
+</div>
+<script>
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')}),{threshold:.06});
+document.querySelectorAll('.fade').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
