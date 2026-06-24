@@ -108,12 +108,17 @@ def build_v5_dataset() -> tuple[pd.DataFrame, str, list[str]]:
             print(f"  dropna 丢弃: {dropped} 行 ({dropped/len(feat)*100:.1f}%)")
 
         # 合并：features ∩ yield（内连接）
+        # eps 的 production_wan_ton 是城市级真实产量，v5 里的是省级填充值
+        # 用不同列名避免冲突，统一用城市级产量作为目标
+        eps_merge = eps[["province_short", "city", "year", "production_wan_ton"]].copy()
+        eps_merge = eps_merge.rename(columns={"production_wan_ton": "city_production_wan_ton"})
         merged = feat_clean.merge(
-            eps[["province_short", "city", "year", "production_wan_ton"]],
+            eps_merge,
             left_on=["province", "city", "year"],
             right_on=["province_short", "city", "year"],
             how="inner",
         )
+        merged["production_wan_ton"] = merged["city_production_wan_ton"]
         print(f"  合并后（inner join）: {len(merged)} 行")
         return merged, "v5_city_features", avail_feat
 
