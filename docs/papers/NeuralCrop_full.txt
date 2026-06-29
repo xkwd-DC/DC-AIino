@@ -1,0 +1,2672 @@
+NeuralCrop: Combining physics and machine
+learning for improved crop yield projections
+Yunan Lin1,2*, Sebastian Bathiany1,2, Maha Badri1,2,
+Maximilian Gelbrecht1,2, Philipp Hess1,2, Brian Groenke2,
+Jens Heinke2, Christoph M¨uller2, Niklas Boers1,2,3*
+1Munich Climate Center and Earth System Modelling Group,
+Department of Aerospace and Geodesy, School of Engineering and
+Design, Technical University of Munich, Munich, Germany.
+2Potsdam Institute for Climate Impact Research, Potsdam, Germany.
+3University of Exeter, Exeter, UK.
+*Corresponding author(s). E-mail(s): yunan.lin@tum.de;
+n.boers@tum.de;
+Abstract
+Global gridded crop models (GGCMs) are crucial to project the impacts of cli-
+mate change on agricultural productivity and assess associated risks for food
+security. Despite decades of development, state-of-the-art GGCMs retain sub-
+stantial uncertainties stemming from process representations. Recently, machine
+learning approaches trained on observational data provide alternatives in crop
+yield projections. However, these models have not demonstrated improved per-
+formance over traditional GGCMs and are not suitable for projecting crop yields
+under a changing climate due to their poor out-of-distribution generalization.
+Here we introduce NeuralCrop, a differentiable hybrid GGCM that combines the
+strengths of an advanced process-based GGCM, resolving important processes
+explicitly, with data-driven machine learning components. NeuralCrop is first
+trained to emulate a competitive GGCM before it is fine-tuned on observational
+data. We show that NeuralCrop produces projections with accuracy compara-
+ble to state-of-the-art GGCMs across site-level and large-scale crop simulations.
+NeuralCrop can accurately project the interannual yield variability in European
+wheat regions and the US Corn Belt. Capturing yield anomalies is essential for
+developing adaptation strategies in the context of climate change. NeuralCrop
+can more accurately reproduce yield anomalies across various climatic conditions,
+with particularly notable improvements under drought extremes. For large-scale,
+1
+arXiv:2512.20177v2  [cs.LG]  30 Mar 2026
+long-term simulations, our approach is orders of magnitude more computation-
+ally efficient. Our results show that end-to-end hybrid crop modelling offers more
+reliable yield projections that are essential for food risk assessments under climate
+change and intensifying extreme weather events.
+Introduction
+Global food systems face intensifying threats from climate change, particularly
+extreme weather events [1–3]. Accurately assessing the impacts of changing weather
+and especially extreme event patterns on agricultural productivity is crucial for the
+development of adaptation strategies to mitigate adverse effects and sustain future
+food security [4, 5]. Global gridded crop models (GGCMs) are essential tools for pro-
+jecting the impacts of climate change [6, 7], and are extensively used in downstream
+analyses (e.g., food security [8, 9], sustainability [10], or economy [11]). Despite decades
+of development, state-of-the-art GGCMs retain substantial uncertainties in process
+representations and generally underestimate crop yield losses during extreme weather
+events [12–16]. Given the projected increases in frequency and magnitude of extreme
+events in a warming climate [17], and their strong influence on future food security,
+these limitations present major challenges for the reliability of crop yield projections
+and food risk assessments [18].
+Machine learning (ML) approaches have emerged rapidly in agricultural ecosys-
+tem modelling [19–21]. These models are capable of learning complex, nonlinear
+interactions, which are difficult to explicitly resolve in process-based GGCMs, from
+observational data (e.g., remote sensing, field measurements, and subnational statis-
+tics), providing an alternative for crop yield projections. ML approaches have been
+successfully used to emulate GGCMs to enable sensitivity and uncertainty analyses
+under input perturbations [22], and to downscale GGCM outputs to finer spatial and
+temporal resolutions [23]. Once trained, ML approaches typically require considerably
+lower computational costs and memory demands during inference than traditional
+GGCMs.
+However, ML approaches have noteworthy limitations compared with GGCMs.
+Most ML models are optimized using root-mean-squared-error loss, which rewards
+averaging over uncertainty and consequently produces overly smoothed projections
+for long-term crop simulations [24]. Lacking realistic biophysical mechanisms, these
+purely data-driven models only capture statistical correlations, leading to limited
+interpretability and poor extrapolation to unseen future climates [19, 25]. Ensuring
+generalization and physical consistency thus remains a primary barrier to the appli-
+cation of pure ML models in crop modelling. In addition, sparse observational data
+further limits the use of pure ML models [26]. Despite some success in using ML
+approaches on crop simulations, these models have not demonstrated to outperform
+state-of-the-art GGCMs [22, 23].
+In light of the complementary benefits and limitations of process-based and ML-
+based models, hybrid models have been proposed as a promising direction for model
+2
+development [27, 28]. By replacing or augmenting poorly represented physical pro-
+cesses with data-driven ML components [29, 30], hybrid models have achieved notable
+success across diverse fields, outperforming pure ML models and traditional process-
+based models [31–33]. Several studies have recently explored the combination of ML
+models with GGCMs [34–37], but ML in these models is typically used in a post-
+processing step to adjust outputs from GGCMs, or used to emulate these models,
+rather than being integrated into their internal processes. To enable efficient gradient-
+based optimization of all parameters jointly and consistently, the hybrid model should
+support automatic differentiation [29]. However, existing traditional GGCMs are not
+differentiable. A key technical challenge for traditional GGCMs in this context is that
+they are typically written in Fortran or C, which struggle to support automatic dif-
+ferentiation and hinder ML integration into GGCMs. This can be solved by using a
+language that is suitable for both process-based components and ML model training,
+like Python or Julia.
+Here we introduce NeuralCrop, a differentiable hybrid GGCM that combines the
+strengths of the state-of-the-art GGCM LPJmL [38] with ML approaches. By imple-
+menting components in a differentiable form to achieve seamless integration with
+ML methods, NeuralCrop enables end-to-end ’online training’, with ML components
+optimized in tandem with the model dynamics. Due to sparse observational data, Neu-
+ralCrop is first pre-trained on GGCM outputs and further fine-tuned using a global
+network of site-level observations. Extensive benchmarking shows that NeuralCrop
+significantly outperforms LPJmL in simulating daily carbon and water fluxes across
+diverse crop sites, and produces yield projections with accuracy comparable to best-
+in-class GGCMs across a range of moisture gradients, with strong improvements under
+extreme climatic conditions.
+NeuralCrop
+NeuralCrop is based on the LPJmL (”Lund-Potsdam-Jena managed Land”) model,
+which explicitly simulates carbon, water, energy, and nitrogen flows for both natural
+vegetation and agricultural crops at 0.5° × 0.5° (latitude × longitude) spatial and daily
+temporal resolution [38–41]. LPJmL is a state-of-the-art process-based GGCM and
+contributes to the global model intercomparison networks AgMIP and ISIMIP [42, 43].
+It has been comprehensively evaluated at the global scale [44–47]. In NeuralCrop, neu-
+ral networks are embedded to replace or augment key biological processes of LPJmL
+that are uncertain or simplified but directly observable, such as photosynthesis and
+soil moisture dynamics, or to emulate processes that are heuristic, such as carbon
+allocation. The considered process-based components within NeuralCrop are fully dif-
+ferentiable to enable a seamless integration with neural networks. These are described
+in detail in the Supplementary Information B.
+Given limited high-quality agricultural observations, we adopt a two-stage strategy
+to train NeuralCrop, as illustrated in Fig. 1. In the absence of sufficient observational
+data, pre-training NeuralCrop on extensive LPJmL simulations allows the ML compo-
+nents to learn physically consistent representations, especially for latent variables. This
+can accelerate and stabilize convergence during subsequent fine-tuning with observa-
+tional data. End-to-end ’online training’ allows NeuralCrop to account for interactions
+3
+𝑥!
+"
+Forcings
+Inputs
+𝑦!#$
+%
+NeuralCrop
+Outputs
+GGCM outputs
+𝑦!
+""#$
+min 𝐿(𝑦!
+%, 𝑦!
+""#$) 
+𝑦!
+"
+Pre-training
+a  Pre-training stage
+𝑥!
+"
+Forcings
+𝑥$
+"
+Inputs
+𝑦!#$
+%
+𝑦&
+%
+Pre-trained
+NeuralCrop
+𝑦$
+"
+Observations
+𝑦!
+&'(
+min 𝐿(𝑦!
+%, 𝑦!
+&'() 
+Fine-tuning
+Process-based
+Hybrid
+Outputs
+𝑦!
+"
+b  Fine-tuning stage
+Fig. 1 Schematic of the NeuralCrop two-stage training framework. It shows how forcings x n
+t , includ-
+ing weather, soil properties, land use, and field management (e.g., crop calendar, tillage, residue, and
+fertilizer), and previous time-step model states y m
+t−1 are fed into NeuralCrop at each time step t, where
+n denotes the number of forcing variables and m denotes the number of model states. These model
+states y m
+t−1 are fed into the corresponding neural networks of hybrid components, which advance the
+evolution of model states over time. The new model states y m
+t
+are then fed back into the model
+to compute the next time step. a, In the pre-training stage, NeuralCrop is trained to emulate the
+behavior of the process-based GGCM LPJmL by minimizing the discrepancies L(yn
+t , yn
+t ) between
+NeuralCrop output yn
+t and LPJmL output yn
+t , given identical weather, soil property, land use, and
+field management inputs. b, In the fine-tuning stage, the pre-trained NeuralCrop is further trained
+using observational data from eddy-covariance observation networks, which serves as ground truth.
+between ML and process-based components in a natural way, ensuring physical con-
+sistency in the learned representations [29]. Furthermore, NeuralCrop supports full
+graphics-processing-unit (GPU) acceleration, which makes global grid-based simula-
+tions, and especially large ensembles thereof, computationally much more efficient, in
+particular above a certain resolution or ensemble size.
+We train NeuralCrop models at both the site and regional levels for different crops.
+The training setup details can be found in the Supplementary Information section D.
+For site-level representations, we evaluate the ability of NeuralCrop to reproduce daily
+gross primary productivity (GPP), ecosystem respiration (RECO), net ecosystem
+exchange (NEE), and soil water content (SWC) against flux tower observations (see
+Supplementary Information section F). For large-scale cropping regions, we evaluate
+NeuralCrop’s performance in simulating wheat and maize yields under both normal
+and extreme climate conditions against reported yield statistics from two major global
+breadbaskets, i.e., European wheat regions and the US Corn Belt (see Supplementary
+Information section G).
+4
+Results
+Long-term yield projections
+Our evaluation setup focuses on the ability of NeuralCrop to capture the long-term
+interannual yield variability, which is a key requirement for GGCMs. We compare
+simulated wheat yields from NeuralCrop and state-of-the-art GGCMs with the har-
+monized EU subnational crop statistics dataset (hereafter, EU statistics) [48] and corn
+yields with USDA statistics at the county level over the period 2000-2016. The simu-
+lated yields are aggregated from a spatial resolution of 0.5° to the subnational units of
+yield statistics, using an area-weighted averaging method (see Methods and Supple-
+mentary Information H.1). Prior to comparison, we detrend all yield time series using
+a cubic smoothing spline to remove the effects of long-term crop breeding advances
+and management improvements, focusing on climate-driven yield variability (Methods
+and Supplementary Information H.2).
+European wheat
+The temporal correlations between simulated and statistical yields for each region
+over 2000-2016 are shown in Figures 2a-c. LPJmL exhibits strong spatial heterogene-
+ity, with high correlations in Eastern Europe, but weak or even negative values in
+parts of Western, Central, and Northern Europe (such as many regions of France and
+Germany). Notably, the ensemble median of AgMIP captures a similar but generally
+weaker spatial correlation pattern to LPJmL, indicating a common challenge for cur-
+rent GGCMs in the latter regions. In contrast, NeuralCrop presents a more spatially
+consistent pattern of positive correlations. Figures 2d-e illustrate the spatial distribu-
+tion of the correlation difference between NeuralCrop and GGCMs(also see Extended
+Data Fig. 6). Among 800 subnational regions, NeuralCrop achieves higher correlation
+in 528 regions than LPJmL, accounting for 66%, with 258 regions (32.25%) showing
+notable improvements where the correlation increases more than 0.2. When compared
+against the ensemble median of AgMIP, NeuralCrop also demonstrates strong perfor-
+mance in capturing interannual yield variability, achieving higher correlations in 601
+regions with 414 regions showing notable improvements (correlation increase exceed-
+ing 0.2). At the country level, NeuralCrop outperforms LPJmL (AgMIP) in 16 (19) of
+the 26 countries (see Extended Data Fig. 6). NeuralCrop shows pronounced improve-
+ment in Western and Central Europe, particularly in France and Germany. These
+regions are consistent with the spatial distribution of eddy-covariance flux observa-
+tions (see Supplementary Information Fig. S10), suggesting the potential to further
+improve NeuralCrop’s performance to capture interannual yield variability with more
+comprehensive observational data.
+US Corn Belt
+For the US Corn Belt, we focus on a region including nine states (Supplementary
+Information Fig. S11), which accounts for about two-thirds of total US corn produc-
+tion [49]. Figures 3a-c show temporal correlations between simulated corn yields and
+statistical corn yields for each county over the period 2000-2016. LPJmL exhibits
+5
+a
+b
+c
+d
+e
+Fig. 2 Comparison of simulated European wheat yields from NeuralCrop, LPJmL, and the AgMIP
+ensemble median with EU statistics [48] in European wheat regions. The AgMIP ensemble includes
+8 GGCMs. a, Time series correlation coefficient between NeuralCrop simulated wheat yield and EU
+statistics at the subnational level for the period 2000-2016 (range from −1 to 1, darker green areas
+indicate stronger positive correlations, and darker purple areas indicate stronger negative correla-
+tions). b, Same as panel a, but for LPJmL. c, Same as panel a, but for AgMIP. d, The difference of
+correlation coefficients between NeuralCrop and LPJmL (i.e., panel a – panel b), where blue areas
+indicate regions where NeuralCrop outperforms LPJmL in simulating interannual yield variability,
+and red areas indicate regions where LPJmL performs better. NeuralCrop outperforms (underper-
+forms) LPJmL in 66% (34%) of the 800 subnational regions. e, Same as panel d but for the difference
+between NeuralCrop and AgMIP (i.e., panel a – panel c). NeuralCrop outperforms (underperforms)
+AgMIP in 75.25% (24.75%) of the 800 subnational regions.
+strong correlations in the southern US Corn Belt, but weak or even negative val-
+ues in the north (such as parts of Minnesota, Wisconsin, and Michigan). NeuralCrop
+is generally more robust than LPJmL and corrects the negative correlations in the
+northern regions. The AgMIP ensemble demonstrates strong and spatially consistent
+correlations across the US Corn Belt. Figures 3d-e illustrate the spatial distribution of
+the correlation difference between NeuralCrop and GGCMs (also see Extended Data
+Fig. 7). Among 677 counties, NeuralCrop yields higher correlation in 484 counties,
+accounting for 71.49%, with 185 counties (27.32%) showing remarkable improvements
+6
+a
+b
+c
+d
+e
+Fig. 3 Comparison of simulated corn yields from NeuralCrop, LPJmL, and the AgMIP ensem-
+ble median with USDA statistics in the US Corn Belt, including nine states (i.e., South Dakota,
+Minnesota, Iowa, Missouri, Wisconsin, Illinois, Michigan, Indiana, and Ohio). The AgMIP ensemble
+includes 8 GGCMs. a, Time series correlation coefficient between NeuralCrop simulated corn yield
+and USDA statistics at the county level for the period 2000-2016 (range from −1 to 1, darker green
+areas indicate stronger positive correlations, and darker purple areas indicate stronger negative cor-
+relations). b, Same as panel a, but for LPJmL. c, Same as panel a, but for AgMIP. d, The difference
+of correlation coefficients between NeuralCrop and LPJmL (i.e., panel a – panel b), where blue areas
+indicate regions where NeuralCrop outperforms LPJmL in simulating interannual yield variability,
+and red areas indicate regions where LPJmL performs better. NeuralCrop outperforms (underper-
+forms) LPJmL in 71.49% (28.51%) of the 677 counties. e, Same as panel d but for the difference
+between NeuralCrop and AgMIP (i.e., panel a – panel c). NeuralCrop outperforms (underperforms)
+AgMIP in 53% (47%) of the 677 counties.
+where correlation increases more than 0.2. When compared against the ensemble
+median of AgMIP, NeuralCrop achieves higher correlations in 422 regions with 150
+regions showing notable improvements (correlation increase exceeding 0.2). At the
+country level, NeuralCrop outperforms LPJmL (AgMIP) in 7 (5) of the 9 states (see
+Extended Data Fig. 7). NeuralCrop underperforms the AgMIP ensemble in the north-
+ern regions. It is noted that no single GGCM consistently outperforms the others, as
+individual model performance varies significantly across crop types and geographical
+regions. Multi-model ensembles are the primary strategy for mitigating uncertain-
+ties in crop simulations [16]. NeuralCrop demonstrates that hybrid crop modelling
+has great potential to enhance its base model performance. We expect that apply-
+ing this approach to state-of-the-art GGCMs will significantly improve the projecting
+performance of multi-model ensembles.
+7
+Performance across moisture gradients
+We evaluate the ability of NeuralCrop to reproduce yield anomalies (Supplementary
+Information H.3) across the European wheat regions and the US Corn Belt over
+the period 2000–2016, under various moisture gradients as defined by the respec-
+tive growing-season Standardized Precipitation Evapotranspiration Index (SPEI). The
+SPEI is a drought index used to characterize drought intensity, duration, and fre-
+quency across different timescales [50] (Supplementary Information G.4). We use
+April–June SPEI for wheat and May-July SPEI for corn [51–53]. We further select
+two specific drought years as case studies, i.e., the 2018 European drought and the
+2012 US drought, to evaluate the performance of NeuralCrop under extreme drought
+events. All analyses are based on detrended yield data (Methods and Supplementary
+Information H.2).
+Yield anomalies across years
+It is evident that NeuralCrop outperforms LPJmL and the AgMIP ensemble in captur-
+ing yield anomalies for both wheat and corn across various moisture gradients (Fig. 4).
+Under dry conditions, the yield statistics (benchmark) reveal that both wheat and
+corn yields decline significantly as drought intensifies (Fig. 4a). While LPJmL and
+AgMIP capture the general trend of increasing yield losses, they show a tendency to
+underestimate drought-induced yield losses, consistent with previous findings [16, 54].
+NeuralCrop generally achieves the lowest root mean square error (RMSE) and matches
+the benchmark medians and means more closely across all dryness classes. Under
+wet conditions, the benchmark shows that wheat yields experience amplified losses as
+wetness intensifies, whereas LPJmL and AgMIP erroneously project a trend of yield
+increases (Fig. 4b), indicating the limitations of state-of-the-art GGCMs in repre-
+senting waterlogging stress. This likely stems from the fact that current GGCMs do
+not explicitly simulate the impacts of water excess on crops, which limits their abil-
+ity to reproduce yield anomalies across wetness gradients [55]. NeuralCrop effectively
+mitigates these spurious yield gains, achieving the lowest RMSE and matching the
+benchmark medians and means more closely across all wetness classes. These results
+suggest that NeuralCrop provides a more consistent and accurate representation of
+yield responses across moisture gradients, particularly under extreme conditions where
+existing GGCMs show systematic limitations.
+Case study
+As extreme weather events are expected to increase in frequency and magnitude due
+to climate change [17], an important ability of GGCMs is to project yield anomalies
+under extreme events. Fig. 5 shows a case study that illustrates the performance of
+NeuralCrop during the 2018 European drought and the 2012 US drought. It is noted
+that the AgMIP wheat ensemble is excluded from this analysis as it only provides
+historical yield simulations up to 2016, and the AgMIP corn ensemble is presented
+in Extended Data Fig. 8. Fig. 5a shows that the majority of Europe experienced
+significant drought-induced wheat yield losses in 2018, especially regions in Central and
+Northern Europe. Similarly, most of the US Corn Belt suffered from severe corn yield
+8
+Fig. 4 Comparison of simulated yield anomalies from NeuralCrop, LPJmL, and the AgMIP ensem-
+ble median with yield statistics (benchmark) for European wheat and US Corn Belt across moisture
+gradients at the subnational level during 2000–2016. The AgMIP ensemble includes 8 GGCMs. a,
+The boxplots represent the reported and simulated wheat yield anomalies in the EU over the period
+2000–2019, grouped by the April-June Standardized Precipitation Evapotranspiration Index (SPEI,
+see Supplementary Information G.4). Green boxes denote EU statistics, orange boxes denote Neu-
+ralCrop, blue boxes denote LPJmL, and purple boxes denote AgMIP. The box boundaries represent
+the interquartile range (IQR), defined by the first quartile, the median, and the third quartile. The
+upper and lower whiskers represent the maximum and minimum values that are within 1.5 times the
+interquartile range of the box. The black triangles are the mean values. The bars in the lower panel
+represent the root mean square error (RMSE) for NeuralCrop, LPJmL, and AgMIP within each SPEI
+class. Orange bars denote NeuralCrop, blue bars denote LPJmL, and purple bars denote AgMIP. b,
+Same as panel a, but for corn yields evaluated against USDA statistics.
+9
+a
+b
+c
+d
+e
+f
+Fig. 5 Yield anomalies and model performance for NeuralCrop and LPJmL under the extreme
+drought years. a, Wheat yield anomalies in 2018 at the subnational level from EU statistics. b, Scatter
+plot comparing simulated wheat yield anomalies (%) by LPJmL against EU statistics (benchmark).
+The color gradient indicates the density of data points, and the dashed line represents the 1:1 line.
+R2 and RMSE values are shown in the upper left. c, Same as panel b, but for NeuralCrop. d, Corn
+yield anomalies in 2012 at the county level from USDA statistics. e, Scatter plot comparing simulated
+corn yield anomalies (%) by LPJmL against USDA statistics (benchmark). f, Same as panel e, but
+for NeuralCrop.
+deficits in 2012 (Fig. 5d). LPJmL generally underestimates the extent of yield losses
+for both the 2018 wheat and 2012 corn drought events, but NeuralCrop outperforms
+the process-based LPJmL in capturing these negative yield anomalies with higher R2
+and lower RMSE, despite slightly overestimating these deficits. When compared to
+the AgMIP corn ensemble (Fig. 8), NeuralCrop also achieves higher R2 and lower
+RMSE. As drought and heat typically occur together, we further investigate their
+compound impacts on yield anomalies. We find that the maximum temperature during
+the growing season intensified the impact of drought on yield anomalies for both wheat
+and corn (see Supplementary Information Fig. S16 and Fig. S17). NeuralCrop also
+demonstrates a stronger performance in capturing these compounding impacts.
+10
+Discussion
+NeuralCrop can more accurately reproduce the daily and seasonal dynamics of car-
+bon and water fluxes across diverse crop in-situ observation sites (Supplementary
+Information F). The interannual instability of crop yields is a critical determinant of
+food security under climate change [56], which is a key indicator for evaluating the
+performance of GGCMs. Traditional GGCMs suffer from pronounced spatial hetero-
+geneity in yield-projection accuracy, which poses a major challenge for global food risk
+assessments. NeuralCrop exhibits more accurate projections of the interannual yield
+variability at European wheat regions and the US Corn Belt after fine-tuning with site-
+level observations. We believe NeuralCrop has the potential to improve simulations
+when more observations are available. Traditional GGCMs can typically detect but
+underestimate the drought-induced yield losses across various drought conditions [57],
+and fail to capture the yield losses driven by wet extremes. Our results show that
+NeuralCrop outperforms GGCMs in capturing yield anomalies across various moisture
+gradients with higher fidelity for both wheat and maize. Overall, NeuralCrop shows
+that incorporating ML is a promising approach for reducing uncertainty in process
+representations and parameterizations within GGCMs.
+NeuralCrop is, to our knowledge, the first hybrid, end-to-end ’online’ trainable
+GGCM that combines the strengths of state-of-the-art GGCMs with ML approaches.
+Compared with ’offline’ training, where the ML component is trained independently of
+the evolving model states, end-to-end ’online’ training enables ML components within
+NeuralCrop to continuously learn from and adjust the evolving model states. This
+co-evolution ensures that NeuralCrop maintains numerical stability over long-term
+simulations, preventing error accumulation [32], and also improves physical consis-
+tency. Compared with traditional GGCMs, NeuralCrop is computationally orders of
+magnitude more efficient. For example, running NeuralCrop on a single GPU and
+LPJmL on 128 central-processing-unit (CPU) cores at 0.5◦spatial resolution with daily
+time steps over 20 years, respectively, NeuralCrop achieved up to an 82.3× speedup
+as the number of grid cells increased to 14,157 (see Extended Data Fig. 9 and Sup-
+plementary Information Table. S4). This can be used for previously impractical tasks
+such as large ensemble simulations.
+Pure ML approaches for crop modelling typically struggle to generalize to unseen
+data [19]. Due to its hybrid approach, NeuralCrop demonstrates robust out-of-
+sample generalization capabilities (see Supplementary Information section G.3). We
+expect that it can be used to accurately simulate data-sparse, climate-vulnerable,
+and under-studied cropping regions, for example in Africa, South America, and Asia.
+Furthermore, as individual GGCM performance varies significantly across crops and
+regions, multi-model ensembles remain essential for mitigating simulation uncertain-
+ties [16]. NeuralCrop demonstrates that hybrid crop modelling has great potential to
+enhance its base model performance. When applying this approach to state-of-the-art
+GGCMs, substantial headroom exists to further improve the projecting performance
+of multi-model ensembles.
+Due to limited understanding, many biophysical processes are oversimplified or
+omitted in GGCMs [58]. For instance, the representation of soil waterlogging remains
+in its infancy in advanced GGCMs, and many GGCMs including LPJmL do not
+11
+account for soil waterlogging mechanisms [55], consistent with our results that yield
+responses under wet extremes are poorly captured by GGCMs. Similarly, processes
+like the impacts of compound climate events and pest/disease stress are only par-
+tially simulated or not included in traditional GGCMs [12]. These gaps limit the
+ability of GGCMs to simulate the individual and combined effects of these stresses.
+As an example, LPJmL failed to detect the yield losses driven by heavy rainfall in
+combination with soil anoxia and diseases in central and northern France in 2016,
+and instead projected a yield increase (Supplementary Information Fig. S18) [51, 59].
+While pre-trained NeuralCrop inherits the same process limitations, it captures part
+of the negative but smaller yield anomalies in northern France after fine-tuning (Sup-
+plementary Information Figs. S18c-f). This suggests that, despite without an explicit
+representation of these processes, the ML components can still learn from observational
+data to partially capture their indirect impacts.
+NeuralCrop is flexible to incorporate new process knowledge as our understanding
+of crop biophysical processes advances or with more ML components as higher-quality
+observational data becomes available. It also provides a powerful means to diag-
+nose what processes are not well represented in the original GGCMs. Until now,
+the high-quality observational data suitable for the NeuralCrop training comes from
+eddy-covariance observation networks. In regions where more data is available, results
+showed that NeuralCrop strongly outperforms traditional GGCMs. We hence expect
+that end-to-end ’online training’, with observational data covering broader areas and
+longer time periods, will enable more realistic crop simulations. Given ongoing cli-
+mate change, more advanced and climate-robust GGCMs are needed to quantify the
+impacts of climate change and especially intensifying extreme weather events on agri-
+cultural productivity. We believe the hybrid modelling approach of NeuralCrop offers
+a promising avenue to support food risk assessments.
+Methods
+Pre-training data generation
+We use LPJmL to generate data to pre-train NeuralCrop. The process-based LPJmL
+model simulates global carbon, water, and nitrogen fluxes and stocks, and surface
+energy balance for both natural vegetation and agricultural crops [38–41]. As a con-
+tributing model to the global model intercomparison networks AgMIP and ISIMIP,
+LPJmL has been comprehensively evaluated at the global scale [42, 43, 45, 47]. For
+cropland, driven by climate forcing, soil properties, land use, and field management
+(e.g., crop calendar, tillage, residue, and fertilizer), LPJmL simulates key biophysi-
+cal processes such as photosynthesis, carbon allocation, evapotranspiration, and soil
+moisture dynamics, as well as bioclimatic impacts on crop growth, development, yield
+formation across different crop functional types [39].
+We ran LPJmL (version 5) on a global grid at 0.5° × 0.5° (latitude × longitude)
+spatial and daily temporal resolution [40]. An initial 5000-year spin-up simulation
+under potential natural vegetation (i.e., without land use) was performed to bring soil
+carbon, nitrogen, and water pools into dynamic equilibrium. Starting from these equi-
+librium states, a second 390-year spin-up simulation was conducted to introduce the
+12
+impacts of historical land-use change on these pools. Both spin-up simulations used
+the first 30-year climate data cycled repeatedly to force LPJmL. The resulting model
+states ensure biophysically consistent initial conditions for subsequent transient sim-
+ulations of crop growth. The detailed description can be found in the Supplementary
+Information section C.
+NeuralCrop architecture
+NeuralCrop explicitly resolved key processes, following their representation in the
+LPJmL model, and is rewritten to support automatic differentiation and GPU opti-
+mization, using the Julia programming language. NeuralCrop embeds ML components,
+here fully-connected neural networks, into the process-based crop model to replace or
+augment components that are uncertain or simplified (Supplementary Information B.
+Neural networks can theoretically be used to parameterize any biased or simplified
+process-based components within GGCMs [27]. In practice, however, their applica-
+bility is constrained by the availability of observational data for training. It is only
+feasible to combine neural networks with process-based components whose prognos-
+tic variables are observable. In agricultural ecosystems, high-quality observational
+data remain scarce. While numerous remote sensing data is now available, their spa-
+tiotemporal resolutions are heterogeneous, making it difficult to use these data to
+train hybrid models [12]. Currently, global eddy-covariance observation networks (e.g.,
+FLUXNET [60] and AmeriFlux [61]) provide continuous, high-quality daily observa-
+tions of crop carbon and water fluxes. Training on these data allows neural networks
+to improve the representation of carbon and soil water-related processes in GGCMs.
+We described in detail in Supplementary Information B how key process-based compo-
+nents, i.e., photosynthesis, carbon allocation, soil carbon and nitrogen decomposition,
+and soil water dynamics, are combined with neural networks.
+The considered process-based components of NeuralCrop are implemented in a
+fully differentiable manner to enable the end-to-end ’online training’, which requires all
+processes along the backpropagation path to be differentiable by automatic differentia-
+tion (AD) [62]. Differentiability allows ML components to be optimized by taking into
+account interactions with the governing equations for model dynamics. For example,
+we use neural ordinary differential equations (NODE) [63] in NeuralCrop to emu-
+late daily carbon allocation (described in Supplementary Information B.2). Through
+’online training’, the NODE parameters are updated while accounting for interactions
+with internal prognostic states. Another big advantage of differentiability is that unob-
+servable latent variables parameterized by neural networks can be implicitly optimized
+through backpropagation using target prognostic observations. For example, in Neural-
+Crop, we use two fully-connected neural networks to parameterize two latent variables
+in photosynthesis (i.e., λ, a key variable related to photosynthetic electron trans-
+port capacity, and maximum photosynthetic carboxylation rate Vcmax), respectively
+(described in Supplementary Information B.1). This approach enables NeuralCrop to
+capture the spatiotemporal variability of both λ and Vcmax using target GPP data,
+thereby reducing uncertainty in the representation of photosynthesis.
+NeuralCrop is implemented in Julia [64], a high-performance and mature pro-
+gramming language for numerical and scientific computing, and its differentiability is
+13
+supported by the automatic differentiation package Zygote.jl [65]. NeuralCrop is ini-
+tialized using equilibrium states of soil carbon, nitrogen, and water pools generated
+from LPJmL simulations. All climate inputs to neural networks are standardized to
+a normal distribution with zero mean and unit variance, while prognostic variable
+inputs are linearly scaled to the range [0, 1] using their physical limits. NeuralCrop
+is optimized for GPUs, which is computationally efficient due to its neural-network
+components and grid-based simulations.
+Two-stage training approach
+Due to the limited high-quality observational data, we adopt a two-stage training
+approach to train NeuralCrop at 0.5° × 0.5° (latitude × longitude) spatial and daily
+temporal resolution (Fig. 1). During the pre-training stage, we train NeuralCrop on
+LPJmL outputs using a loss function composed of two terms (Supplementary Infor-
+mation D.3, Eq. S24). The first loss term promotes predictive accuracy by minimizing
+discrepancies between NeuralCrop projections and LPJmL outputs, while the second
+loss term imposes physical constraints to obey carbon mass balance. We then fine-tune
+the pre-trained model using real-world observations, specifically the carbon and water
+flux data from eddy-covariance observation networks, using the accuracy loss function
+(Supplementary Information D.3, Eq. S25). The processing of flux data is described
+in detail in Supplementary Information C.4. The fine-tuning adjusts the model to bet-
+ter match observed carbon and water dynamics by correcting biases inherited from
+LPJmL. All model outputs used for training are normalized by their respective maxi-
+mum value computed prior to model initialization, and all loss terms are defined using
+the standard mean squared error (MSE) (Supplementary Information D.3, Eq. S23).
+We use a rollout length that covers the entire crop growing period (from sowing to
+harvest) to both pre-train and fine-tune NeuralCrop, which we find enables stable and
+robust model training (Supplementary Information D.5). Although shorter rollouts
+offer higher training efficiency, they often lead to loss oscillation and convergence
+failures. This instability becomes more pronounced as the rollout length decreases,
+highlighting the importance of incorporating the entire crop growing period into each
+training rollout. We set a 365-day rollout as the default to train all NeuralCrop models
+in our study.
+Data sources and benchmarking
+We select European wheat regions and the US Corn Belt over the period 2000-
+2016 to evaluate the performance of NeuralCrop under both normal and extreme
+climate conditions. These two large-scale cropping regions are selected because of
+their long-term, high-quality eddy-covariance observations for fine-tuning, as well as
+annual subnational crop yield statistics for evaluation. Yield data used for evalua-
+tion are publicly available from the harmonized European Union subnational crop
+statistics dataset [48] and the USDA-NASS database, as described in Supplemen-
+tary Information G.1.1 and G.2.1. It’s noted that these two datasets are the most
+reliable yield statistics from these regions but may not fully represent ground-truth
+yields, as they are subject to potential errors due to reporting inaccuracies. The yield
+14
+simulations from the other 8 GGCMs, including ACEA [66], CROVER [67], EPIC-
+IIASA [68], ISAM [69], LDNDC [70], LPJ-GUESS [71], PEPIC [72], pDSSAT [73], and
+SIMPLACE-LINTUL5 [74], are accessible from AgMIP GGCMI Phase 3, providing
+historical yield simulations up to 2016.
+Yield data processing
+We aggregate simulated yields to the corresponding subnational unit of reported yield
+statistics (primarily NUTS-3 level in EU countries, and county level in the US) using
+an area-weighted averaging method, respectively, as described in Supplementary Infor-
+mation H.1. In European wheat regions, spring and winter wheat are simulated under
+rain-fed and irrigated management conditions, which are jointly evaluated against
+reported total wheat yields, including soft and durum wheat. In the US Corn Belt,
+the corn is simulated under rain-fed and irrigated management conditions to compare
+with reported corn yields. Prior to comparison, both simulated and reported yield time
+series are detrended using a cubic smoothing spline to remove the effects of long-term
+crop breeding advances and management improvements, thereby isolating the inter-
+annual variability primarily driven by climate change, described in Supplementary
+Information H.2.
+Evaluation metrics
+For interannual yield variability, we use the Pearson correlation coefficient (Supple-
+mentary Information section E.1) as a metric to evaluate the model performance.
+For yield anomalies, we use root mean square error (RMSE) (Supplementary Infor-
+mation section E.3), or the coefficient of determination (R2, see Eq. S28), i.e., the
+squared Pearson correlation coefficient (Supplementary Information section E.2) as
+the evaluation metrics.
+Data availability
+For running LPJmL and training NeuralCrop, we used the bias-corrected climate
+inputs from ISIMIP3a GSWP3-W5E5 datasets for the period 1901–2019, which are
+publicly available for download at https://www.isimip.org/. The data for cultivated
+area fraction and annual fertilizer rates were obtained from the LUH2v2 dataset [75].
+The crop residue data were accessed from ref. [76]. The crop tillage management data
+were obtained from ref. [77]. Soil properties (e.g., soil textures and pH) and crop sow-
+ing dates were accessed from Agricultural Model Intercomparison and Improvement
+Project (AgMIP) [45].
+The flux data used to finetune NeuralCrop were obtained from the global
+flux
+network
+FLUXNET2015
+(https://fluxnet.org/data/fluxnet2015-dataset/)
+and
+FLUXNET-CH4
+(https://fluxnet.org/data/fluxnet-ch4-community-product/),
+the
+American
+flux
+network
+AmeriFlux
+(https://ameriflux.lbl.gov/data/
+flux-data-products/), and the European Integrated Carbon Observation System
+(ICOS) (https://www.icos-cp.eu/data-products/).
+15
+The European subnational wheat statistics were downloaded from https://data.jrc.
+ec.europa.eu/dataset/685949ff-56de-4646-a8df-844b5bb5f835, which provides annual
+wheat (including soft and durum wheat) statistics on area, production, and average
+yield across three levels of the Nomenclature of Territorial Units for Statistics (NUTS).
+The subnational corn statistics of the US Corn Belt were obtained from https://
+quickstats.nass.usda.gov/. The yield simulations from the other GGCMs are available
+at https://www.isimip.org/.
+Code availability
+The NeuralCrop Julia code will be available on GitHub when this work gets published.
+Supplementary information
+The manuscript is accompanied by Supplementary Information that describes in detail
+how to develop, train, and validate NeuralCrop, as well as additional results.
+Author contribution
+Y.L., S.B., M.B., M.G., P.H. and N.B. conceived and designed the study. Y.L. wrote
+the model code, processed the data, trained the models and analysed the results. J.H.
+provided the yield comparison code. All authors discussed the results. Y.L. wrote the
+manuscript with contributions from all authors.
+Acknowledgements
+Y.L. acknowledges funding from the program of the China Scholarship Council
+(no.202303250017). N.B. and S.B. acknowledge funding from the Volkswagen Foun-
+dation. This is ClimTip contribution #X; the ClimTip project has received funding
+from the European Union’s Horizon Europe research and innovation programme under
+grant agreement no.101137601. The authors gratefully acknowledge the Ministry of
+Research, Science and Culture (MWFK) of Land Brandenburg for supporting this
+project by providing resources on the high performance computer system at the
+Potsdam Institute for Climate Impact Research.
+16
+References
+[1] Yang, Y., Tilman, D., Jin, Z., Smith, P., Barrett, C.B., Zhu, Y.-G., Burney, J.,
+D’Odorico, P., Fantke, P., Fargione, J., et al.: Climate change exacerbates the
+environmental impacts of agriculture. Science 385(6713), 3747 (2024)
+[2] Rezaei, E.E., Webber, H., Asseng, S., Boote, K., Durand, J.L., Ewert, F., Martre,
+P., MacCarthy, D.S.: Climate change impacts on crop yields. nature reviews earth
+& environment 4(12), 831–846 (2023)
+[3] Hasegawa, T., Sakurai, G., Fujimori, S., Takahashi, K., Hijioka, Y., Masui, T.:
+Extreme climate events increase risk of global food insecurity and adaptation
+needs. Nature Food 2(8), 587–595 (2021)
+[4] Hultgren, A., Carleton, T., Delgado, M., Gergel, D.R., Greenstone, M., Houser,
+T., Hsiang, S., Jina, A., Kopp, R.E., Malevich, S.B., et al.: Impacts of climate
+change on global agriculture accounting for adaptation. Nature 642(8068), 644–
+652 (2025)
+[5] Lesk, C., Rowhani, P., Ramankutty, N.: Influence of extreme weather disasters
+on global crop production. Nature 529(7584), 84–87 (2016)
+[6] J¨agermeyr, J., M¨uller, C., Ruane, A.C., Elliott, J., Balkovic, J., Castillo, O.,
+Faye, B., Foster, I., Folberth, C., Franke, J.A., et al.: Climate impacts on global
+agriculture emerge earlier in new generation of climate and crop models. Nature
+Food 2(11), 873–885 (2021)
+[7] Adrian, R., Craig, M., Degvold, F., Ebi, K.L., Frieler, K., Jamshed, A., McMil-
+lan, J., Mechler, R., New, M., Simpson, N., et al.: Climate change 2022-impacts,
+adaption and vulnerability. summary for policymakers (2022)
+[8] Beier, F.D., Dietrich, J.P., Heinke, J., Abrahao, G., Jeetze, P., Bodirsky, B.L., et
+al.: Planetary boundaries under a land-based climate change mitigation scenario
+with a food demand transformation: a modelling study. The Lancet Planetary
+Health 9(10), 101249 (2025) https://doi.org/10.1016/S2542-5196(25)00087-7
+[9] Luchtenbelt, H., Doelman, J., Bos, A., Daioglou, V., J¨agermeyr, J., M¨uller, C.,
+Stehfest, E., Vuuren, D.: Quantifying food security and mitigation risks con-
+sequential to climate change impacts on crop yields. Environmental Research
+Letters 20(1), 014001 (2024)
+[10] Kahiluoto, H., Sakieh, Y., Kaseva, J., Kersebaum, K.-C., Minoli, S., Franke, J.,
+R¨otter, R.P., M¨uller, C.: Redistribution of nitrogen to feed the people on a safer
+planet. PNAS nexus 3(5), 170 (2024)
+[11] Orlov, A., J¨agermeyr, J., M¨uller, C., Daloz, A.S., Zabel, F., Minoli, S., Liu, W.,
+Lin, T.-S., Jain, A.K., Folberth, C., et al.: Human heat stress could offset potential
+17
+economic benefits of co2 fertilization in crop production under a high-emissions
+scenario. One Earth 7(7), 1250–1265 (2024)
+[12] Wang, B., J¨agermeyr, J., O’Leary, G.J., Wallach, D., Ruane, A.C., Feng, P., Li, L.,
+Liu, D.L., Waters, C., Yu, Q., et al.: Pathways to identify and reduce uncertainties
+in agricultural climate impact assessments. Nature Food 5(7), 550–556 (2024)
+[13] Xiong, W., Asseng, S., Hoogenboom, G., Hernandez-Ochoa, I., Robertson, R.,
+Sonder, K., Pequeno, D., Reynolds, M., Gerard, B.: Different uncertainty distri-
+bution between high and low latitudes in modelling warming impacts on wheat.
+Nature Food 1(1), 63–69 (2020)
+[14] Asseng, S., Ewert, F., Rosenzweig, C., Jones, J.W., Hatfield, J.L., Ruane, A.C.,
+Boote, K.J., Thorburn, P.J., R¨otter, R.P., Cammarano, D., et al.: Uncertainty
+in simulating wheat yields under climate change. Nature climate change 3(9),
+827–832 (2013)
+[15] M¨uller, C., J¨agermeyr, J., Franke, J.A., Ruane, A.C., Balkovic, J., Ciais, P.,
+Dury, M., Falloon, P., Folberth, C., Hank, T., Hoffmann, M., Izaurralde, R.C.,
+Jacquemin, I., Khabarov, N., Liu, W., Olin, S., Pugh, T.A.M., Wang, X.,
+Williams, K., Zabel, F., Elliott, J.W.: Substantial Differences in Crop Yield Sen-
+sitivities Between Models Call for Functionality-Based Model Evaluation. Earth’s
+Future 12(3), 2023–003773 (2024) https://doi.org/10.1029/2023EF003773
+[16] Iizumi, T., Sakai, T.: The global dataset of historical yields for major crops 1981–
+2016. Scientific Data 7(1), 97 (2020)
+[17] Lee, H., Calvin, K., Dasgupta, D., Krinner, G., Mukherji, A., Thorne, P., Trisos,
+C., Romero, J., Aldunce, P., Barrett, K., et al.: IPCC, 2023: Climate Change
+2023: Synthesis Report. Contribution of Working Groups I, II and III to the Sixth
+Assessment Report of the Intergovernmental Panel on Climate Change, (2023)
+[18] Koehler, A.-K.: Uncertainties in global crop modelling. Nature Food 1(1), 19–20
+(2020)
+[19] Sweet, L.-b., Athanasiadis, I.N., Bree, R., Castellano, A., Martre, P., Paudel,
+D., Ruane, A.C., Zscheischler, J.: Transdisciplinary coordination is essential for
+advancing agricultural modeling with machine learning. One Earth 8(4) (2025)
+[20] Liu, L., Zhou, W., Guan, K., Peng, B., Xu, S., Tang, J., Zhu, Q., Till, J., Jia, X.,
+Jiang, C., et al.: Knowledge-guided machine learning can improve carbon cycle
+quantification in agroecosystems. Nature communications 15(1), 357 (2024)
+[21] Van Klompenburg, T., Kassahun, A., Catal, C.: Crop yield prediction using
+machine learning: A systematic literature review. Computers and electronics in
+agriculture 177, 105709 (2020)
+18
+[22] Liu, W., Ye, T., M¨uller, C., J¨agermeyr, J., Franke, J.A., Stephens, H., Chen, S.:
+The statistical emulators of ggcmi phase 2: responses of year-to-year variation of
+crop yield to co 2, temperature, water, and nitrogen perturbations. Geoscientific
+Model Development 16(23), 7203–7221 (2023)
+[23] Folberth, C., Baklanov, A., Balkoviˇc, J., Skalsk`y, R., Khabarov, N., Obersteiner,
+M.: Spatio-temporal downscaling of gridded crop model yield estimates based on
+machine learning. Agricultural and forest meteorology 264, 1–15 (2019)
+[24] Terven, J., Cordova-Esparza, D.-M., Romero-Gonz´alez, J.-A., Ram´ırez-Pedraza,
+A., Ch´avez-Urbiola, E.: A comprehensive survey of loss functions and metrics in
+deep learning. Artificial Intelligence Review 58(7), 195 (2025)
+[25] Paudel, D., De Wit, A., Boogaard, H., Marcos, D., Osinga, S., Athanasiadis, I.N.:
+Interpretability of deep learning models for crop yield forecasting. Computers and
+Electronics in Agriculture 206, 107663 (2023)
+[26] Tseng, G., Kerner, H., Nakalembe, C., Becker-Reshef, I.: Learning to predict crop
+type from heterogeneous sparse labels using meta-learning. In: Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp.
+1111–1120 (2021)
+[27] Reichstein, M., Camps-Valls, G., Stevens, B., Jung, M., Denzler, J., Carvalhais,
+N., Prabhat, F.: Deep learning and process understanding for data-driven earth
+system science. Nature 566(7743), 195–204 (2019)
+[28] Irrgang, C., Boers, N., Sonnewald, M., Barnes, E.A., Kadow, C., Staneva, J.,
+Saynisch-Wagner, J.: Towards neural earth system modelling by integrating arti-
+ficial intelligence in earth system science. Nature Machine Intelligence 3(8),
+667–674 (2021)
+[29] Gelbrecht, M., White, A., Bathiany, S., Boers, N.: Differentiable programming
+for earth system modeling. Geoscientific Model Development 16(11), 3123–3135
+(2023)
+[30] Shen, C., Appling, A.P., Gentine, P., Bandai, T., Gupta, H., Tartakovsky, A.,
+Baity-Jesi, M., Fenicia, F., Kifer, D., Li, L., et al.: Differentiable modelling to unify
+machine learning and physical models for geosciences. Nature Reviews Earth &
+Environment 4(8), 552–567 (2023)
+[31] Liu, Y., Huang, H., Wang, S.-C., Zhang, T., Xu, D., Chen, Y.: Elm2. 1-xgbfire1.
+0: improving wildfire prediction by integrating a machine learning fire model in a
+land surface model. Geoscientific Model Development 18(13), 4103–4117 (2025)
+[32] Kochkov, D., Yuval, J., Langmore, I., Norgaard, P., Smith, J., Mooers, G., Kl¨ower,
+M., Lottes, J., Rasp, S., D¨uben, P., et al.: Neural general circulation models for
+weather and climate. Nature 632(8027), 1060–1066 (2024)
+19
+[33] Zhang, C., Perezhogin, P., Gultekin, C., Adcroft, A., Fernandez-Granda, C.,
+Zanna, L.: Implementation and evaluation of a machine learned mesoscale eddy
+parameterization into a numerical ocean circulation model. Journal of Advances
+in Modeling Earth Systems 15(10), 2023–003697 (2023)
+[34] Bloh, M., Lobell, D., Asseng, S.: Knowledge informed hybrid machine learning
+in agricultural yield prediction. Computers and Electronics in Agriculture 227,
+109606 (2024)
+[35] Droutsas, I., Challinor, A.J., Deva, C.R., Wang, E.: Integration of machine learn-
+ing into process-based modelling to improve simulation of complex crop responses.
+in silico Plants 4(2), 017 (2022)
+[36] Maestrini, B., Mimi´c, G., Oort, P.A., Jindo, K., Brdar, S., Athanasiadis, I.N.,
+Evert, F.K.: Mixing process-based and data-driven approaches in yield prediction.
+European Journal of Agronomy 139, 126569 (2022)
+[37] Shahhosseini, M., Hu, G., Huber, I., Archontoulis, S.V.: Coupling machine learn-
+ing and crop modeling improves crop yield prediction in the us corn belt. Scientific
+reports 11(1), 1606 (2021)
+[38] Schaphoff, S., Bloh, W., Rammig, A., Thonicke, K., Biemans, H., Forkel, M.,
+Gerten, D., Heinke, J., J¨agermeyr, J., Knauer, J., et al.: LPJmL4–a dynamic
+global vegetation model with managed land–part 1: Model description. Geosci-
+entific Model Development 11(4), 1343–1375 (2018)
+[39] Bondeau, A., Smith, P.C., Zaehle, S., Schaphoff, S., Lucht, W., Cramer, W.,
+Gerten, D., LOTZE-CAMPEN, H., M¨uller, C., Reichstein, M., et al.: Modelling
+the role of agriculture for the 20th century global terrestrial carbon balance.
+Global Change Biology 13(3), 679–706 (2007)
+[40] Bloh, W., Schaphoff, S., M¨uller, C., Rolinski, S., Waha, K., Zaehle, S.: Imple-
+menting the nitrogen cycle into the dynamic global vegetation, hydrology, and
+crop growth model lpjml (version 5.0). Geoscientific Model Development 11(7),
+2789–2812 (2018)
+[41] Lutz, F., Herzfeld, T., Heinke, J., Rolinski, S., Schaphoff, S., Von Bloh, W., Stoor-
+vogel, J.J., M¨uller, C.: Simulating the effect of tillage practices with the global
+ecosystem model lpjml (version 5.0-tillage). Geoscientific Model Development
+12(6), 2419–2440 (2019)
+[42] Franke, J.A., M¨uller, C., Elliott, J., Ruane, A.C., J¨agermeyr, J., Balkovic, J.,
+Ciais, P., Dury, M., Falloon, P.D., Folberth, C., et al.: The ggcmi phase 2 exper-
+iment: global gridded crop model simulations under uniform changes in co 2,
+temperature, water, and nitrogen levels (protocol version 1.0). Geoscientific Model
+Development 13(5), 2315–2336 (2020)
+20
+[43] Frieler, K., Volkholz, J., Lange, S., Schewe, J., Mengel, M., Roc´ıo Rivas L´opez, M.,
+Otto, C., Reyer, C.P., Karger, D.N., Malle, J.T., et al.: Scenario setup and forcing
+data for impact model evaluation and impact attribution within the third round of
+the inter-sectoral impact model intercomparison project (isimip3a). Geoscientific
+Model Development 17(1), 1–51 (2024)
+[44] M¨uller, C., Robertson, R.D.: Projecting future crop productivity for global
+economic modeling. Agricultural Economics 45(1), 37–50 (2014)
+[45] M¨uller, C., Elliott, J., Chryssanthacopoulos, J., Arneth, A., Balkovic, J., Ciais, P.,
+Deryng, D., Folberth, C., Glotter, M., Hoek, S., et al.: Global gridded crop model
+evaluation: benchmarking, skills, deficiencies and implications. Geoscientific
+Model Development 10(4), 1403–1422 (2017)
+[46] J¨agermeyr, J., Pastor, A., Biemans, H., Gerten, D.: Reconciling irrigated food
+production with environmental flows for sustainable development goals imple-
+mentation. Nature communications 8(1), 15900 (2017)
+[47] Schaphoff, S., Forkel, M., M¨uller, C., Knauer, J., Von Bloh, W., Gerten,
+D., J¨agermeyr, J., Lucht, W., Rammig, A., Thonicke, K., et al.: Lpjml4–a
+dynamic global vegetation model with managed land–part 2: Model evaluation.
+Geoscientific Model Development 11(4), 1377–1403 (2018)
+[48] Ronchetti, G., Nisini Scacchiafichi, L., Seguini, L., Cerrani, I., Velde, M.: Harmo-
+nized european union subnational crop statistics can reveal climate impacts and
+crop cultivation shifts. Earth System Science Data 16(3), 1623–1649 (2024)
+[49] Lobell, D.B., Deines, J.M., Tommaso, S.D.: Changes in the drought sensitivity of
+us maize yields. Nature Food 1(11), 729–735 (2020)
+[50] Vicente-Serrano, S.M., Beguer´ıa, S., L´opez-Moreno, J.I.: A multiscalar drought
+index sensitive to global warming: the standardized precipitation evapotranspi-
+ration index. Journal of climate 23(7), 1696–1718 (2010)
+[51] N´oia J´unior, R.d.S., Deswarte, J.-C., Cohan, J.-P., Martre, P., Der Velde, M.,
+Lecerf, R., Webber, H., Ewert, F., Ruane, A.C., Slafer, G.A., et al.: The extreme
+2016 wheat yield failure in france. Global Change Biology 29(11), 3130–3146
+(2023)
+[52] Zipper, S.C., Qiu, J., Kucharik, C.J.: Drought effects on us maize and soy-
+bean production: spatiotemporal patterns and historical changes. Environmental
+Research Letters 11(9), 094021 (2016)
+[53] Deines, J.M., Archontoulis, S.V., Huber, I., Lobell, D.B.: Observational evidence
+for groundwater influence on crop yields in the united states. Proceedings of the
+National Academy of Sciences 121(36), 2400085121 (2024)
+21
+[54] Frieler, K., Schauberger, B., Arneth, A., Balkoviˇc, J., Chryssanthacopoulos, J.,
+Deryng, D., Elliott, J., Folberth, C., Khabarov, N., M¨uller, C., et al.: Under-
+standing the weather signal in national crop-yield variability. Earth’s Future 5(6),
+605–616 (2017)
+[55] Garcia-Vila, M., Santos Vianna, M., Harrison, M.T., Liu, K., S. N´oia-J´unior, R.,
+Weber, T.K., Zhao, J., Acutis, M., Archontoulis, S., Asseng, S., et al.: Gaps and
+strategies for accurate simulation of waterlogging impacts on crop productivity.
+Nature Food, 1–10 (2025)
+[56] Proctor, J., Zeppetello, L.V., Chan, D., Huybers, P.: Climate change increases
+the interannual variance of summer crop yields globally through changes in
+temperature and water supply. Science Advances 11(36), 3575 (2025)
+[57] Heinicke, S., Frieler, K., J¨agermeyr, J., Mengel, M.: Global gridded crop mod-
+els underestimate yield responses to droughts and heatwaves. Environmental
+Research Letters 17(4), 044026 (2022)
+[58] N´oia J´unior, R.d.S., Asseng, S., M¨uller, C., Deswarte, J.-C., Cohan, J.-P., Martre,
+P.: Negative impacts of climate change on crop yields are underestimated. Trends
+Plant Sci. 30(11), 1262–1273 (2025) https://doi.org/10.1016/j.tplants.2025.05.
+002
+[59] Ben-Ari, T., Bo´e, J., Ciais, P., Lecerf, R., Velde, M., Makowski, D.: Causes and
+implications of the unforeseen 2016 extreme yield loss in the breadbasket of france.
+Nature communications 9(1), 1627 (2018)
+[60] Pastorello, G., Trotta, C., Canfora, E., Chu, H., Christianson, D., Cheah, Y.-W.,
+Poindexter, C., Chen, J., Elbashandy, A., Humphrey, M., et al.: The fluxnet2015
+dataset and the oneflux processing pipeline for eddy covariance data. Scientific
+data 7(1), 225 (2020)
+[61] Chu, H., Christianson, D.S., Cheah, Y.-W., Pastorello, G., O’Brien, F., Geden,
+J., Ngo, S.-T., Hollowgrass, R., Leibowitz, K., Beekwilder, N.F., et al.: Ameriflux
+base data pipeline to support network growth and data sharing. Scientific Data
+10(1), 614 (2023)
+[62] Gelbrecht, M., Kl¨ower, M., Boers, N.: Pseudospectralnet: Toward hybrid atmo-
+spheric models for climate simulations. Journal of Advances in Modeling Earth
+Systems 17(10), 2025–004969 (2025)
+[63] Chen, R.T., Rubanova, Y., Bettencourt, J., Duvenaud, D.K.: Neural ordinary
+differential equations. Advances in neural information processing systems 31
+(2018)
+[64] Bezanson, J., Edelman, A., Karpinski, S., Shah, V.B.: Julia: A fresh approach to
+numerical computing. SIAM review 59(1), 65–98 (2017)
+22
+[65] Innes, M.: Don’t unroll adjoint: Differentiating ssa-form programs. CoRR
+abs/1810.07951 (2018) arXiv:1810.07951
+[66] Mialyk, O., Schyns, J.F., Booij, M.J., Su, H., Hogeboom, R.J., Berger, M.: Water
+footprints and crop water use of 175 individual crops for 1990–2019 simulated
+with a global crop model. Scientific data 11(1), 206 (2024)
+[67] Okada, M., Iizumi, T., Sakurai, G., Hanasaki, N., Sakai, T., Okamoto, K.,
+Yokozawa, M.: Modeling irrigation-based climate change adaptation in agricul-
+ture: Model development and evaluation in northeast china. Journal of Advances
+in Modeling Earth Systems 7(3), 1409–1424 (2015)
+[68] Balkoviˇc, J., Velde, M., Skalsk`y, R., Xiong, W., Folberth, C., Khabarov, N.,
+Smirnov, A., Mueller, N.D., Obersteiner, M.: Global wheat production poten-
+tials and management flexibility under the representative concentration pathways.
+Global and Planetary Change 122, 107–121 (2014)
+[69] Song, Y., Jain, A., McIsaac, G.: Implementation of dynamic crop growth processes
+into a land surface model: evaluation of energy, water and carbon fluxes under
+corn and soybean rotation. Biogeosciences 10(12), 8039–8066 (2013)
+[70] Haas, E., Klatt, S., Fr¨ohlich, A., Kraft, P., Werner, C., Kiese, R., Grote, R.,
+Breuer, L., Butterbach-Bahl, K.: Landscapedndc: a process model for simulation
+of biosphere–atmosphere–hydrosphere exchange processes at site and regional
+scale. Landscape ecology 28(4), 615–636 (2013)
+[71] Ma, J., Olin, S., Anthoni, P., Rabin, S.S., Bayer, A.D., Nyawira, S.S., Arneth,
+A.: Modeling symbiotic biological nitrogen fixation in grain legumes globally with
+lpj-guess (v4. 0, r10285). Geoscientific Model Development 15(2), 815–839 (2022)
+[72] Williams, J., Jones, C., Kiniry, J., Spanel, D.A.: The epic crop growth model.
+Transactions of the ASAE 32(2), 497–0511 (1989)
+[73] Jones, J.W., Hoogenboom, G., Porter, C.H., Boote, K.J., Batchelor, W.D., Hunt,
+L.A., Wilkens, P.W., Singh, U., Gijsman, A.J., Ritchie, J.T.: The dssat cropping
+system model. European journal of agronomy 18(3-4), 235–265 (2003)
+[74] Enders, A., Vianna, M., Gaiser, T., Krauss, G., Webber, H., Srivastava, A.K.,
+Seidel, S.J., Tewes, A., Rezaei, E.E., Ewert, F.: Simplace—a versatile modelling
+and simulation framework for sustainable crops and agroecosystems. in silico
+Plants 5(1), 006 (2023)
+[75] Hurtt, G.C., Chini, L., Sahajpal, R., Frolking, S., Bodirsky, B.L., Calvin, K.,
+Doelman, J.C., Fisk, J., Fujimori, S., Goldewijk, K.K., et al.: Harmonization of
+global land-use change and management for the period 850–2100 (luh2) for cmip6.
+Geoscientific Model Development Discussions 2020, 1–65 (2020)
+23
+[76] Dietrich, J.P., Mishra, A., Weindl, I., Bodirsky, B.L., Wang, X., Baumstark, L.,
+Kreidenweis, U., Klein, D., Steinmetz, N., Chen, D., Humpenoeder, F., von Jeetze,
+P., Wirth, S., Beier, F., Hoetten, D., Sauer, P., Tommey, J.: mrland: MadRaT land
+data package. Version: 0.65.11 (2025). https://doi.org/10.5281/zenodo.3822083 .
+https://github.com/pik-piam/mrland
+[77] Porwollik, V., Rolinski, S., Heinke, J., M¨uller, C.: Generating a rule-based global
+gridded tillage dataset. Earth System Science Data 11(2), 823–843 (2019)
+24
+Extended Data Figures
+Fig. 6 Correlation coefficient difference between NeuralCrop and GGCMs in European wheat
+regions. a, Boxplots of the correlation coefficient difference between NeuralCrop and LPJmL at the
+subnational level, aggregated by country for the period 2000–2016, with countries ordered alpha-
+betically by their country code (A–Z). The box boundaries represent the interquartile range (IQR),
+defined by the first quartile, the median, and the third quartile. The upper and lower whiskers rep-
+resent the maximum and minimum values that are within 1.5 times the interquartile range of the
+box. The black triangles are the mean values. NeuralCrop outperforms (underperforms) LPJmL in
+16 (10) of the 26 countries. b, Same as panel a but for the correlation coefficient difference between
+NeuralCrop and AgMIP (the ensemble median of 8 GGCMs). NeuralCrop outperforms (underper-
+forms) LPJmL in 19 (7) of the 26 countries.
+25
+Fig. 7 Correlation coefficient difference between NeuralCrop and GGCMs in the US Corn Belt,
+including nine states (i.e., South Dakota, Minnesota, Iowa, Missouri, Wisconsin, Illinois, Michigan,
+Indiana, and Ohio). a, Boxplots of the correlation coefficient difference between NeuralCrop and
+LPJmL at the county level, aggregated by state for the period 2000–2016. The box boundaries rep-
+resent the interquartile range (IQR), defined by the first quartile, the median, and the third quartile.
+The upper and lower whiskers represent the maximum and minimum values that are within 1.5 times
+the interquartile range of the box. The black triangles are the mean values. NeuralCrop outperforms
+(underperforms) LPJmL in 7 (2) of the 9 states. b, Same as panel a but for the correlation coeffi-
+cient difference between NeuralCrop and AgMIP (the ensemble median of 8 GGCMs). NeuralCrop
+outperforms (underperforms) LPJmL in 4 (5) of the 9 states.
+26
+Fig. 8 Simulated corn yield anomalies (%) by AgMIP (the ensemble median of 8 GGCMs) against
+USDA statistics (benchmark). The color gradient indicates the density of data points, and the dashed
+line represents the 1:1 line. R2 and RMSE values are shown in the upper left.
+27
+Fig. 9 Inference time of GPU-accelerated NeuralCrop and CPU-based LPJmL simulating for a
+0.5◦× 0.5◦spatial resolution with daily time steps over a 20-year simulation period (7300 days) at
+different grid cells. NeuralCrop was running on one single NVIDIA H100 GPU with 80GB of memory,
+and LPJmL was running on one single AMD EPYC 9554 CPU with 128 cores and 768GB of memory.
+28
+Supplementary information
+A Hybrid architecture
+31
+A.1 Dynamical Core of NeuralCrop . . . . . . . . . . . . . . . . . . . . . .
+31
+A.2 Neural network . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+31
+A.3 Implementation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+31
+B Trainable components of NeuralCrop
+33
+B.1
+Photosynthesis
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+33
+B.2
+Crop carbon allocation . . . . . . . . . . . . . . . . . . . . . . . . . . .
+35
+B.3
+Soil and litter carbon cycle
+. . . . . . . . . . . . . . . . . . . . . . . .
+36
+B.4
+Soil and litter nitrogen cycle . . . . . . . . . . . . . . . . . . . . . . . .
+37
+B.5
+Soil water cycle . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+38
+C Data
+40
+C.1 Initial conditions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+40
+C.2 Pre-training data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+40
+C.3 Fine-tuning data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+40
+C.4 Data pre-processing
+. . . . . . . . . . . . . . . . . . . . . . . . . . . .
+41
+D Training
+43
+D.1 Input data normalization
+. . . . . . . . . . . . . . . . . . . . . . . . .
+43
+D.2 Optimizer settings
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+43
+D.3 Loss function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+43
+D.4 Training sequence length . . . . . . . . . . . . . . . . . . . . . . . . . .
+44
+D.5 Training rollouts
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+44
+D.6 Output rescaling
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+46
+D.7 Training resources
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+46
+E Evaluation metrics
+47
+E.1
+Pearson correlation coefficient . . . . . . . . . . . . . . . . . . . . . . .
+47
+E.2
+Coefficient of determination . . . . . . . . . . . . . . . . . . . . . . . .
+47
+E.3
+Root mean square error
+. . . . . . . . . . . . . . . . . . . . . . . . . .
+47
+F In situ validation
+48
+F.1
+In situ sites . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+48
+F.2
+Training . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+48
+F.3
+Results . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+49
+G Large-scale cropping regions
+55
+G.1 European wheat
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+55
+G.1.1
+Subnational crop statistics . . . . . . . . . . . . . . . . . . . . .
+55
+G.1.2
+Pre-training . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+55
+G.1.3
+Fine-tuning . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+56
+G.2 US Corn Belt . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+57
+29
+G.2.1
+County-level crop statistics
+. . . . . . . . . . . . . . . . . . . .
+57
+G.2.2
+Pre-training . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+58
+G.2.3
+Fine-tuning . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+59
+G.3 Out-of-sample generalization
+. . . . . . . . . . . . . . . . . . . . . . .
+60
+G.4 SPEI . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+62
+H Yield data processing
+64
+H.1 Yield aggregation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+64
+H.2 Yield detrending
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+64
+H.3 Yield anomalies . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+65
+I
+Additional information
+66
+I.1
+Case study
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+66
+I.2
+France wheat anomalies in 2016 . . . . . . . . . . . . . . . . . . . . . .
+68
+30
+A Hybrid architecture
+A.1 Dynamical Core of NeuralCrop
+NeuralCrop distinguishes between diagnostic and prognostic variables. Diagnostic vari-
+ables, such as leaf area index (LAI) and gross primary productivity (GPP), represent
+instantaneous system states that are not explicitly dependent on the system’s tem-
+poral evolution. Prognostic variables, such as carbon pools, nitrogen pools and soil
+water pools, govern the dynamic evolution of the system states over time. They are
+represented by coupled ordinary differential equations (ODEs) that form the dynam-
+ical core of NeuralCrop in crop carbon, nitrogen, and water cycles, as described in
+detail in Section B. At each time step, diagnostic variables are updated based on the
+computed prognostic variables.
+A.2 Neural network
+In NeuralCrop, we combine fully-connected neural networks with process-based com-
+ponents, which are designed to learn key process representations from observational
+data, to reduce ’hidden’ uncertainties inherent in process-based GGCMs. For diagnos-
+tic variables replaced or augmented by neural networks, we use a 5-layer MLP with
+ReLU activations and 384 hidden neurons. To capture temporal dependencies and con-
+tinuous dynamics, we naturally use neural ordinary differential equations (NODEs) [1]
+to model prognostic variables, which are parameterized by a 3-layer MLP with ReLU
+activations and 384 hidden neurons. To solve the NODEs, we use a forward Euler
+solver with a fixed time step ∆t = 1 day. At each time step t, the prognostic variable
+X(t) is updated according to:
+X(t + ∆t) = X(t) + ∆t · fθ(X(t), t)
+(S1)
+where fθ denotes the MLP that outputs the learned tendencies.
+A.3 Implementation
+NeuralCrop adopts robust physical representations of ecosystem processes governing
+carbon, water, energy, and nitrogen fluxes from LPJmL, a state-of-the-art process-
+based model in simulating natural and agricultural ecosystems. To enable seamless
+integration with machine learning components, we translated the C-based crop module
+of LPJmL into Julia, a high-performance language designed for numerical and scientific
+computing [2]. The Julia ecosystem for scientific machine learning (SciML) provides
+native support for differential equations [3], which naturally fits well with our hybrid
+modelling approach using ODEs as the core of system dynamics.
+We implement the ML components of NeuralCrop using Lux.jl [4, 5], a neural
+network framework built entirely with pure functions that are friendly to both compil-
+ers and automatic differentiation. We train the ML components of NeuralCrop using
+Zygote.jl [6], a high-performance automatic differentiation (AD) framework in Julia
+that enables efficient gradient-based optimization, accelerated by CUDA.jl [7, 8]. Dur-
+ing training, the gradients of neural networks are computed via direct reverse-mode
+31
+differentiation, including the forward Euler solver used for the NODEs (i.e., gradi-
+ents are obtained by backpropagating through the Euler solver rather than using
+adjoint methods). To support full graphics-processing-unit (GPU) compatibility and
+improve computational efficiency, we implement the process-based components using
+KernelAbstractions.jl [9], which allows both neural networks and process-based parts
+to be parallelized and executed within a unified GPU-accelerated framework.
+32
+B Trainable components of NeuralCrop
+A detailed description of the model components of LPJmL can be found in Schaphoff
+et al.[10]. In this section, we focus on the components replaced or augmented by
+neural networks within NeuralCrop. The overall data flow in the learned components
+of NeuralCrop is shown in Fig. S1.
+Photosynthesis 
+(MLP)
+Crop carbon allocation 
+(NODE)
+Soil and litter carbon cycle 
+(NODE)
+Soil water cycle 
+(NODE)
+Soil and litter nitrogen cycle 
+(NODE)
+augmented
+replaced
+Climate forcing
+temperature
+CO2
+preciptation
+radiation
+Extra features
+day length
+APAR
+soil Ks
+GPP
+NPP
+soil moisture
+Extra features
+crop respiration
+leaf area index
+crop nitrogen
+soil temperature
+APAR: absorbed photosynthetically active radiation
+Ks: saturated hydraulic conductivity
+GPP: gross primary production
+NPP: net primary production
+Fig. S1 Schematic of the data flow in the learned components of NeuralCrop.
+B.1 Photosynthesis
+The photosynthesis scheme follows a ’big leaf’ model developed by Farquhar et al [11,
+12], and improved by Collatz et al [13, 14] and Prentice et al [15, 16]. The daily
+gross photosynthesis rate Agd
+ g C m−2 day−1
+is calculated as the co-limited minimum
+of the light-limited photosynthesis rate JE
+ mol C m−2 h−1
+and the Rubisco-limited
+photosynthesis rate JC
+ mol C m−2 h−1
+. The corresponding equations are:
+JE = C1 ·
+APAR
+daylength,
+(S2)
+where C1 is a temperature stress and stomatal conductance–related coefficient, APAR
+is the absorbed photosynthetically active radiation, and daylength is the length of day
+time.
+JC = C2 · Vmax,
+(S3)
+33
+where C2 is the stomatal conductance-related coefficient, and Vmax is the maximum
+Rubisco capacity.
+Agd =
+
+JE + JC −
+p
+(JE + JC)2 −4 · θ · JE · JC
+
+2 · θ · daylength
+,
+(S4)
+where θ is the co-limitation coefficient of light and Rubisco activity.
+Here, we only present the final equation to obtain Agd (Eq. S4) and omit the
+intermediate derivation steps, which are already described in detail in Schaphoff et
+al.[10]. In order to compute the optimal ratio of the inter-cellular to atmospheric CO2
+concentration, λ, the following equation must be solved (Eq. S5).
+And + (1 −daylength/24) · Rleaf −pa · (gc −gmin) · (1 −λ)/1.6 = 0,
+(S5)
+where And is daily net photosynthesis rate, Rleaf is leaf respiration, pa is the atmo-
+spheric partial pressure of CO2, gc is canopy conductance, gmin is vegetation (crop)
+specific minimum canopy conductance. However, an analytical solution is not feasi-
+ble because λ appears both directly in the equation and indirectly through And. In
+LPJmL, a bisection algorithm is used to iteratively solve the equation and determine
+the value of λ, which introduces high computational cost when conducting large-scale,
+high-resolution simulations.
+To address this bottleneck, we replace the root-finding algorithm with a 5-layer
+MLP to emulate the solution for λ, which approximates the nonlinear relationship
+between environmental variables (i.e., day length, air temperature, and soil moisture)
+and the corresponding optimal value of λ. Compared to the bisection algorithm, the
+neural network-based emulator can significantly accelerate the photosynthesis compu-
+tation, which is due to the fact that neural networks only need one forward pass for
+inference, while root-finding algorithms involve iterative evaluations.
+Additionally, we use a second 5-layer MLP to simulate the maximum Rubisco
+capacity Vmax, originally computed using an empirical formulation (Eq. S6).
+Vmax = (Nleaf −NCleaf, low · Cleaf)/(p · exp(ktemp · (T −25)) · LAI) · daylength (S6)
+where Nleaf is the leaf nitrogen content, Cleaf is the leaf carbon content, NCleaf, low is
+the crop-specific lower ratio of leaf carbon and nitrogen, p is the static coefficient, ktemp
+is the factor of temperature dependence of nitrogen demand for Rubisco activity, T is
+the air temperature, LAI is the leaf area index. Instead of relying on a fixed empirical
+relationship, this neural network is trained using observational data to capture more
+complex and potentially nonlinear interactions between Vmax and its environmental
+and biochemical drivers (i.e., day length, APAR, leaf nitrogen, and air temperature).
+Furthermore, we implement the photosynthesis module to be fully differentiable.
+By leveraging observational GPP, we are able to optimize λ and Vmax through gradient-
+based ’online training’, which helps mitigate ”hidden” biases introduced by the original
+empirical formulation of λ and Vmax.
+34
+B.2 Crop carbon allocation
+In LPJmL, crop carbon allocation is governed by a set of heuristic rules driven by
+phenological development stage, organ priority, and stress factors. Daily NPP (net
+gross productivity) accumulates to total biomass, which is then allocated to crop
+organs in a hierarchical order: root, leaf, storage organ, mobile reserve, and stem [10].
+The carbon allocation equations are:
+Croot = froot · biomass,
+(S7)
+Cleaf = LAI
+sla ,
+(S8)
+Cso = HI · (1 −froot) · biomass,
+(S9)
+Cpool = biomass −Croot −Cleaf −Cso.
+(S10)
+where froot is the root carbon allocation coefficient (co-limited by water and nitrogen
+stress), sla is the specific leaf area, HI is the harvest index (limited by water stress).
+The daily carbon allocation is computed based solely on the current phenological and
+environmental conditions without tracking the dynamic evolution of carbon pools over
+time, which limits its ability to represent feedbacks and lagged responses.
+The matrix-based carbon allocation framework proposed by Luo et al.[17] provides
+a promising approach to model carbon allocation dynamics. By representing carbon
+allocation as a system of ODEs(Eq. S11), it captures the temporal evolution of carbon
+pools in a continuous and prognostic manner.
+dC(t)
+dt
+= A(C, t)µ(t) + B(C, t)ξ(t)K(C, t)C(t),
+(S11)
+where C(t) denotes the vector of carbon compartments, A(C, t) is a vector of allo-
+cation coefficients, µ(t) is carbon input (e.g., NPP), B(C, t) is a matrix of transfer
+coefficients, ξ(t) is a matrix of environmental modifiers, K(C, t) is a matrix of turnover
+coefficients. Despite its advantages, a key challenge of the matrix-based formulation
+is the parameterization of the matrices A, B, and K, which requires detailed mech-
+anistic assumptions or extensive calibration. Such parameterizations are often poorly
+constrained and exhibit high spatial heterogeneity, making it difficult to apply the
+model robustly under diverse environmental and management conditions.
+Here, we further extend the matrix approach using neural ordinary differential
+equations (NODEs), where the right-hand side of ODEs is replaced by neural net-
+works [1]. Specifically, we use a 3-layer MLP to parameterize the carbon allocation
+dynamics (the right-hand side of Eq. S11) implicitly based on carbon pool states
+and external inputs (i.e., NPP, LAI, leaf nitrogen, and soil moisture). This NODE-
+based formulation avoids explicitly prescribing the allocation, transfer, and turnover
+coefficients while introducing data-driven flexibility to better capture the complexity
+and variability of crop-environment interactions. Our choice of matrix approach was
+also motivated by our desire for efficient running on machine learning accelerators, in
+particular GPUs, which are highly optimized for matrix operations.
+35
+B.3 Soil and litter carbon cycle
+Agricultural soil and litter carbon play a crucial role in the global carbon balance under
+climate change. In LPJmL, the litter carbon consists of three litter pools, including
+two above-ground leaf and stem litter carbon pools and one below-ground root litter
+carbon pool. The soil carbon is simulated across five vertical soil layers (0.2, 0.3, 0.5,
+1, and 1 meter thickness) with a fast and a slow organic carbon pool in each layer [18].
+LPJmL uses discrete-time balance equations to update each soil and litter carbon pool.
+Based on the matrix approach, we reformulated the soil and litter carbon balance as
+explicit ODEs (Eqs. S12 - S14), which are well suited for parallel execution on GPUs.
+dClitter(t, l)
+dt
+= Alitter · Cresidue −(1 −exp(−klitter10 · flitter(t, l))) · Clitter(t, l), (S12)
+with l = 1, 2, 3,
+where Cresidue denotes the crop residues after crops are harvested, Alitter is the crop
+residue partitioning coefficients, klitter10 is the static litter carbon decomposition rate
+at 10 ◦C, flitter(t, l) is the carbon decomposition response function. Above-ground litter
+carbon decomposition depends on air temperature and soil moisture, whereas below-
+ground litter carbon decomposition depends on soil temperature and soil moisture.
+The second term of Eq. S12 is the daily decomposed litter carbon, at which 70% of
+decomposed litter carbon directly enters the atmosphere as litter respiration, and the
+remaining goes into the soil carbon pools, with 98.5% to the fast soil carbon pools
+and 1.5% to the slow carbon pools [18].
+dCfast(t, l)
+dt
+= Afastµ(t) −(1 −exp(−kfast10 · ffast(t, l))) · Cfast(t, l),
+(S13)
+dCslow(t, l)
+dt
+= Aslowµ(t) −(1 −exp(−kslow10 · fslow(t, l))) · Cslow(t, l),
+(S14)
+with l = 1, 2, 3, 4, 5,
+where µ(t) is the carbon input from decomposed litter carbon, Afast and Aslow are
+the carbon input partitioning coefficients across five layers, kfast0 and kslow0 are the
+static soil carbon decomposition rate at 10 ◦C, ffast(t, l) and fslow(t, l) are the carbon
+decomposition response functions which depends on soil temperature and soil mois-
+ture. Both the second term of Eq. S13 and Eq. S14 are the daily decomposed soil
+carbon, which directly goes into the atmosphere as soil respiration.
+The original formulation of the response function is a cubic polynomial equation:
+f = exp
+
+308.56 ·
+
+1
+56.02 −
+1
+T + 46.02
+
+·
+ 0.0402 −5.005 · θ3 + 4.269 · θ2 + 0.719 · θ
+
+,
+(S15)
+where (T) denotes air or soil temperature, θ is soil moisture. We replace the decompo-
+sition response functions flitter(t, l), ffast(t, l), and fslow(t, l) in Eqs. S12 - S14 with a
+36
+3-layer MLP that takes both soil temperature and soil moisture as inputs, respectively.
+This allows the model to flexibly capture nonlinear environmental effects in a fully
+data-driven manner, rather than relying on fixed cubic polynomial response functions.
+B.4 Soil and litter nitrogen cycle
+In LPJmL, the soil and litter nitrogen cycle is tightly coupled to the soil and litter car-
+bon cycle and follows a structurally similar formulation, including three litter nitrogen
+pools and a fast and a slow nitrogen pool in each soil layer [19]. We also reformulated
+the soil and litter nitrogen balance as explicit ODEs (Eqs. S16-S18).
+dNlitter(t, l)
+dt
+= Alitter · Nresidue −(1 −exp(−klitter10 · flitter(t, l))) · Nlitter(t, l), (S16)
+with l = 1, 2, 3,
+where Nresidue denotes the crop residues after crops are harvested, Alitter is the crop
+residue partitioning coefficients, klitter10 is the static litter nitrogen decomposition rate
+at 10 ◦C, flitter(t, l) is the nitrogen decomposition response function. Above-ground
+litter nitrogen decomposition depends on air temperature and soil moisture, whereas
+below-ground litter nitrogen decomposition depends on soil temperature and soil mois-
+ture. The second term of Eq. S16 is the daily decomposed litter nitrogen, at which 70%
+of decomposed litter nitrogen directly enters the atmosphere as litter respiration, and
+the remaining goes into the soil nitrogen pools, with 98.5% to the fast soil nitrogen
+pools and 1.5% to the slow nitrogen pools [18].
+dNfast(t, l)
+dt
+= Afastµ(t) −(1 −exp(−kfast10 · ffast(t, l))) · Nfast(t, l),
+(S17)
+dNslow(t, l)
+dt
+= Aslowµ(t) −(1 −exp(−kslow10 · fslow(t, l))) · Nslow(t, l),
+(S18)
+with l = 1, 2, 3, 4, 5,
+where µ(t) is the nitrogen input from decomposed litter nitrogen, Afast and Aslow
+are the nitrogen input partitioning coefficients across five layers, kfast0 and kslow0 are
+the static soil nitrogen decomposition rate at 10 ◦C, ffast(t, l) and fslow(t, l) are the
+nitrogen decomposition response functions which depends on soil temperature and soil
+moisture. Both the second term of Eq. S17 and Eq. S18 are the daily decomposed soil
+nitrogen, which directly goes into the atmosphere as soil respiration.
+The original formulation of the response function follows Eq. S15. We replace the
+decomposition response functions flitter(t, l), ffast(t, l), and fslow(t, l) in Eqs. S16 -
+S18 with a 3-layer MLP that takes both soil temperature and soil moisture as inputs,
+respectively. This allows the model to flexibly capture nonlinear environmental effects
+in a fully data-driven manner, rather than relying on fixed cubic polynomial response
+functions.
+37
+B.5 Soil water cycle
+Similar to soil carbon and nitrogen, soil water in LPJmL is represented by five hydro-
+logically active layers. Rather than explicitly solving the governing partial differential
+equations [10, 20], LPJmL simulates daily soil-water dynamics with a computationally
+efficient bucket model as follows:
+Wt = Wt−1 + ∆t
+
+(P + M + Irr −EI) −R −(ES + ET ) −p
+
+,
+(S19)
+where W is the absolute soil water content in a specific soil layer, P is the precipitation,
+M is the snowmelt, Irr is the irrigation water, EI is the interception loss from leaves,
+R is the runoff, ES is the soil evaporation, ET is the plant transpiration, and p is the
+percolation. The ∆t is the model time step, which is fixed to one day in LPJmL so
+that all flux terms are expressed as daily rates. LPJmL assumes that ES occurs only in
+bare soil with vegetation cover less than 100% and that water required for evaporation
+is available from the top 0.3 meters of soil. The soil water accessible for ET depends
+on the root depth of vegetation. The structure of Eq. S19 is inherently discrete but
+equivalent to an explicit first-order ODE for a fixed time step. We reformulated it
+as a first-order ODE (Eq. S20), which allows the use of differentiable ODE solvers,
+enabling efficient gradient-based optimization for ML models.
+dW
+dt = (P + M + Irr −EI) −R −(ES + ET ) −p.
+(S20)
+Compared to the soil carbon cycle, the soil water cycle is inherently more com-
+plex, involving a broader range of interacting processes, which leads to significantly
+higher uncertainty in predictions. Although the ODE-based soil water representation
+(Eq. S20) is numerically tractable, it relies on empirical formulas and fixed parameters.
+Such simplifications limit its ability to capture the complex spatio-temporal nonlin-
+ear processes, especially under diverse land cover types, soil properties, and climatic
+conditions.
+To address the above limitations of Eq. S20, we integrate neural networks with
+soil water processes to augment the traditional process-based formulation with data-
+driven flexibility. We could use neural networks to replace the entire right-hand side
+of Eq. S20 to get a fully data-driven soil water representation, or replace only spe-
+cific sub-processes to get a hybrid model. To compare both approaches, we implement
+a 3-layer MLP to replace M and ES leading to a hybrid model, and a 3-layer MLP
+to fully emulate the daily soil water dynamics, respectively. The reason to replace M
+and ES was based purely on empirical evidence. Through extensive testing, we found
+that replacing these two sub-processes yielded the most stable long-term simulations,
+whereas replacing other or additional sub-processes often led to simulation instability
+due to weakened sub-process constraints. Moreover, M involves a complex heuristic
+snowmelt formulation, and using a neural network to emulate it can substantially
+reduce model complexity. These two models were trained using mean squared error as
+the training objective. Results indicate that the hybrid approach better captures the
+daily dynamics of soil water content both in-sample and out-of-sample scenarios than
+38
+Fig. S2 Comparison of soil water content (SWC) simulated by hybrid and pure machine learning
+models under in-sample and out-of-sample scenarios, with LPJmL-simulated SWC used as baseline.
+Panels a and b show in-sample performance for the hybrid and pure machine learning models, respec-
+tively, while panels c and d present their out-of-sample performance.
+the fully data-driven alternative, as shown in Fig. S2. Due to the physical constraints
+of process-based components, the hybrid model more accurately captures rapid fluc-
+tuations in SWC and maintains consistency with the baseline across both in-sample
+and out-of-sample scenarios (Fig. S2, panels a and c), whereas the pure machine learn-
+ing model exhibits overly smoothed responses and shows pronounced deviations from
+the baseline (Fig. S2, panels b and d), especially under out-of-sample scenarios. This
+indicates that incorporating process-based components with ML methods provides a
+more accurate and generalizable representation of soil hydrological processes.
+39
+C Data
+C.1 Initial conditions
+Before simulating managed croplands, process-based vegetation models usually need
+spin-up simulations to develop equilibrium vegetation and soil states. LPJmL involves
+a two-stage spin-up process. The first spin-up simulation typically runs for 5000 years
+until all system states (i.e., soil carbon, nitrogen, and water pools) reach equilibrium.
+The second spin-up simulation typically spans 390 years to introduce the impacts
+of land-use change on these pools driven by historical human activities [21]. Since
+NeuralCrop does not simulate natural vegetation, it can not perform this spin-up
+procedure prior to crop simulations. We therefore perform the spin-up in LPJmL
+and initialize the soil carbon, nitrogen, and water pools in NeuralCrop from LPJmL
+simulations to ensure physically consistent initial conditions.
+C.2 Pre-training data
+Due to the limited availability of large-scale high-resolution observations for crop-
+land carbon, water, and nitrogen dynamics, NeuralCrop is pre-trained on simulation
+data (Table S1) generated by LPJmL. This pre-training step allows NeuralCrop to
+learn prior knowledge from LPJmL and provides a strong initialization for subsequent
+training under data-scarce conditions. The LPJmL inputs are shown in Table S2.
+Table S1 Training data generated by LPJmL.
+Variable
+Symbol
+Dimension
+Units
+Time
+Inter-cellular to atmospheric CO2 ratio
+λ
+1
+-
+daily
+Maximum Rubisco capacity
+Vmax
+1
+g C m−2
+daily
+Gross primary productivity
+GPP
+1
+g C m−2
+daily
+Crop carbon pools
+Ci
+4
+g C m−2
+daily
+Litter carbon pools
+Clitter(l)
+3
+g C m−2
+daily
+Soil fast carbon pools
+Cfast(l)
+5
+g C m−2
+daily
+Soil slow carbon pools
+Cslow(l)
+5
+g C m−2
+daily
+Litter nitrogen pools
+Nlitter(l)
+3
+g N m−2
+daily
+Soil fast nitrogen pools
+Nfast(l)
+5
+g N m−2
+daily
+Soil slow nitrogen pools
+Nslow(l)
+5
+g N m−2
+daily
+Soil water pools
+W(l)
+5
+mm
+daily
+C.3 Fine-tuning data
+During the fine-tuning stage, the training of NeuralCrop is focused on optimizing
+the ML components with real-world observations. The fine-tuning data were obtained
+from the global flux network FLUXNET, the American flux network AmeriFlux, and
+the European Integrated Carbon Observation System (ICOS), which provide site-level
+daily crop and soil eddy covariance flux as well as meteorological forcing measurements.
+Table S3 shows the observational data used during the fine-tuning stage. After the
+40
+Table S2 LPJmL inputs.
+Type
+Variable
+Units
+Time
+Climate
+Temperature
+◦C
+daily
+Climate
+Maximum temperature
+◦C
+daily
+Climate
+Minimum temperature
+◦C
+daily
+Climate
+Precipitation
+mm
+daily
+Climate
+Net longwave radiation
+W/m2
+daily
+Climate
+Downward shortwave radiation
+W/m2
+daily
+Climate
+Wind speed
+m min−1
+daily
+Climate
+CO2
+ppmv
+annual
+Soil
+Soil texture
+-
+static
+Soil
+Soil PH
+-
+static
+Management
+Land use
+-
+annual
+Management
+Nitrogen fertilizer
+g N m−2
+annual
+Management
+Tillage
+-
+annual
+Management
+Residue on field
+-
+annual
+Management
+Sowing date
+-
+static
+Management
+Heat unit requirements
+-
+static
+Coordinate
+Land sea mask
+◦C
+static
+pre-training stage, NeuralCrop is able to reproduce the dynamics of LPJmL, but also
+inherits its structural and knowledge biases. To address that, we optimize the param-
+eters of the relevant ML components of NeuralCrop using data from flux networks,
+while freezing the remaining ML components.
+Table S3 Flux network observational data.
+Type
+Variable
+Symbol
+Units
+Time
+Feature
+Air temperature
+TAF
+◦C
+daily
+Feature
+Precipitation
+PF
+mm
+daily
+Feature
+Downward shortwave radiation
+SWIN F
+W/m2
+daily
+Feature
+Downward longwave radiation
+LWIN F
+W/m2
+daily
+Feature
+Upward longwave radiation
+LWOUT
+W/m2
+daily
+Feature
+CO2
+CO2F MDS
+µmol mol−1
+daily
+Label
+Gross primary productivity
+GPPNT VUT REF
+g C m−2
+daily
+Label
+Ecosystem Respiration
+RECONT VUT REF
+g C m−2
+daily
+Label
+Soil water content,
+SWCF MDS #
+%
+daily
+# denotes soil depth index, higher values represent deeper layers (1 is the shallowest).
+C.4 Data pre-processing
+The flux networks provide both daytime and nighttime partitioned GPP and
+RECO [22, 23]. The nighttime method estimates RECO by fitting a respiration-
+temperature function using nighttime data and derives GPP as the difference between
+modeled RECO and daytime net ecosystem exchange (NEE). Because photosynthesis
+is negligible at night, RECO is approximately equal to NEE. The daytime method
+41
+fits a light-response function to estimate GPP and a respiration-temperature function
+for RECO using daytime and nighttime data. As a result, both GPP and RECO are
+estimated by NEE, which introduces coupled uncertainties. Therefore, we use night-
+time partitioned GPP and RECO for fine-tuning. The nighttime partitioned GPP and
+RECO may contain negative values. We replace negative GPP and RECO with their
+daytime counterparts to avoid introducing an additional bias during fine-tuning.
+The soil water content across flux tower sites is not standardized in the number of
+soil layers and their depth, which poses a challenge for consistent model training. To
+address this, we converted the soil water distribution into the five-layer structure used
+in NeuralCrop by aggregating or interpolating soil water data based on depth-weighted
+proportions aligned with the relative thicknesses of the NeuralCrop soil layers.
+42
+D Training
+D.1 Input data normalization
+All input features are standardized before being joined together and passed to the
+neural networks. We normalize climate forcings distributed with zero mean and unit
+variance to improve training stability. Specifically, for each climate forcing variable x,
+we compute the standardized value ˜x as:
+˜x = x −µ
+σ
+,
+(S21)
+where µ is the mean and σ is the standard deviation computed from the 20-year
+historical climatology. For input features generated by NeuralCrop itself, we rescale
+them to the [0, 1] range using their physical upper and lower bounds. Here, for each
+state variable x, the normalized value ˜x is computed as:
+˜x =
+x −xlower
+xupper −xlower
+,
+(S22)
+where xlower and xupper denote the physical lower and upper limits of the variable,
+respectively.
+D.2 Optimizer settings
+All NeuralCrop models were pre-trained using the AdamW optimizer [24]. We used
+values β1 = 0.9, β2 = 0.999, and ϵ = 10−6 based on empirical evidence from prior
+experiments. The initial learning rate was set to 1 × 10−3. A sinusoidal exponential
+decay scheme (SinExp) was employed to dynamically adjust the learning rate through-
+out training, oscillating between 1 × 10−3 and 1 × 10−5 with a decay factor of 0.975
+and a cycle period of 20 epochs. The only exception to these hyperparameters in fine-
+tuning was that the initial learning rate was set to 1×10−4. All models were trained for
+100 epochs using batch sizes 32, 64, 128, 256. We empirically selected the configuration
+that produced the most stable decrease in validation loss over time.
+D.3 Loss function
+All NeuralCrop models are trained in two stages (pre-training and fine-tuning) with
+different loss functions, where all loss terms are defined in the general form of mean
+squared error (MSE):
+MSE = 1
+T
+T
+X
+t=1
+(ˆyt −yt)2 ,
+(S23)
+where ˆyt is the model simulation at time t, yt is the corresponding observation, and
+T is the total number of time steps.
+43
+During the pre-training stage, we employed a combination of two loss types (i.e.,
+accuracy and mass balance) to minimize two kinds of discrepancies between Neural-
+Crop and LPJmL outputs. The loss term of accuracy accounts for the distance between
+predictions and reference data, and the loss term of mass balance constrains the car-
+bon conservation during crop carbon allocation. The pre-training loss function has
+two kinds of loss types:
+LPre-training =
+X
+i∈T
+βaccuracy,iMAccuracy,i + βmassMMassBalance,
+(S24)
+where T denotes the set of loss terms of accuracy (i.e., λ, Vmax, GPP, carbon and nitro-
+gen pools, soil water pools), MAccuracy,i is the MSE between NeuralCrop prediction
+and reference data of variable i with corresponding loss scales βaccuracy,i, MMassBalance
+is the MSE between the sum of crop carbon and accumulated above-ground biomass
+with a loss scale βmass.
+After the pre-training stage, NeuralCrop was further fine-tuned with real-world
+observational data (i.e., the eddy-covariance flux data) to reduce the gap between
+model outputs and ground truth. During this stage, we only updated the ML compo-
+nents that correspond to variables with available observations (C.3). Here is the loss
+function:
+LFine-tuning = βgppMGPP + βrecoMRECO + βswcMSWC,
+(S25)
+where MGPP, MRECO, and MSWC denote the MSE on GPP, RECO, and SWC,
+scaled by βgpp, βreco, and βswc, respectively.
+D.4 Training sequence length
+To investigate the required length of time series data for effective training, we trained
+several NeuralCrop models with identical parameters using time series data ranging
+from 1 to 20 years in length. We find that two years of data were sufficient to train
+NeuralCrop effectively. We further investigated two training strategies. The first strat-
+egy used 80% of the time series samples from two years for training and the remaining
+20% for validation. The second strategy used the time series samples from the first two
+years for training, with the third year for validation. We found that both strategies
+yielded comparable performance.
+D.5 Training rollouts
+To explore the benefits of training with different rollouts (i.e., how many simulation
+days to update ML parameters), we trained the NeuralCrop models with identical
+model parameters on rollouts of 1, 30, 60, 180, 365, and 720 days (Fig. S3). We find that
+NeuralCrop trained on longer rollouts leads to significantly more stable convergence
+during training. In contrast, NeuralCrop trained on shorter rollouts, especially 1 day,
+exhibits large oscillations in both training and validation loss during the entire training
+period. The rollout of 365 days leads to the most stable and smooth convergence.
+44
+We attribute this to the fact that a 365-day rollout covers the complete crop growth
+cycle, which enables ML components to learn complete seasonal dynamics in a single
+rollout. Although the rollout of 720 days also exhibits similarly stable convergence,
+the longer sequence length results in deeper computational graphs, increasing both
+memory usage and time costs of backpropagation. Therefore, we set a 365-day rollout
+as the default to train all NeuralCrop models.
+Fig. S3 NeuralCrop models with identical model parameters trained on rollouts of 1, 30, 60, 180,
+365, and 720 days (a-f).
+45
+D.6 Output rescaling
+All variables predicted by neural networks during training are rescaled using their his-
+torical minimum and maximum values over the training years, which prevents variables
+with large magnitudes from dominating the training. Specifically, for each predicted
+variablex, the normalized value ˜x is computed as:
+˜x =
+x −xmin
+xmax −xmin
+,
+(S26)
+where xmin and xmax denote the minimum and maximum values of the variable,
+respectively.
+D.7 Training resources
+All training and inference of NeuralCrop were conducted using a single NVIDIA H100
+GPU with 80GB of memory.
+We compared the efficiency of inference time between GPU-accelerated NeuralCrop
+and CPU-based LPJmL by running them on a 0.5◦× 0.5◦spatial resolution with
+daily time steps over a 20-year simulation period (7300 days) at different grid cells
+(Table S4). The LPJmL was running on one single AMD EPYC 9554 CPU with 128
+cores and 768GB of memory. The results show that LPJmL takes over 7,500 seconds
+(about 2 hours) to simulate 14,157 grid cells, whereas NeuralCrop completes the exact
+simulation in 91 seconds, over 82 times faster. Similar gains appear at smaller grid
+cells, with 60 times faster for 7,865 grid cells and 16 times faster for 1,573 grid cells.
+Although GPU overhead makes the one-cell simulation slower, the efficiency increases
+rapidly with scale, reflecting the powerful parallel capacity of the GPU. This allows
+NeuralCrop to achieve competitive speed compared to traditional GGCM running on
+multiple CPU cores when doing global and daily simulations.
+Table S4 Inference time of GPU-accelerated NeuralCrop and
+CPU-based LPJmL simulating for a 0.5◦× 0.5◦spatial resolution
+with daily time steps over a 20-year simulation period (7300 days)
+at different grid cells. NeuralCrop was running on one single
+NVIDIA H100 GPU with 80GB of memory, and LPJmL was
+running on one single AMD EPYC 9554 CPU with 128 cores and
+768GB of memory.
+Grid cells
+LPJmL
+NeuralCrop
+Times (speed up)
+1
+0.50 s
+46.01 s
+0.011x
+1573
+833.99 s
+51.24 s
+16.27x
+7865
+4169.94 s
+70.02 s
+59.55x
+14157
+7505.89 s
+91.16 s
+82.33x
+46
+E Evaluation metrics
+Evaluation metrics compare model simulations with ground truth. In this study, our
+preferred evaluation metrics include root mean square error (RMSE) and Pearson
+correlation coefficient (r).
+E.1 Pearson correlation coefficient
+Pearson correlation coefficient (r) calculates the linear relationship between model
+simulations and observations. It is defined as:
+r =
+PT
+t=1(yt −¯y)(ˆyt −¯ˆy)
+qPT
+t=1(yt −¯y)2
+qPT
+t=1(ˆyt −¯ˆy)2
+,
+(S27)
+where ˆyt and yt represent the simulated and observed values at time t, respectively,
+while ¯ˆy and ¯y denote their mean values. It ranges from −1 to +1, with higher values
+indicating stronger agreement in the temporal variability. In particular, r is used to
+assess the ability of models to reproduce seasonal and interannual variations.
+E.2 Coefficient of determination
+Coefficient of determination (R2) quantifies the proportion of the variance in the
+benchmark yield time series that is predictable from the model simulations, which is
+defined as the square of the Pearson correlation coefficient (r) between the simulated
+and benchmark yields:
+R2 = r2
+(S28)
+E.3 Root mean square error
+Root mean square error (RMSE) is a widely used metric to evaluate the accuracy of
+model predictions against observations. It is defined as the square root of the average
+of the squared differences between predicted values and observed values:
+RMSE =
+v
+u
+u
+t 1
+T
+T
+X
+t=1
+(ˆyt −yt)2,
+(S29)
+where ˆyt is the model simulation at time t, yt is the corresponding observation, and
+T is the total number of time steps. A lower RMSE value indicates better agreement
+between model simulations and observations.
+47
+F In situ validation
+F.1 In situ sites
+To evaluate the performance of NeuralCrop across different crop types and environ-
+ments, we conducted in situ validation using observational data from four crop flux
+tower sites (Table S5 and Fig. S4), selected to represent wheat, rice, corn, and soy-
+bean cropping regions. These are four global staple crops, spanning diverse climate
+zones, management practices, and phenological patterns, making them suitable cases
+for evaluating the performance of NeuralCrop. Each site provides high-quality daily
+eddy covariance measurements of carbon (i.e., GPP, RECO, and NEE) and soil water
+fluxes (SWC), as well as measurements of meteorological variables (Table S3).
+Table S5 Overview of crop flux tower sites used for NeuralCrop validation.
+Site
+Crop
+Country
+(latitude, longitude)
+Year
+Source
+CH-Oe2 [25]
+Wheat
+Swiss
+(47.2864, 7.7337)
+2004-2023
+ICOS
+KR-CRK [26]
+Rice
+South Korea
+(38.2013, 127.2506)
+2005-2018
+FLUXNET
+US-Mo3 [27]
+Soybean
+USA
+(39.2322, -92.1493)
+2016-2021
+AmeriFlux
+US-Ne1 [28]
+Corn
+USA
+(39.2322, -92.1493)
+2001-2020
+AmeriFlux
+Fig. S4 Geographical locations of the four FLUXNET sites used for in situ validation of NeuralCrop.
+Each site corresponds to a different crop: wheat (CH-Oe2), rice (KR-CRK), corn (US-Ne1), and
+soybean (US-Mo3).
+F.2 Training
+We first train four NeuralCrop models for the above four crop sites separately using
+LPJmL outputs spanning from 2004 to 2017. Each NeuralCrop model is then fine-
+tuned with corresponding observational data (i.e., GPP, RECO, NEE, and SWC).
+The training setup can be found in Section C and Section D. Since crop rotation is
+practiced at these sites, we excluded flux data from non-target crop years and retained
+48
+only the data of periods during which the target crop was growing. We use the last
+year of data for validation and the remaining years for training (or fine-tuning). To
+evaluate the model performance, we use the root mean square error (RMSE, Eq. S29)
+and the Pearson correlation coefficient (r, Eq. S27) to assess both the accuracy and
+the ability of models to reproduce seasonal and interannual variations.
+F.3 Results
+We compare the daily predictions of GPP, RECO, NEE, and SWC from NeuralCrop
+and LPJmL against FLUXNET observations across all four crop sites. Results indicate
+that NeuralCrop models outperform LPJmL models (see Figs. S5-S7 and Table S6).
+For GPP, NeuralCrop consistently achieves lower RMSE values (1.38–1.62) compared
+to LPJmL (2.06–2.85), with correlations up to 0.98, indicating a more accurate repro-
+duction of seasonal cycles and peak flux magnitudes. Similarly, for RECO, NeuralCrop
+significantly reduces RMSE (0.89–1.74) relative to LPJmL (1.36–2.57), and achieves
+higher correlations (0.79–0.97 vs. 0.68–0.95), demonstrating its improved capabil-
+ity to capture respiration dynamics. For NEE, NeuralCrop not only yields smaller
+errors (1.15–1.66 vs. 1.66–2.73 for LPJmL) but also stronger correlations (0.90–0.95
+vs. 0.83–0.94), highlighting its ability to better capture the timing and magnitude of
+transitions between carbon sink and source. For SWC, NeuralCrop reduces RMSE
+(14.51–37.30) relative to LPJmL (14.90–37.68) at all sites, while correlations are site-
+dependent with NeuralCrop outperforming LPJmL at KR-CRK but showing slightly
+lower correlations at the other sites.
+Overall, these results suggest that NeuralCrop performs well across diverse crop
+types and climatic zones, with consistently better performance in carbon flux sim-
+ulations and comparable performance in soil water simulations compared to the
+traditional process-based crop model LPJmL. The improved performance of Neural-
+Crop highlights its potential as a reliable tool for assessing the impacts of climate
+change on crop productivity.
+49
+Fig. S5 Comparison between FLUXNET observations and model simulations (NeuralCrop and
+LPJmL) for the wheat site (CH-Oe2) over four years. Time series are shown for (a–b) gross primary
+productivity (GPP, gC m−2 day−1), (c–d) ecosystem respiration (RECO, gC m−2 day−1), (e–f) net
+ecosystem exchange (NEE, gC m−2 day−1), and (g–h) soil water content (SWC, mm). Panels (a,
+c, e, g) compare FLUXNET with NeuralCrop, while panels (b, d, f, h) compare FLUXNET with
+LPJmL. Blue lines represent FLUXNET data, red lines represent NeuralCrop simulations, and green
+lines represent LPJmL simulations.
+50
+Fig. S6 Comparison between FLUXNET observations and model simulations (NeuralCrop and
+LPJmL) for the rice site (KR-CRK) over four years. Time series are shown for (a–b) gross primary
+productivity (GPP, gC m−2 day−1), (c–d) ecosystem respiration (RECO, gC m−2 day−1), (e–f) net
+ecosystem exchange (NEE, gC m−2 day−1), and (g–h) soil water content (SWC, mm). Panels (a,
+c, e, g) compare FLUXNET with NeuralCrop, while panels (b, d, f, h) compare FLUXNET with
+LPJmL. Blue lines represent FLUXNET data, red lines represent NeuralCrop simulations, and green
+lines represent LPJmL simulations.
+51
+Fig. S7 Comparison between FLUXNET observations and model simulations (NeuralCrop and
+LPJmL) for the soybean site (US-Mo3) over four years. Time series are shown for (a–b) gross primary
+productivity (GPP, gC m−2 day−1), (c–d) ecosystem respiration (RECO, gC m−2 day−1), (e–f) net
+ecosystem exchange (NEE, gC m−2 day−1), and (g–h) soil water content (SWC, mm). Panels (a,
+c, e, g) compare FLUXNET with NeuralCrop, while panels (b, d, f, h) compare FLUXNET with
+LPJmL. Blue lines represent FLUXNET data, red lines represent NeuralCrop simulations, and green
+lines represent LPJmL simulations.
+52
+Fig. S8 Comparison between FLUXNET observations and model simulations (NeuralCrop and
+LPJmL) for the corn site (US-Ne1) over four years. Time series are shown for (a–b) gross primary
+productivity (GPP, gC m−2 day−1), (c–d) ecosystem respiration (RECO, gC m−2 day−1), (e–f) net
+ecosystem exchange (NEE, gC m−2 day−1), and (g–h) soil water content (SWC, mm). Panels (a,
+c, e, g) compare FLUXNET with NeuralCrop, while panels (b, d, f, h) compare FLUXNET with
+LPJmL. Blue lines represent FLUXNET data, red lines represent NeuralCrop simulations, and green
+lines represent LPJmL simulations.
+53
+Table S6 Model performance against FLUXNET observations at four crop sites: CH-Oe2 (wheat), KR-CRK (rice), US-Mo3
+(soybean), and US-Ne1 (corn). Performance metrics include Root Mean Square Error (RMSE) and Pearson correlation
+coefficient (r), calculated for gross primary productivity (GPP), ecosystem respiration (RECO), net ecosystem exchange
+(NEE), and soil water content (SWC). Bold numbers indicate the better performance between NeuralCrop and LPJmL.
+Variable
+Metric
+Wheat (CH-Oe2)
+Rice (KR-CRK)
+Soybean (US-Mo3)
+Corn (US-Ne1)
+NeuralCrop
+LPJmL
+NeuralCrop
+LPJmL
+NeuralCrop
+LPJmL
+NeuralCrop
+LPJmL
+GPP
+RMSE
+1.53
+2.51
+1.42
+2.83
+1.38
+2.85
+1.62
+2.06
+r
+0.96
+0.91
+0.95
+0.90
+0.96
+0.86
+0.98
+0.97
+RECO
+RMSE
+1.51
+2.57
+1.37
+2.37
+1.74
+1.82
+0.89
+1.36
+r
+0.79
+0.68
+0.83
+0.77
+0.82
+0.80
+0.97
+0.95
+NEE
+RMSE
+1.66
+2.73
+1.15
+1.68
+1.57
+2.28
+1.53
+1.66
+r
+0.92
+0.83
+0.90
+0.87
+0.90
+0.74
+0.95
+0.94
+SWC
+RMSE
+22.21
+30.58
+37.30
+37.68
+17.55
+17.88
+14.51
+14.90
+r
+0.67
+0.68
+0.62
+0.53
+0.87
+0.89
+0.32
+0.34
+54
+G Large-scale cropping regions
+G.1 European wheat
+G.1.1 Subnational crop statistics
+We use the harmonized EU subnational crop statistics dataset [29] as ground truth,
+which was collected from National Statistical Institutes (NSIs) in EU countries and
+the EUROSTAT dataset. This dataset provides primarily county-level, and state-level
+in some EU countries, records of production, area, and yield in wheat, including soft,
+durum, and total wheat, across 27 EU countries over the period 1975–2020. We used
+the total wheat statistics from 2000 to 2019 for model evaluation, which includes 14,910
+records for yield, covering a total of 883 regions (specifically, 3 NUTS-1, 69 NUTS-2,
+and 811 NUTS-3 statistical regions). In official statistics, wheat yields are reported at
+the standard EU humidity (14%). To ensure consistency with model simulations, all
+reported wheat yields are converted to dry matter (0% humidity) prior to analysis, as
+follows:
+YDM = YHM × (1 −h),
+(S30)
+where YDM is the yield at 0% humidity, YHM is the yield at the standard humidity,
+and h is the standard humidity fraction.
+G.1.2 Pre-training
+In the European wheat cropping regions, we pre-trained NeuralCrop models using
+LPJmL outputs from 2016-1-1 to 2017-12-31 to simulate winter wheat varieties under
+rain-fed and irrigated management conditions, and outputs from 2016-1-1 to 2016-
+12-31 to simulate spring wheat varieties under rain-fed and irrigated management
+conditions, respectively. The initial states of the NeuralCrop models were derived from
+the LPJmL simulations on the last day of 2015, ensuring consistent soil water, carbon,
+and nitrogen conditions at the beginning of the training period. The training setup
+can be found in Section C and Section D.
+To ensure the pre-trained NeuralCrop is adequately prepared for the subsequent
+fine-tuning phase, we compared simulated wheat yields from NeuralCrop and LPJmL
+for the period 2000-2019 at the subnational level. The simulated yields are aggregated
+to subnational units using an area-weighted average method, described in Section H.1.
+Fig. S9 shows that pre-trained NeuralCrop and LPJmL exhibit a strong agreement
+in their simulated wheat yields at the subnational level. The correlation coefficients
+are consistently high (mean values predominantly above 0.8) across all EU countries.
+This robust correlation confirms that the pre-trained NeuralCrop effectively learned
+and reproduced the wheat yield behavior of LPJmL.
+55
+Fig. S9 Boxplots of time series correlation coefficient of simulated wheat yields between pre-trained
+NeuralCrop and LPJmL at the subnational level, aggregated by country for the period 2000–2019,
+with countries ordered alphabetically by their country code (A–Z). The box boundaries represent
+the interquartile range (IQR), defined by the first quartile, the median, and the third quartile. The
+upper and lower whiskers represent the maximum and minimum values that are within 1.5 times the
+interquartile range of the box. The black triangles are the mean value.
+G.1.3 Fine-tuning
+NeuralCrop models were further fine-tuned using site-level eddy-covariance flux tower
+data across major European wheat cropping regions. The wheat flux data comprised
+12 flux tower sites distributed in Belgium, Switzerland, Germany, France, and Italy
+(see Table S7 and Fig. S10), covering a broad range of climatic and management
+conditions. These observations provide daily GPP, RECO, NEE, and, for most sites,
+SWC, as well as auxiliary meteorological variables, spanning from 2001 to 2023. Since
+crop rotation is practiced at most sites, we excluded flux data from non-target crop
+years and retained only the data of periods during which the wheat was growing. The
+final dataset included a total of 76 site-years of wheat flux observations for fine-tuning.
+Table S7 Overview of European wheat flux tower sites used for fine-tuning of
+NeuralCrop.
+Site
+Country
+(latitude, longitude)
+Year
+Source
+BE-Lon [30]
+Belgium
+(50.5516, 4.7462)
+2004-2020
+ICOS
+CH-Oe2 [25]
+Switzerland
+(47.2864, 7.7337)
+2004-2023
+ICOS
+DE-Geb [31]
+Germany
+(51.0997, 10.9146)
+2001-2020
+ICOS
+DE-Kli [32]
+Germany
+(50.8930, 13.5223)
+2004-2023
+ICOS
+DE-RuS [33]
+Germany
+(50.8659, 6.4471)
+2011-2014
+ICOS
+DE-Seh [34]
+Germany
+(50.8706, 6.4497)
+2001-2010
+FLUXNET
+DK-Vng [35]
+Germany
+(56.0374, 9.1607)
+2009-2018
+ICOS
+FR-Gri [36]
+France
+(48.8442, 1.9519)
+2004-2014
+FLUXNET
+FR-Aur [37]
+France
+(43.5496, 1.1061)
+2005-2023
+ICOS
+FR-EM2 [38]
+France
+(49.8721, 3.0206)
+2017-2023
+ICOS
+FR-Lam [39]
+France
+(43.4964, 1.2378)
+2005-2020
+ICOS
+IT-CA2 [40]
+Italy
+(42.3772, 12.0260)
+2011-2014
+ICOS
+56
+Fig. S10 Geographical locations of the EU wheat flux tower sites used for fine-tuning of NeuralCrop.
+G.2 US Corn Belt
+G.2.1 County-level crop statistics
+In this study, the US Corn Belt includes the states of South Dakota, Minnesota, Iowa,
+Missouri, Illinois, Indiana, Ohio, Michigan, and Wisconsin (shown in Fig. S11) [41].
+County-level corn statistics from National Agricultural Statistics Service of USDA are
+used as ground truth, which provides records of production, area, and yield in corn,
+starting from 1910. We used the corn statistics from 2000 to 2019 for model evaluation,
+which includes 13,665 records for yield, covering a total of 764 counties. We also use
+the Eq. G.1.1, with h = 0.155, to convert the reported corn yields to dry matter (0%
+humidity) before analysis.
+57
+Fig. S11 States shaded in blue represent the US Corn Belt, including the states of South Dakota,
+Minnesota, Iowa, Missouri, Wisconsin, Illinois, Michigan, Indiana, and Ohio.
+G.2.2 Pre-training
+In the US Corn Belt cropping regions, we pre-trained NeuralCrop models using LPJmL
+outputs from 2016-1-1 to 2016-12-31 to simulate corn under rain-fed and irrigated
+management conditions, respectively. The initial states of the NeuralCrop models were
+derived from the LPJmL simulations on the last day of 2015, ensuring consistent soil
+water, carbon, and nitrogen conditions at the beginning of the training period. The
+training setup can be found in Section C and Section D.
+Same to EU wheat pre-training, we compared simulated corn yields from Neural-
+Crop and LPJmL for the period 2000-2019 at the county level. The simulated yields
+are aggregated to counties using an area-weighted average method, described in H.1.
+Fig. S12 shows that pre-trained NeuralCrop and LPJmL exhibit a strong agreement in
+their simulated corn yields at the county level. The correlation coefficients are consis-
+tently high (mean values predominantly above 0.8) across all states of US Corn Belt.
+This robust correlation confirms that the pre-trained NeuralCrop effectively learned
+and reproduced the corn yield behavior of LPJmL.
+58
+Fig. S12 Boxplots of time series correlation coefficient of simulated corn yields between pre-trained
+NeuralCrop and LPJmL at the county level, aggregated by state for the period 2000–2019. The box
+boundaries represent the interquartile range (IQR), defined by the first quartile, the median, and the
+third quartile. The upper and lower whiskers represent the maximum and minimum values that are
+within 1.5 times the interquartile range of the box. The black triangles are the mean value.
+G.2.3 Fine-tuning
+NeuralCrop models were further fine-tuned using site-level eddy-covariance flux tower
+data across major US corn cropping regions. The corn flux data comprised 10 flux
+tower sites distributed in the states of Missouri, Nebraska, Minnesota, and California
+(Table S8 and Fig. S13), covering a broad range of climatic and management condi-
+tions. These observations provide daily GPP, RECO, NEE, and, for most sites, SWC,
+as well as auxiliary meteorological variables, spanning from 2001 to 2023. Since crop
+rotation is practiced at most sites, we excluded flux data from non-target crop years
+and retained only the data of periods during which the corn was growing. Finally, the
+dataset included 26 site-years of corn flux observations for fine-tuning.
+Table S8 Overview of US corn flux tower sites used for fine-tuning
+of NeuralCrop.
+Site
+(latitude, longitude)
+Year
+Source
+US-Bi2 [42]
+(38.1091, -121.5351)
+2017-2021
+AmeriFlux
+US-Mo1 [43]
+(39.2298, -92.1167)
+2015-2023
+AmeriFlux
+US-Mo3 [44]
+(39.2322, -92.1493)
+2016-2021
+AmeriFlux
+US-Ne1 [28]
+(41.1651, -96.4766)
+2001-2020
+AmeriFlux
+US-Ne2 [45]
+(41.1649, -96.4701)
+2001-2013
+AmeriFlux
+US-Ne3 [46]
+(41.1797, -96.4397)
+2001-2013
+AmeriFlux
+US-Ro1 [47]
+(44.7143, -93.0898)
+2004-2016
+AmeriFlux
+US-Ro3 [48]
+(44.7217, -93.0893)
+2004-2007
+AmeriFlux
+US-Ro5 [49]
+(44.6910, -93.0576)
+2017-2023
+AmeriFlux
+US-Ro6 [50]
+(44.6946, -93.0578)
+2017-2023
+AmeriFlux
+59
+Fig. S13 Geographical locations of the US corn flux tower sites used for fine-tuning NeuralCrop.
+G.3 Out-of-sample generalization
+Pure ML models typically exhibit poor performance in out-of-sample conditions, and
+even produce physically inconsistent predictions. We anticipate that NeuralCrop may
+generalize well in unseen conditions because of its hybrid modelling approach, where
+neural networks are used only to replace or augment selected sub-processes while
+simultaneously being constrained by other, explicitly resolved processes. To validate
+this hypothesis, we compared NeuralCrop with pure ML models (i.e., neural networks
+in the form of multi-layer perceptrons) that were trained on the European wheat
+cropping regions and used to simulate the US wheat cropping regions (including the
+states of Montana, North Dakota, South Dakota, Nebraska, Colorado, Kansas, Okla-
+homa, and Texas) (Fig. S15), respectively, a scenario entirely unseen during training.
+The simulated wheat yields are aggregated from the 0.5◦× 0.5◦(latitude × longi-
+tude) grid to the county level using area-weighted averaging, as shown in H.1. Results
+demonstrate that NeuralCrop presents robust spatial generalization capabilities, even
+outperforming the fully process-based LPJmL model in six out of eight states, with
+comparable performance in the remaining two (Fig. S14). In contrast, the pure ML
+model shows significantly weaker predictive skills across all states. This indicates that
+our hybrid NeuralCrop model provides a promising approach for accurate simulation
+of large-scale agricultural systems where observational data is scarce.
+The European wheat statistics were downloaded from https://data.jrc.ec.europa.
+eu/dataset/685949ff-56de-4646-a8df-844b5bb5f835, which provides annual wheat
+statistics on area, production, and average yield across three levels of the Nomencla-
+ture of Territorial Units for Statistics (NUTS). The US wheat statistics were obtained
+from https://quickstats.nass.usda.gov/.
+60
+Fig. S14 Comparison of simulated wheat yields from NeuralCrop, LPJmL, and MLP with USDA
+statistics in the US Corn Belt, including nine states, including eight states (i.e., Montana, North
+Dakota, South Dakota, Nebraska, Colorado, Kansas, Oklahoma, and Texas). Simulated wheat yields
+are aggregated from the 0.5◦× 0.5◦(latitude × longitude) grid to the county level using area-weighted
+averaging. a, Time series correlation coefficient between NeuralCrop simulated corn yield and USDA
+statistics at the county level for the period 2000-2007 (range from −1 to 1, darker green areas indicate
+stronger positive correlations, and darker purple areas indicate stronger negative correlations). b,
+Same as panel a, but for LPJmL. c, Same as panel a, but for MLP. d, The difference of correlation
+coefficients between NeuralCrop and LPJmL (i.e., panel a – panel b), where blue areas indicate regions
+where NeuralCrop outperforms LPJmL in simulating interannual yield variability, and red areas
+indicate regions where LPJmL performs better. e, Same as panel d, but for the difference between
+NeuralCrop and MLP (i.e., panel a – panel c). f, Boxplots of time series correlation coefficients
+between simulated wheat yield and USDA statistics at the country level, aggregated by states for
+the period 2000-2007. Blue boxes represent LPJmL, orange boxes represent NeuralCrop, and green
+boxes represent MLP. The box boundaries represent the interquartile range (IQR), defined by the first
+quartile, the median, and the third quartile. The upper and lower whiskers represent the maximum
+and minimum values that are within 1.5 times the interquartile range of the box. The black triangles
+are the mean value.
+61
+Fig. S15 States shaded in blue represent the US main wheat regions, including the states of Mon-
+tana, North Dakota, South Dakota, Nebraska, Colorado, Kansas, Oklahoma, and Texas.
+G.4 SPEI
+The Standardized Precipitation Evapotranspiration Index (SPEI) is a drought index
+that combines precipitation (P) and potential evapotranspiration (PET) [51]. It
+can be used to characterize drought intensity, duration, and frequency across differ-
+ent timescales, thereby providing a consistent framework to assess water availability
+impacts on agriculture. SPEI is defined as the difference between Pt and PETt at time
+t:
+Dt = Pt −PETt,
+(S31)
+where
+PETt
+is
+calculated
+using
+Priestley-Taylor
+equation,
+following
+LPJmL
+scheme [10]. The accumulated water balance over a timescale of k months is then given
+by:
+Dt,k =
+k−1
+X
+i=0
+(Pt−i −PETt−i),
+(S32)
+where Dt,k represents the climatic water balance integrated over k months. The series
+Dt,k is fitted to a probability distribution (typically Logistic) and transformed into
+a standardized normal variable with mean zero and unit variance. The standardized
+index is expressed as:
+SPEIt,k = Dt,k −µ
+σ
+,
+(S33)
+where µ and σ are the mean and standard deviation of the fitted distribution, respec-
+tively. Negative values of SPEIt,k indicate drier conditions than normal, while positive
+values indicate wetter conditions than normal.
+62
+In this study, SPEI is calculated using an accumulation period of k = 3 months.
+We select SPEI during key crop growth stages to assess water availability relevant to
+crop production. Based on calculated SPEI values, drought severity is categorized into
+four classes:
+Table S9 Dryness classification based on
+SPEI.
+Value
+Classification
+1.5 ≤SPEI ≤∞
+Extremely Wet
+1.0 ≤SPEI ≤1.5
+Very Wet
+0.5 ≤SPEI ≤1.0
+Moderately Wet
+−0.5 ≤SPEI ≤0.5
+Normal
+−1.0 ≤SPEI < −0.5
+Moderately Dry
+−1.5 ≤SPEI < −1.0
+Very Dry
+−∞≤SPEI < −1.5
+Extremely Dry
+63
+H Yield data processing
+H.1 Yield aggregation
+NeuralCrop and LPJmL simulate yields on a global grid at 0.5◦× 0.5◦(latitude
+× longitude) spatial resolution, whereas reported yields are usually available at the
+county level or for even larger administrative units. To make the simulated yields
+comparable with these observations, we first linearly downscale the 0.5◦outputs to a
+finer 0.05◦grid by uniformly assigning the original cell value to all sub-cells, and then
+aggregate the 0.05◦yields to target regions using the harvested-area weighted method,
+see below.
+Let Hj,t denote the harvested area of the target crop in 0.05◦grid j and year t.
+For a region r (e.g., county, state, or country), the harvested-area weighted mean yield
+¯yr,t is computed as
+¯yr,t =
+X
+j∈r
+αj,t y0.05
+j,t ,
+αj,t =
+Hj,t
+P
+j∈r Hj,t
+,
+(S34)
+where αj,t is the fraction of the regional harvested area located in grid cell j.
+H.2 Yield detrending
+To remove the effects of long-term improvements associated with crop breeding and
+management while retaining interannual variability primarily driven by climate fluc-
+tuations, we use smoothing splines to detrend the simulated and observed yield time
+series. Given time series (t, yt), t = 1, 2, . . . , T, where t denotes the year and yt repre-
+sents the corresponding crop yield (either simulated or observed), the smoothing spline
+estimate ˆf(x) of the function f(t) is obtained by minimizing the following objective
+function:
+T
+X
+i=1
+(yt −f(t))2 + λ
+Z
+[f ′′(t)]2 dt,
+(S35)
+where the first term, PT
+i=1(yt −f(t))2, measures the lack of fit to the data, the second
+term,
+R
+[f ′′(t)]2 dt, penalizes curvature of the function, thereby enforcing smoothness,
+and λ (≥0) is the smoothing parameter, which controls the trade-off between goodness
+of fit and smoothness. The optimal solution f(x) is a cubic spline function. As λ →
+0, the solution approaches an interpolating spline, exactly passing through all data
+points. As λ →∞, the solution converges to a linear function, representing complete
+smoothing. In this study, the smoothing parameter λ is selected empirically based on
+the characteristics of the yield time series. The detrended yield time series is then
+obtained as:
+ydetrended
+t
+= yt −ˆf(t).
+(S36)
+64
+H.3 Yield anomalies
+Yield anomalies are calculated to measure the relative deviation of annual yields from
+their long-term trends. Specifically, given the simulated or observed yield yt in year t
+and the corresponding expected yield ˆf(t) estimated by a smoothing spline function
+(Section H.2), the normalized yield anomaly is defined as:
+ˆat = yt −ˆf(t)
+ˆf(t)
+.
+(S37)
+65
+I Additional information
+I.1 Case study
+Fig. S16 Wheat yield anomaly patterns across compound drought–heat conditions in European
+wheat regions during the 2018 drought. a-c, Scatter plots of wheat yield anomaly (%) versus Stan-
+dardized Precipitation Evapotranspiration Index (SPEI) and growing-season maximum temperature
+for (a) EU statistics, (b) NeuralCrop, and (c) LPJmL at the subnational level. Point colors represent
+yield anomalies, with red indicating negative anomalies (yield losses) and blue indicating positive
+anomalies (yield gains).
+66
+Fig. S17 Wheat yield anomaly patterns across compound drought–heat conditions in the US Corn
+Belt during the 2012 drought. a-d, Scatter plots of wheat yield anomaly (%) versus SPEI and growing-
+season maximum temperature for (a) USDA statistics, (b) NeuralCrop, (c) LPJmL, and (d) the
+AgMIP (the ensemble median of 8 GGCMs) at the county level. Point colors represent yield anomalies,
+with red indicating negative anomalies (yield losses) and blue indicating positive anomalies (yield
+gains).
+67
+I.2 France wheat anomalies in 2016
+Fig. S18 Wheat yield anomalies and model performance for NeuralCrop and LPJmL under the
+2016 heavy rainfall in France. a, Wheat yield anomalies in 2016 at the subnational level from EU
+statistics. b, Wheat yield anomalies in 2016 at the subnational level from LPJmL. c, Wheat yield
+anomalies in 2016 at the subnational level from pre-trained NeuralCrop. d, Wheat yield anomalies
+in 2016 at the subnational level from NeuralCrop. e, Boxplots of 2016 wheat yield anomalies (%).
+The green box denotes EU statistics, the yellow box denotes pre-trained NeuralCrop, the orange box
+denotes NeuralCrop, and the blue box denotes LPJmL. The upper and lower whiskers represent the
+maximum and minimum values that are within 1.5 times the interquartile range of the box. The
+black triangles are the mean value. f, Root mean square error (RMSE) between simulated 2016 yield
+anomalies and EU statistics. The yellow box denotes pre-trained NeuralCrop, the orange box denotes
+NeuralCrop, and the blue box denotes LPJmL.
+68
+References
+[1] Ricky TQ Chen, Yulia Rubanova, Jesse Bettencourt, and David K Duvenaud.
+Neural ordinary differential equations. Advances in neural information processing
+systems, 31, 2018.
+[2] Jeff Bezanson, Alan Edelman, Stefan Karpinski, and Viral B Shah. Julia: A fresh
+approach to numerical computing. SIAM review, 59(1):65–98, 2017.
+[3] Christopher Rackauckas, Yingbo Ma, Julius Martensen, Collin Warner, Kirill
+Zubov, Rohit Supekar, Dominic Skinner, Ali Ramadhan, and Alan Edelman.
+Universal differential equations for scientific machine learning. arXiv preprint
+arXiv:2001.04385, 2020.
+[4] Avik Pal. Lux: Explicit Parameterization of Deep Neural Networks in Julia, April
+2023. If you use this software, please cite it as below.
+[5] Avik Pal. On Efficient Training & Inference of Neural Differential Equations,
+2023.
+[6] Michael Innes. Don’t unroll adjoint: Differentiating ssa-form programs. CoRR,
+abs/1810.07951, 2018.
+[7] Tim Besard, Christophe Foket, and Bjorn De Sutter. Effective extensible pro-
+gramming: Unleashing Julia on GPUs.
+IEEE Transactions on Parallel and
+Distributed Systems, 2018.
+[8] Tim Besard, Valentin Churavy, Alan Edelman, and Bjorn De Sutter.
+Rapid
+software prototyping for heterogeneous and distributed platforms. Advances in
+Engineering Software, 132:29–46, 2019.
+[9] Valentin Churavy. KernelAbstractions.jl.
+[10] Sibyll Schaphoff, Werner von Bloh, Anja Rammig, Kirsten Thonicke, Hester Bie-
+mans, Matthias Forkel, Dieter Gerten, Jens Heinke, Jonas J¨agermeyr, J¨urgen
+Knauer, et al. Lpjml4–a dynamic global vegetation model with managed land–
+part 1: Model description. Geoscientific Model Development, 11(4):1343–1375,
+2018.
+[11] Graham D Farquhar, S von von Caemmerer, and Joseph A Berry. A biochemical
+model of photosynthetic co2 assimilation in leaves of c3 species. planta, 149(1):78–
+90, 1980.
+[12] Graham D Farquhar and S Von Caemmerer. Modelling of photosynthetic response
+to environmental conditions. In Physiological plant ecology II: Water relations
+and carbon assimilation, pages 549–587. Springer, 1982.
+69
+[13] G James Collatz, J Timothy Ball, Cyril Grivet, and Joseph A Berry. Physiolog-
+ical and environmental regulation of stomatal conductance, photosynthesis and
+transpiration: a model that includes a laminar boundary layer. Agricultural and
+Forest meteorology, 54(2-4):107–136, 1991.
+[14] G James Collatz, Miquel Ribas-Carbo, and Joseph A Berry.
+Coupled
+photosynthesis-stomatal conductance model for leaves of c4 plants. Functional
+Plant Biology, 19(5):519–538, 1992.
+[15] Alex Haxeltine and IC Prentice. A general model for the light-use efficiency of
+primary production. Functional Ecology, pages 551–561, 1996.
+[16] I Colin Prentice, Martin Heimann, and Stephen Sitch. The carbon balance of the
+terrestrial biosphere: Ecosystem models and atmospheric observations. Ecological
+Applications, 10(6):1553–1573, 2000.
+[17] Yiqi Luo, Yuanyuan Huang, Carlos A Sierra, Jianyang Xia, Anders Ahlstr¨om,
+Yizhao Chen, Oleksandra Hararuk, Enqing Hou, Lifen Jiang, Cuijuan Liao, et al.
+Matrix approach to land carbon cycle modeling. Journal of Advances in Modeling
+Earth Systems, 14(7):e2022MS003008, 2022.
+[18] Stephen Sitch, Benjamin Smith, I Colin Prentice, Almut Arneth, Alberte
+Bondeau, Wolfgang Cramer, Jed O Kaplan, Samuel Levis, Wolfgang Lucht,
+M Thonicke Sykes, et al. Evaluation of ecosystem dynamics, plant geography
+and terrestrial carbon cycling in the lpj dynamic global vegetation model. Global
+change biology, 9(2):161–185, 2003.
+[19] Werner von Bloh, Sibyll Schaphoff, Christoph M¨uller, Susanne Rolinski, Katha-
+rina Waha, and S¨onke Zaehle.
+Implementing the nitrogen cycle into the
+dynamic global vegetation, hydrology, and crop growth model lpjml (version 5.0).
+Geoscientific Model Development, 11(7):2789–2812, 2018.
+[20] Stefanie Rost, Dieter Gerten, Alberte Bondeau, Wolfgang Lucht, Janine Rohwer,
+and Sibyll Schaphoff. Agricultural green and blue water consumption and its
+influence on the global water system. Water Resources Research, 44(9), 2008.
+[21] Sara Minoli, Jonas J¨agermeyr, Senthold Asseng, Anton Urfels, and Christoph
+M¨uller. Global crop yields can be lifted by timely adaptation of growing periods
+to climate change. Nature Communications, 13(1):7079, 2022.
+[22] Markus Reichstein, Eva Falge, Dennis Baldocchi, Dario Papale, Marc Aubinet,
+Paul Berbigier, Christian Bernhofer, Nina Buchmann, Tagir Gilmanov, Andre
+Granier, et al. On the separation of net ecosystem exchange into assimilation and
+ecosystem respiration: review and improved algorithm. Global change biology,
+11(9):1424–1439, 2005.
+70
+[23] Gilberto Pastorello, Carlo Trotta, Eleonora Canfora, Housen Chu, Danielle
+Christianson, You-Wei Cheah, Cristina Poindexter, Jiquan Chen, Abdelrahman
+Elbashandy, Marty Humphrey, et al. The fluxnet2015 dataset and the oneflux
+processing pipeline for eddy covariance data. Scientific data, 7(1):225, 2020.
+[24] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv
+preprint arXiv:1711.05101, 2017.
+[25] Nina Buchmann, Lukas Hortnagl, Sabina Keller, and Fabio Turco.
+Fluxnet
+Product from Oensingen crop, 2003–2023.
+https://hdl.handle.net/11676/
+lWly2Cb3xiVw8QB-Z1SXWqKx, 2024. Accessed 2025-07-30.
+[26] Youngryel Ryu, Minseok Kang, and Jongho Kim.
+FLUXNET-CH4 KR-CRK
+Cheorwon Rice paddy, Dataset. https://doi.org/10.18140/FLX/1669649, 2020.
+Data collected from 2015–2018. Accessed 2025-07-30.
+[27] Adam Schreiner-McGraw.
+AmeriFlux FLUXNET-1F US-Mo3 LTAR CMRB
+Field 3 (CMRB BAU), Ver. 3-5, AmeriFlux AMP, Dataset. https://doi.org/10.
+17190/AMF/2229384, 2023. Accessed 2025-07-30.
+[28] Andy Suyker. AmeriFlux FLUXNET-1F US-Ne1 Mead - irrigated continuous
+maize site, Ver. 4-7, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/
+1871140, 2025. Accessed 2025-07-30.
+[29] Giulia Ronchetti, Luigi Nisini Scacchiafichi, Lorenzo Seguini, Iacopo Cerrani, and
+Marijn van der Velde. Harmonized european union subnational crop statistics can
+reveal climate impacts and crop cultivation shifts. Earth System Science Data,
+16(3):1623–1649, 2024.
+[30] Fluxnet Product from Lonzee crop, 2004–2020. https://hdl.handle.net/11676/
+eo cBxOeMONH2G8z4g0G 60J, 2021. Accessed 2025-07-30.
+[31] Fluxnet Product from Gebesee crop, 2001–2020. https://hdl.handle.net/11676/
+ICpbHZew62rMezJ0DdGd1QZz, 2021. Accessed 2025-07-30.
+[32] Fluxnet Product from Klingenberg crop, 2004–2023.
+https://hdl.handle.net/
+11676/b8wQzTvW2nkN-mFPaSIO6lad, 2021. Accessed 2025-07-30.
+[33] Fluxnet Product from Selhausen Juelich crop, 2011–2014.
+https://hdl.handle.
+net/11676/HE7Nj8 yV0xTr1zYLvOchSR1, 2021. Accessed 2025-07-30.
+[34] Marius Schmidt Karl Schneider.
+FLUXNET2015 DE-Seh Selhausen, Dataset.
+https://doi.org/10.18140/FLX/1669649, 2020. Data collected from 2015–2018.
+Accessed 2025-07-30.
+[35] Fluxnet Product from Voulundgaard crop, 2009–2018. https://hdl.handle.net/
+11676/Msw4MfzUvAI4JRy4PEXnxRdg, 2024. Accessed 2025-07-30.
+71
+[36] Pauline Buysse, Brigitte Durand, Jean-Christophe Gueudet, Nicolas Mascher,
+Eric Larmanou, Pierre Cellier, and Benjamin Loubet. FLUXNET2015 FR-Gri
+Grignon, Dataset. https://doi.org/10.18140/FLX/1669649, 2020. Data collected
+from 2004-2014. Accessed 2025-07-30.
+[37] Fluxnet Product from Aurade crop, 2005-2023. https://hdl.handle.net/11676/
+8VEnzKK7Clppzc7jrXlMFAIc, 2021. Accessed 2025-07-30.
+[38] Fluxnet Product from Estrees-Mons A28 crop, 2017-2023. https://hdl.handle.
+net/11676/iFrHZC8K -lgFIKzoAQOXoc9, 2021. Accessed 2025-07-30.
+[39] Fluxnet Product from Lamasquere crop, 2005-2020.
+https://hdl.handle.net/
+11676/7WGNEcqpODsIXmZfRvQxboSm, 2021. Accessed 2025-07-30.
+[40] Simone Sabbatini, Nicola Arriga, Beniamino Gioli, Dario Papale, Michele Tomas-
+succi, and Alessio Boschi.
+FLUXNET2015 IT-CA2 Castel d’Asso2, Dataset.
+https://doi.org/10.18140/FLX/1440231, 2020. Data collected from 2011–2014.
+Accessed 2025-07-30.
+[41] Jillian M Deines, Sotirios V Archontoulis, Isaiah Huber, and David B Lobell.
+Observational evidence for groundwater influence on crop yields in the united
+states. Proceedings of the National Academy of Sciences, 121(36):e2400085121,
+2024.
+[42] Camilo Rey-Sanchez, Carlos Tianxin Wang, Daphne Szutu, Kyle Hemes, Joseph
+Verfaillie, and Dennis Baldocchi.
+AmeriFlux FLUXNET-1F US-Bi2 Bouldin
+Island corn, Ver. 3-5, AmeriFlux AMP, (Dataset).
+https://doi.org/10.17190/
+AMF/1871135, 2022. Accessed 2025-07-30.
+[43] Adam Schreiner-McGraw.
+AmeriFlux FLUXNET-1F US-Mo1 LTAR CMRB
+Field 1 (CMRB ASP), Ver. 5-7, AmeriFlux AMP, (Dataset). https://doi.org/10.
+17190/AMF/2229382, 2025. Accessed 2025-07-30.
+[44] Adam Schreiner-McGraw.
+AmeriFlux FLUXNET-1F US-Mo3 LTAR CMRB
+Field 3 (CMRB BAU), Ver. 3-5, AmeriFlux AMP, (Dataset). https://doi.org/10.
+17190/AMF/2229384, 2023. Accessed 2025-07-30.
+[45] Andy Suyker. AmeriFlux FLUXNET-1F US-Ne2 Mead - irrigated maize-soybean
+rotation site, Ver. 3-7, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/
+AMF/2574638, 2025. Accessed 2025-07-30.
+[46] Andy Suyker.
+AmeriFlux BASE US-Ne3 Mead - rainfed maize-soybean rota-
+tion site, Ver. 19-5, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/
+1246086, 2025. Accessed 2025-07-30.
+[47] John Baker and Tim Griffis. AmeriFlux FLUXNET-1F US-Ro1 Rosemount- G21,
+Ver. 5-7, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/1881588,
+72
+2025. Accessed 2025-07-30.
+[48] John Baker and Tim Griffis. AmeriFlux FLUXNET-1F US-Ro3 Rosemount- G19,
+Ver. 4-7, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/2469468,
+2025. Accessed 2025-07-30.
+[49] John Baker and Tim Griffis.
+AmeriFlux FLUXNET-1F US-Ro5 Rosemount
+I18 South, Ver. 5-7, AmeriFlux AMP, (Dataset). https://doi.org/10.17190/AMF/
+1818371, 2025. Accessed 2025-07-30.
+[50] John Baker and Tim Griffis.
+AmeriFlux FLUXNET-1F US-Ro6 Rosemount
+I18 North, Ver. 5-7, AmeriFlux AMP, (Dataset).
+https://doi.org/10.17190/
+AMF/1881590, 2025. Accessed 2025-07-30.
+[51] Sergio M Vicente-Serrano, Santiago Beguer´ıa, and Juan I L´opez-Moreno. A mul-
+tiscalar drought index sensitive to global warming: the standardized precipitation
+evapotranspiration index. Journal of climate, 23(7):1696–1718, 2010.
+73

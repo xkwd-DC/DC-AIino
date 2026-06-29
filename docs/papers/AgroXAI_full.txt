@@ -1,0 +1,901 @@
+AgroXAI: Explainable AI-Driven Crop
+Recommendation System for Agriculture 4.0
+¨Ozlem TURGUT
+Department of Computer Engineering
+Pamukkale University
+Denizli, Turkey
+Email: oturgut19@posta.pau.edu.tr
+˙Ibrahim K ¨OK
+Department of AI and Data Engineering
+Ankara University
+Ankara, Turkey
+Email: ikok@ankara.edu.tr
+Suat ¨OZDEM˙IR
+Department of Computer Engineering
+Hacettepe University
+Ankara, Turkey
+Email: ozdemir@cs.hacettepe.edu.tr
+Abstract—Today, crop diversification in agriculture is a critical
+issue to meet the increasing demand for food and to improve
+food safety and quality. This issue is considered to be the
+most important challenge for the next generation of agriculture
+due to diminishing natural resources, limited arable land and
+unpredictable climatic conditions caused by climate change.
+In this paper, we employ emerging technologies such as the
+Internet of Things (IoT), machine learning (ML) and explainable
+artificial intelligence (XAI) to improve operational efficiency and
+productivity in the agricultural sector. Specifically, we propose an
+edge computing-based explainable crop recommendation system,
+AgroXAI, which suggests suitable crops for a region based on
+weather and soil conditions. In this system, we provide local
+and global explanations of ML model decisions with methods
+such as ELI5, LIME, SHAP, which we integrate into ML
+models. More importantly, we provide regional alternative crop
+recommendations with the Counterfactual explainability method.
+In this way, we envision that our proposed AgroXAI system will
+be a platform that provides regional crop diversity in the next
+generation agriculture.
+Index Terms—Explainable Artificial Intelligence (XAI), Agri-
+culture 4.0, Internet of Things, edge computing, crop recommen-
+dation
+I. INTRODUCTION
+Today, global climate change, population growth, agricul-
+tural land depletion and biodiversity loss pose serious en-
+vironmental, social and economic threats [1]. Under these
+globally changing conditions, industrial growth and produc-
+tion methods based on sustainable agricultural principles are
+needed to meet the increasing demand for food and im-
+prove food security and quality [2]. At this point, ensuring
+crop diversity in agriculture stands out as a critical issue.
+Crop diversification is the process of adding a new crop,
+a different variety, to a field [3]. It is not only mitigates
+various agricultural challenges such as soil degradation, pest
+infestation, and climate change impacts, but also enhances
+farm resilience, fosters income growth on small holdings,
+stabilizes commodity prices, improves soil health, and offers a
+diverse range of nutritious food options for both humans and
+livestock [4]. In this context, ensuring regional crop diversity
+based on low-cost digital technologies, in response to changing
+environmental and climate conditions, emerges as a key area
+of focus for agriculture 4.0 [5]. In particular, it is necessary
+to periodically monitor the soil, air, and environmental factors
+in distributed geographic regions and provide suitable crop
+alternatives accordingly.
+The concept of the Internet of Things (IoT), which provides
+technology-oriented creative solutions to the current needs
+in the new agricultural era, comes to the forefront [6], [7].
+IoT offers innovative digital solutions in many areas based
+on low-cost, low-latency approaches such as edge and fog
+computing that respond to end-user needs on-site [8]. Many
+of these solutions are also being used effectively in agriculture
+domain. In this context, a wide variety of IoT-supported smart
+agriculture applications are implemented in crop management,
+soil management, water management, livestock management,
+green management, weather management, and tracking and
+tracing [9], [10]. It is observed that these applications are
+becoming widespread with AI support, but there is also a
+growing need for interpretability and explainability for the
+effective use of these technologies. In this regard, Explainable
+Artificial Intelligence (XAI) plays a crucial role in agriculture
+by enhancing the transparency of AI-driven recommendations,
+such as those for crop selection, soil health, and pest man-
+agement [11]. By clarifying how environmental factors, soil
+properties, and climate conditions shape AI suggestions, XAI
+builds trust in technological solutions and supports data-driven
+decision-making. This interpretability is essential for sus-
+tainable agricultural practices, allowing stakeholders to make
+informed choices that enhance resilience and productivity amid
+changing environmental conditions.
+Specifically, the existing research efforts related to crop
+prediction in the agriculture domain are as follows.
+Sharma et al. [12] developed a crop prediction model based
+on Gaussian Naive Bayes, Decision Tree, Logistic Regression,
+Random Forest, and XGBoost models. The authors developed
+their models by training them on data collected from different
+agricultural fields in India. The forecasting system based on
+the developed models was enabled to be used online and
+offline via an Android application. Similarly, Doshi et al.
+[13] developed an intelligent recommendation system called
+AgroConsultant to help farmers in India make an intelligent
+decision on which crop to grow depending on various envi-
+ronmental and geographical factors. In the developed system,
+the authors presented a system design that combines data
+sets showing soil, climate and precipitation characteristics and
+arXiv:2412.16196v1  [cs.LG]  16 Dec 2024
+decides which crop farmers will grow by using Decision Tree,
+K-Nearest Neighbour, Random Forest, regression and Neural
+Network models.
+Rajak et al. [14] aimed to design a crop recommendation
+system using an ensemble learning model based on Support
+Vector Machine, Naive Bayes, Multi-layer Perceptron and
+Random Forest models. The proposed system was tested
+with soil dataset collected from different sources. Rule-based
+output was produced with the ensemble model used in the
+system. Similarly, Pudumalar et al. [15] aimed to design a
+highly accurate and effective crop recommendation system
+using ensemble techniques. They applied the majority voting
+technique in Random Forest, CHAID, K-Nearest Neighbour
+and Naive Bayes learners. In this study, soil testing lab
+and crop data available in online sources were used as a
+dataset. As a result of the applied model, they created a
+rule. Saranya et al. [16] developed a crop recommendation
+module that ensembles the results of Support Vector Machine,
+Random Forest, Naive Bayes, and K-Nearest Neighbor models
+using majority voting. In addition, they designed a web-based
+interface called TILLAGE that includes fertilizer recommen-
+dation and pesticide recommendation modules based on the
+CNN model. The proposed modular solution aims to increase
+agricultural production by improving soil use, fertilization and
+crop selection.
+Unlike the above studies, edge computing architecture and
+Deep Reinforcement learning (DRL) learning-based methods
+have been used in the architectural design and product man-
+agement of smart agriculture applications. For example; Wang
+[17] aimed to design an edge-cloud computing-based smart
+agriculture system using DRL. This system consists of an
+agricultural data collection layer, edge computing layer, data
+transmission layer, and cloud computing layer. While data is
+collected from various sensors placed in the agricultural data
+collection layer, DRL is deployed in the cloud computing
+layer for instant smart decision-making. In another study,
+Alonso et al. [18] proposed an architecture called Global
+Edge Computing Architecture (GECA) to realize Edge-IoT
+applications. In this architecture, they developed SDN/NFV
+capabilities and a Double Deep-Q Learning model to control
+virtual data flows. Din et al. [19] focused on the problem
+of monitoring crop health in a semi-structured farm. For this
+problem, a non-uniform area coverage algorithm based on the
+Double Deep Q-Network (DDQN) algorithm was developed.
+On the other hand, studies on the explainability of smart
+agriculture practices have been quite limited. Sabrina et al.
+[20] designed an ML and fuzzy logic-based smart agriculture
+system aiming to increase crop production. The system is
+based on SVR, KNN and Naive Bayes models to monitor
+soil properties, and weather conditions, and detect possible
+abnormal conditions for the target crop. In the paper, an
+approach based on fuzzy rules is presented to ensure user trust
+and interoperability. In a similar study, Cartolano et al. [21] fo-
+cused on crop recommendation and effective feature extraction
+based on explainable ML methods in smart agriculture. They
+applied Extreme Gradient Boosting, Multi-layer Perceptron,
+and SVR models on the crop recommendation database. In
+these models, they obtained visualization with various graph-
+ics using SHAP and LIME, which are explainable artificial
+intelligence methods.
+Considering the existing gaps and shortcomings in the liter-
+ature, in this work we present an explainable and interpretable
+decision support system based on IoT edge computing in the
+agricultural domain. The key contributions of this paper are
+summarized as follows.
+• We propose a XAI based crop recommendation system
+called AgroXAI that provides a dynamic regional crop
+diversity.
+• We introduce a conceptual IoT architecture to operate the
+proposed system at the edge based on an edge computing
+approach.
+• We also provide SHAP, LIME and ELI5 based post-hoc
+explainability of why the preferred crop is planted for an
+agricultural area.
+This paper is structured as follows: Section II explains the
+proposed crop recommendation system model, used ML mod-
+els and XAI methods. Section III presents experimental result
+of ML models and discusses the XAI method results. Section
+IV provides a comprehensive discussion of security, privacy,
+ethical considerations, economic feasibility of the model and
+local preferences. Finally, Section V concludes the paper.
+II. AN EDGE COMPUTING-BASED EXPLAINABLE CROP
+RECOMMENDATION SYSTEM (AGROXAI)
+In this section, we introduce the proposed system model for
+crop recommendation system and used ML and XAI methods.
+A. System Model
+Next generation agriculture aims to make agricultural pro-
+duction more efficient, sustainable and predictable through
+technologies such as digitalization, automation and artificial
+intelligence. With this new vision of agriculture, data-driven
+decision-making processes will enable farmers to make more
+informed and region-specific crop choices. However, due to
+differences in climate, soil structure, water resources, temper-
+ature and humidity in different regions, there is a need for
+low-cost and effective decision support systems that can make
+localized decisions at the most extreme regional level. There-
+fore, in this study, we propose a data-driven and AI-supported
+crop recommendation system that will make regional crop
+selection more effective at the edge close to the end user.
+Specifically, the proposed system shown in Figure 1 is based
+on a conceptual IoT architecture consisting of physical layer,
+edge layer, fog layer and cloud layer.
+• Physical Layer: This layer includes sensors that measure
+the region’s climate, soil structure, water resources, tem-
+perature and humidity, and actuators that provide condi-
+tions that can be changed in the region. In this way, it will
+be possible to periodically measure the current conditions
+for crop forecasting and change the environment when
+necessary.
+Crop
+Prediction
+Features to adjust for the alternative crop
+Post-hoc
+Explainability
+Methods
+Counterfactual
+Explainability
+(Crop Recommendations)
+Black Box 
+Models
+XAI
+Methods
+Edge Layer
+Physical 
+Layer
+Raspberry Pi
+Raspberry Pi
+Fog Server
+Fog Server
+Fog Server
+Fog Server
+Fog Layer
+Raspberry Pi
+Cloud Layer
+Weather  & Soil 
+Data
+Actual Instance
+Lentil
+Counterfactual 1
+Maize
+Counterfactual 2
+Jute
+Counterfactual 3
+Mungbean
+Fig. 1: Proposed Edge Computing-Based Explainable Crop Recommendation System (AgroXAI)
+• Edge Layer: At this layer, for each geographic region,
+there are end devices to analyze the locally collected
+data. these devices are capable of running classical ML
+and XAI methods (such as Raspberry Pi). Regionally,
+the edge devices are tasked with taking the data in their
+coverage area, predicting the appropriate crops for each
+region and providing an explanation of the prediction
+results. The ML models and XAI methods used in this
+study operate at this layer.
+• Fog Layer: This layer includes hardware clouds that
+manage data traffic between the edge and the cloud layer
+and have the potential to provide network control.
+• Cloud Layer: This layer includes resource-rich network
+devices that can perform computation and storage tasks
+that cannot be performed on edge systems in the proposed
+architecture. In particular, it collects all agricultural data
+in one center and provides batch analysis when needed.
+In the physical layer of AgroXAI, farmers in each geographical
+region will be able to collect regional conditions at the time
+of planting crops with IoT sensors and see the most suitable
+crops to be planted according to ML and XAI results on edge
+devices. When needed, the obtained information can be stored
+on the fog server or cloud server and stored on central servers.
+B. ML Models
+In this paper, we used K-Nearest Neighbors (KNN), Ran-
+dom Forest (RF), Decision Tree (DT), Support Vector Machine
+(SVM), LightGBM (LGBM) and Multilayer Perceptron (MLP)
+models to classify the crop. Table I shows the parameters used
+in the training of these models.
+1) KNN: KNN, which is based on the distance between
+data points, is used to solve classification and regression
+problems. It uses the nearest ”k” pieces of data to decide which
+class the data belongs to. The success of KNN is determined
+by the number of neighbors (k) and the distance calculation
+algorithm used [22].
+2) RF: RF is an ensemble approach. A forest is made up
+of many independent decision tree classifiers. Changing the
+attribute choices at random instead of the training examples is
+the main concept. Every tree in the forest generates a result
+by doing its own assessment. Each tree votes, and the value
+with the highest score is chosen [22].
+3) DT: DT is a model that predicts by learning simple
+rules extracted from data features, represented by a tree
+representation. Instances are ordered from root to leaf node.
+Each node in the tree indicates a feature of the instance to be
+tested. Based on the tested features, the path from the root to
+a leaf node leads to the class label. The overfitting problem in
+DT can be encountered. Pruning can be applied to solve this
+problem [23] .
+4) SVM: SVM is a method for classifying both linear and
+non-linear data. In this method, data are classified into pre-
+defined classes with the help of a hyperplane. In determining
+the hyperplane, margins and support vectors, which are data
+points close to the hyperplane, are used [22].
+5) LGBM: LGBM is a type of histogram-based boosting
+method. It is capable of rapidly processing big datasets [24]. It
+TABLE I: ML Model Parameters
+Model
+Training Parameters
+Best Parameters
+KNN
+n neighbours: (10-50), metric: (‘euclidian’, ‘cityblock’)
+n neighbours: 11, metric: ‘cityblock’
+RF
+max depth: (5-10), n estimators: (10-150), criterion: (‘gini’, ‘entropy’)
+max depth: 9, n estimators: 89, criterion: ‘entropy’
+DT
+max depth: (10-150), criterion: (’gini’, ‘entropy’),
+splitter: (‘best’, ‘random’), min samples split: [ 2, 4, 6, 8, 10, 12]
+max depth: 131, criterion: ‘gini’,
+splitter: ‘best’, min samples split: 4
+SVM
+kernel: ‘rbf’,
+C: [0.001, 1], gamma: [0.01, 0.1]
+kernel: ‘linear’,
+C: [0.001,0.01, 0.1]
+kernel: ‘linear’
+C: 0.01
+LGBM
+num leaves: (5-20), learning rate: [0.1, 0.01, 0.001],
+n estimators: (10-50)
+num leaves: 5, learning rate: 0.1, n estimators: 43
+MLP
+activation: (‘tanh’, ‘relu’), learning rate: (‘constant’, ‘adaptive’),
+solver: (‘sgd’, ‘adam’), alpha: [0.0001, 0.001,0.1,0.2,0.3,0.4,0.5],
+hidden layer sizes: [(10,10),(10,20), (10,30),
+(10,40),(10,30,10),(10, 30, 50, 25)]
+activation: ‘relu’, learning rate: ‘constant’,
+solver: ‘adam’, alpha: 0.5,
+hidden layer sizes: (10, 30, 50, 25)
+uses the leaf-wise strategy, one of the methods used in learning
+decision trees. This strategy allows an unbalanced tree to grow
+and aims to split the leaf with the most loss. In this way, the
+loss is minimized [25].
+6) MLP: MLP is a simple feedforward neural network and
+basically consists of three layers. The first layer is the input
+layer, which accepts incoming signals and then passes them
+on to neurons in the hidden layer. Calculations are performed
+in the hidden layer. There may be one hidden layer, or there
+could be multiple hidden layers. The last layer, the output
+layer, accepts the output signals from the hidden layer and
+creates the output pattern of the network [23].
+C. Explainable AI Methods
+In the classification process, not only is it important for
+models to achieve high accuracy, but the interpretability of
+the models’ decisions is also of critical importance. Providing
+interpretability in these developed systems emerges as a factor
+that enhances trust in the model decisions [26]. Therefore, in
+this study, we employ IML methods such as ELI5, LIME,
+SHAP, and Counterfactual.
+1) Explain Like I’m 5 (ELI5): ELI5 is a Python package
+used for the explainability of black box models. It provides
+both global and local explainability. ELI5 uses tree models for
+calculating feature weights. The contribution of the feature to
+the decision is based on how much the score has changed from
+parent to child at each node of the tree. [27]
+2) SHapley Additive exPlanations (SHAP): SHAP is an
+explainability method based on game theory. In this method, a
+value called Shapley value is calculated for each feature, which
+expresses the contribution of the feature to the outcome. Shap
+provides both local and global explanation [28].
+3) Local
+Interpretable
+Model-agnostic
+Explanations
+(LIME): LIME method examines how the model works by
+changing the inputs and observing how the predictions vary.
+LIME is model-agnostic and provides local explanations [29].
+4) Counterfactual: Counterfactual is a human-friendly ex-
+plainability method that explains the smallest change in feature
+values and transforms the prediction into a predefined output.
+Although a counterfactual tries to generate feature values
+as close as possible to the corresponding instance, it is not
+always possible to find a counterfactual for every predefined
+prediction [28].
+III. EXPERIMENTAL RESULTS AND EVALUATION
+A. Dataset Information
+In this paper, we use the agriculture dataset available in
+Kaggle [30]. The dataset contains 2200 rows of data and seven
+features. The features are presented in Table II. In addition,
+the dataset contains 22 different crop types as target labels.
+These crops are apple, banana, blackgram, chickpea, coconut,
+TABLE II: Dataset Features and Descriptions
+Features
+Descriptions
+Nitrogen
+Amount of Nitrogen in soil
+Phosphorus
+Amount of Phosphorus in soil
+Potassium
+Amount of Potassium in soil
+Temperature
+The average soil temperatures
+Humidity
+Amount of humidity
+ph
+pH level of the soil
+Rainfall
+Amount of rainfall
+Target
+Types of crop
+coffee, cotton, grapes, jute, kidney beans, lentil, maize, mango,
+moth beans, mungbean, muskmelon, orange, papaya, pigeon
+peas, pomegranate, rice and watermelon.
+B. ML Results and Evaluation
+We tested all used models with the best parameters in
+Table I and obtained the results in Table III. When comparing
+classification models based on precision, recall, F1 score, and
+accuracy, all models show strong performance with an overall
+value above 95%. In particular, RF outperforms the others
+with outstanding precision, recall, F1 score, and accuracy
+reaching 99.24%. The DT follows closely behind with a
+balanced performance with an accuracy of 98.48%. KNN,
+SVM, LGBM, and MLP also show strong performances,
+reaching over 95% accuracy. The success of RF here may
+be due to combining multiple decision trees and mitigating
+overfitting through random sampling, which tends to provide
+robust generalization.
+TABLE III: Classification Results of ML Models
+Precision
+Recall
+F1-Score
+Accuracy
+KNN
+97.1071
+96.6667
+96.6198
+96.6667
+RF
+99.3395
+99.2424
+99.2312
+99.2424
+DT
+98.5620
+98.4848
+98.4742
+98.4848
+SVM
+97.7694
+97.4242
+97.4163
+97.4242
+LGBM
+97.7930
+97.5758
+97.5527
+97.5758
+MLP
+95.7698
+95.6061
+95.5945
+95.6061
+C. XAI Results and Evaluation
+We used ELI5, SHAP, and Counterfactual explainability
+methods to explain ML models developed for crop diversity. In
+this context, we first used ELI5 and SHAP methods for local
+and global explanation of the decisions of the most successful
+ML models RF and LGBM models. Then, we determined the
+crop varieties to be grown in the relevant region using the
+counterfactual method.
+The global explainability of the ELI5 method with respect
+to RF and LGBM models is shown in Figure 2. These graphs
+show the most effective attributes for classifying the crop
+variety according to the weather and soil conditions in the
+region. According to the information in the figure, it is seen
+that the first two features that contribute the most to the
+decision in crop classification for RF and LGBM models are
+“Humidity” and “Rainfall”. The third attribute is “Potassium”
+for RF and “Phosphorus” for LGBM. This information shows
+that moisture and rainfall features are critical in determining
+crop diversity.
+For local interpretability, a single data instance is selected,
+and the model’s decision output for this data is analyzed. In
+this context, the local interpretability of the most successful
+models, RF and LGBM, has been extracted for randomly
+selected data instances. The local interpretability of RF and
+LGBM models for randomly selected data are given in Figure
+3 and Figure 4, respectively. In Figure 2, the RF model
+predicted the selected single data instance as papaya with
+a probability of 95.5%, grapes with 2.2%, and maize with
+1.1%. The interpretability of this result was derived using the
+ELI5 method. According to this, “Potassium”, ”Phosphorus”
+and ”Humidity” were the most effective features for the
+papaya decision. On the other hand, ”Rainfall”, ”Potassium”
+Fig. 2: ELI5 global explanations for RF (Left) and LGBM
+(Right)
+and ”Temperature” were more effective for maize and grape
+predictions. For the same test data, the LGBM model predicted
+papaya with 100% accuracy. The interpretability of this result
+was obtained using the ELI5 method and is shown in Figure
+3. According to this, it was determined that the most effective
+features in the decision of the LGBM model were Phosphorus,
+pH and Humidity”, respectively. When both global and local
+explanation results of the ELI5 method are evaluated together,
+it is observed that the values of humidity, rainfall, phosphorus,
+and potassium are decisive features in regional crop produc-
+tion.
+In this study, more than one method is used for better inter-
+pretability of model decisions. In this context, RF and LGBM
+model decisions are also explained both locally and globally
+with the SHAP method. First, the global explainability of
+the SHAP method for the RF and LGBM models is shown
+using the summary plot in Figure 5. The features are ranked
+according to their importance. Here, each color represents
+the contribution to different crop types. For both the RF and
+LGBM models, ”Humidity” is identified as the most important
+feature for crop classification. While the other decisive features
+for the RF model are phosphorus, potassium, and nitrogen,
+they are ranked as rainfall, phosphorus, and potassium for the
+LGBM model.
+Then, SHAP local explainability results were obtained for
+the sample test data provided in the description of Figure
+6 and illustrated using a force plot. In the force plot, the
+feature occupying the largest area is the one contributing
+the most to the decision. Accordingly, ”Phosphorus” was the
+most contributing feature for the RF model, while ”Nitrogen”
+played the same role for the LGBM model. Features shown
+in red have a positive contribution to the decision, whereas
+those in blue have a negative contribution. For the RF model,
+”Phosphorus” and ”pH” contributed positively, while ”Potas-
+sium,” ”Nitrogen,” and ”Humidity” contributed negatively. In
+the LGBM model, ”Phosphorus” and ”Rainfall” contributed
+positively, whereas the most influential feature, ”nitrogen,” had
+a negative contribution.
+We also examined the local explanations of the RF and
+LGBM model according to LIME, another local explainability
+method. As shown in Figure 7, for the randomly selected data,
+the RF model predicted lentil with 85% probability, mothbean
+with 7% probability, jute with 5% probability and mungbean
+with 3% probability. The contribution of the features for this
+prediction is shown on the right side of the figure from max-
+imum to minimum. Rainfall greater than 121.91, Potassium
+greater than 32 and Nitrogen greater than 37 led to the con-
+clusion of lentils. Rainfall greater than 121.91 and Humidity
+content greater than 61.02 contributed to the decision for
+mothbean. For jute, Rainfall greater than 121.91, Potassium
+greater than 32, Nitrogen greater than 37 and Phosphorus
+greater than 28 contributed positively, while Humidity greater
+than 61.02, pH greater than 6.92 and Temperature greater than
+22.76 negatively influenced the decision.
+On the other hand, the LGBM model classified the same
+sample data as lentil with 100% probability as shown in Figure
+Fig. 3: ELI5 local explanations for RF (Randomly selected sample test data: Nitrogen = 44, Phosphorus = 60, Potassium =
+55, Temperature = 34.28046, Humidity = 90.555618, pH = 6.825371, Rainfall = 98.540474)
+Fig. 4: ELI5 local explanations for LGBM (Randomly selected sample test data: Nitrogen = 44, Phosphorus = 60, Potassium
+= 55, Temperature = 34.28046, Humidity = 90.555618, pH = 6.825371, Rainfall = 98.540474)
+Fig. 5: SHAP global explanations for RF (Left) and LGBM (Right)
+Fig. 6: SHAP local explanations for RF (Top) and LGBM (Bottom)- Randomly selected sample data: Nitrogen = 39, Phosphorus
+= 77, Potassium = 21, Temperature = 22.997744, Humidity = 60.242188, pH = 4.603563, Rainfall = 159.689346
+Fig. 7: LIME local explanations for RF (Used sample data: Nitrogen = 70, Phosphorus = 38, Potassium = 35, Temperature =
+24.397362, Humidity = 79.268616, pH = 7.014064, Rainfall = 164.269699 )
+8. This decision is largely influenced by rainfall and potassium
+features.
+Up to this point, we have evaluated the post-hoc explain-
+ability of the model results by using ELI5, SHAP and LIME.
+In this study, we also aimed to provide alternative crop
+recommendation based on edge computation regionally in
+addition to the interpretability of the current decisions. In this
+context, we used the counterfactual explainability method to
+identify the list of other crops that can be planted for each
+predicted crop. In counterfactual explainability, each selected
+data sample is referred to as the “actual instance,” and the
+class for selected data is predicted. In addition to this result,
+alternative counterfactual suggestions are provided for the
+output. In this way, regionally appropriate products and al-
+ternative suggestions are obtained. Based on this information,
+counterfactual explainability results for randomly selected data
+samples are presented in Table IV and Table V.
+As seen in Table 4, the RF model has predicted the selected
+actual instance data as Papaya. However, with some changes in
+the input data features, it is observed that counterfactually, the
+instance could also be classified as Banana, Mango, or Rice.
+However, it is noted that for these alternative crops, changes
+in values such as rainfall, nitrogen, and humidity are required.
+These value changes and their directions are illustrated in
+Figure 9a. In Figure 9, the bar graphs up and down from 0
+show the changes in the feature values for the counterfactual
+classes. For instance, a farmer who wants to grow Rice in a
+region instead of Papaya as given in counterfactual-3 would
+need to increase the Nitrogen and Rainfall values and decrease
+the Humidity values in that region. However, it may not be
+inherently possible to change some characteristics. For this
+reason, it would be appropriate to turn to crops with features
+that can be changed.
+In Table V, the actual instance and counterfactual outputs of
+the LGBM model for the same test data are provided. Figure
+9b illustrates the changes for each counterfactual output com-
+pared to the actual instance in the LGBM model. According
+to this result, a farmer who wants to grow Rice given in
+counterfactual-3 instead of Papaya should expect an increase
+in Rainfall and a decrease in Humidity in the region.
+When all the explainability method results are evaluated,
+post-hoc explainability of the ML models has been achieved
+through methods such as ELI5, SHAP, and LIME. Accord-
+ingly, although each algorithm highlights different features
+Fig. 8: LIME local explanations for LGBM (Used sample data: Nitrogen = 70, Phosphorus = 38, Potassium = 35, Temperature
+= 24.397362, Humidity = 79.268616, pH = 7.014064, Rainfall = 164.269699 )
+TABLE IV: Counterfactuals for RF
+Type of Instance
+Nitrogen
+Phosphorus
+Potassium
+Temperature
+Humidity
+pH
+Rainfall
+Label
+Actual Instance
+44
+60
+55
+34.28046
+90.555618
+6.825371
+98.540474
+Papaya
+Counterfactual-1
+117
+60
+55
+34.281461
+45.50041
+6.825371
+98.550477
+Banana
+Counterfactual-2
+44
+60
+38
+34.281461
+60.18227
+6.825371
+98.550477
+Mango
+Counterfactual-3
+85
+60
+55
+34.281461
+85.29596
+6.825371
+295.154486
+Rice
+TABLE V: Counterfactual Explainability for LGBM
+Type of Instance
+Nitrogen
+Phosphorus
+Potassium
+Temperature
+Humidity
+pH
+Rainfall
+Label
+Actual Instance
+44
+60
+55
+34.28046
+90.555618
+6.825371
+98.540474
+Papaya
+Counterfactual-1
+93
+86
+55
+34.281461
+90.655616
+5.916632
+98.550477
+Banana
+Counterfactual-2
+137
+60
+55
+34.281461
+45.35615
+6.825371
+98.550477
+Mango
+Counterfactual-3
+44
+60
+55
+34.281461
+29.08982
+6.825371
+259.863518
+Rice
+(a) Counterfactuals for RF
+(b) Counterfactuals for LGBM
+Fig. 9: Counterfactual Explainability of RF and LGBM models
+in different orders globally and locally, similar features were
+emphasized in the decision-making process. This phenomenon
+corresponds to the disagreement problem in the field of XAI.
+While the ML models produce the same predictions, they
+may provide different explanations regarding the impact of
+features on the outcome. The results obtained in this study
+confirm this observation. On the other hand, we used coun-
+terfactual explainability to provide product suggestions for
+growing alternative crops and diversification. The results of
+this methodology also yielded valuable results in terms of
+providing alternative products regionally.
+IV. DISCUSSION
+The AgroXAI system ensures model explainability while
+fostering crop diversity by offering locally relevant alternative
+crop recommendations. These features allow for the trans-
+parent disclosure of the rationale behind agricultural system
+decisions, thereby enhancing the decision-making process of
+farmers. While the AgroXAI system offers numerous advan-
+tages, it is essential to also address critical aspects such as
+security, privacy, ethical considerations, economic feasibility,
+and local preferences. Therefore, this section will explore these
+key issues in detail.
+In explainable systems, there is generally a trade-off be-
+tween accuracy and interpretability. Accordingly, models with
+high interpretability tend to have lower accuracy, while models
+with higher accuracy may exhibit reduced interpretability. In
+the context of AgroXAI, this highlights the need to strike a
+balance between optimizing the accuracy and ensuring trans-
+parency for users. Therefore, the selection of XAI methods in
+systems like AgroXAI may depend on a choice between max-
+imizing model accuracy and presenting the system’s decisions
+in an understandable and user-friendly manner.
+While the AgroXAI system facilitates transparency and
+informed decision-making, its reliance on user data and sensor-
+derived information introduces potential concerns. If sensor
+security is not adequately ensured, malicious actors could
+create privacy and security risks. As such, addressing security
+and privacy is paramount in the design and implementation of
+the system to ensure its trustworthiness.
+In another dimension, AgroXAI aims to minimize en-
+vironmental impacts by helping farmers optimize resource
+usage. By employing the counterfactual method, it provides
+valuable information on how farmers should adjust water and
+fertilizer levels for different crops, thus enhancing productivity.
+For instance, this feature supports sustainable agriculture by
+promoting the efficient use of water resources and preserving
+soil health through optimized fertilizer use. However, the
+potential impacts of crop recommendations on livelihoods
+and food security must also be carefully considered. For
+instance, if the recommended crops are not suitable for local
+climate conditions or soil characteristics, crop failure may
+occur, leading to a significant decline in farmers’ income.
+Such losses present considerable risks, particularly in regions
+where agriculture and food security are critical. In light of
+these challenges, the ability of developed systems to adapt
+to changing environmental conditions and provide appropriate
+recommendations becomes increasingly important, especially
+in a context where climate variability and soil degradation are
+escalating.
+V. CONCLUSION
+In this study, we propose a digitalized, remotely manage-
+able, data-driven, and AI-supported system aimed at achieving
+the sustainability, efficiency, capacity enhancement, and smart
+agricultural production goals targeted by Agriculture 4.0. We
+present an explainable AI-powered smart crop selection and
+recommendation system to meet these needs. The proposed
+system is structured to identify crops suitable for specific
+geographical conditions and to provide a list of alternative
+crops. By focusing on the promising area of XAI within
+the field of AI, AgroXAI has the potential to build trust
+on the user side. The obtained results have increased the
+interpretability of the model decisions of the developed system
+through different XAI methods and established confidence
+among users. Additionally, the results provide insights into
+the environmental factors that need to change for regional
+crop alternatives. In this respect, AgroXAI is expected to
+contribute to customized production processes by serving as
+both an intelligent and explainable decision support system
+in agricultural production. In the coming years, with the
+widespread adoption of such systems, farmers will be able
+to better understand region-specific conditions, increase effi-
+ciency, minimize environmental impacts, and optimize product
+diversity.
+REFERENCES
+[1] O. Friha, M. A. Ferrag, L. Shu, L. Maglaras, and X. Wang, “Internet of
+things for the future of smart agriculture: A comprehensive survey of
+emerging technologies,” IEEE/CAA Journal of Automatica Sinica, vol. 8,
+no. 4, pp. 718–752, 2021.
+[2] R. C¸ akmakc¸ı, M. A. Salık, and S. C¸ akmakc¸ı, “Assessment and principles
+of environmentally sustainable food and agriculture systems,” Agricul-
+ture, vol. 13, no. 5, p. 1073, 2023.
+[3] M. M. Rahman, A. Islam, and S. Ferdousee, “Crop diversification,
+sustainable production, and consumption (sdg-12) in rural bangladesh:
+insights from the northern region of the country,” Circular Agricultural
+Systems, vol. 4, no. 1, 2024.
+[4] A. Barman, P. Saha, S. Patel, and A. Bera, “Crop diversification an ef-
+fective strategy for sustainable agriculture development,” in Sustainable
+crop production-recent advances.
+IntechOpen, 2022.
+[5] H. T. Bui, H. Aboutorab, A. Mahboubi, Y. Gao, N. H. Sultan,
+A. Chauhan, M. Z. Parvez, M. Bewong, R. Islam, Z. Islam et al.,
+“Agriculture 4.0 and beyond: Evaluating cyber threat intelligence sources
+and techniques in smart farming ecosystems,” Computers & Security, p.
+103754, 2024.
+[6] M. F. B. Alam, S. R. Tushar, S. M. Zaman, E. D. S. Gonzalez,
+A. M. Bari, and C. L. Karmaker, “Analysis of the drivers of agriculture
+4.0 implementation in the emerging economies: Implications towards
+sustainability and food security,” Green Technologies and Sustainability,
+vol. 1, no. 2, p. 100021, 2023.
+[7] A. A. AlZubi and K. Galyna, “Artificial intelligence and internet of
+things for sustainable farming and smart agriculture,” IEEE Access,
+2023.
+[8] ˙I. K¨ok, B. H. C¸ orak, U. Yavano˘glu, and S. ¨Ozdemir, “Deep learning
+based delay and bandwidth efficient data transmission in IoT,” in 2019
+IEEE International Conference on Big Data (Big Data).
+IEEE, 2019,
+pp. 2327–2333.
+[9] B. B. Sinha and R. Dhanalakshmi, “Recent advancements and challenges
+of internet of things in smart agriculture: A survey,” Future Generation
+Computer Systems, vol. 126, pp. 169–184, 2022.
+[10] M. C¸ etin and S. Beyhan, “Smart irrigation systems using machine learn-
+ing and control theory,” The Digital Agricultural Revolution: Innovations
+and Challenges in Agriculture through Technology Disruptions, pp. 57–
+85, 2022.
+[11] I. K¨ok, F. Y. Okay, ¨O. Muyanlı, and S. ¨Ozdemir, “Explainable artificial
+intelligence (xai) for internet of things: a survey,” IEEE Internet of
+Things Journal, vol. 10, no. 16, pp. 14 764–14 779, 2023.
+[12] A. Sharma, M. Bhargava, and A. V. Khanna, “Ai-farm: A crop recom-
+mendation system,” in 2021 International Conference on Advances in
+Computing and Communications (ICACC), 2021, pp. 1–7.
+[13] Z. Doshi, S. Nadkarni, R. Agrawal, and N. Shah, “Agroconsultant: Intel-
+ligent crop recommendation system using machine learning algorithms,”
+in 2018 Fourth International Conference on Computing Communication
+Control and Automation (ICCUBEA), 2018, pp. 1–6.
+[14] R. K. Rajak, A. Pawar, M. Pendke, P. Shinde, S. Rathod, and A. Devare,
+“Crop recommendation system to maximize crop yield using machine
+learning technique,” International Research Journal of Engineering and
+Technology, vol. 4, no. 12, pp. 950–953, 2017.
+[15] S. Pudumalar, E. Ramanujam, R. H. Rajashree, C. Kavya, T. Kiruthika,
+and J. Nisha, “Crop recommendation system for precision agriculture,”
+in 2016 Eighth International Conference on Advanced Computing
+(ICoAC).
+IEEE, 2017, pp. 32–36.
+[16] S. K, K. R, and N. S, “TILLAGE : An ensemble-based agricultural crop
+recommendation system,” International Journal of Scientific Research in
+Science, Engineering and Technology, pp. 280–285, 2023.
+[17] F. Bu and X. Wang, “A smart agriculture iot system based on deep
+reinforcement learning,” Future Generation Computer Systems, vol. 99,
+pp. 500–507, 2019.
+[18] R. S. Alonso, I. Sitt´on-Candanedo, R. Casado-Vara, J. Prieto, and
+J. M. Corchado, “Deep reinforcement learning for the management
+of software-defined networks in smart farming,” in 2020 International
+Conference on Omni-layer Intelligent Systems (COINS).
+IEEE, 2020,
+pp. 1–6.
+[19] A. Din, M. Y. Ismail, B. Shah, M. Babar, F. Ali, and S. U. Baig, “A
+deep reinforcement learning-based multi-agent area coverage control for
+smart agriculture,” Computers and Electrical Engineering, vol. 101, p.
+108089, 2022.
+[20] F. Sabrina, S. Sohail, F. Farid, S. Jahan, F. Ahamed, and S. Gordon,
+“An interpretable artificial intelligence based smart agriculture system,”
+Computers, Materials & Continua, pp. 3777–3797, 2022.
+[21] A. Cartolano, A. Cuzzocrea, G. Pilato, and G. M. Grasso, “Explainable
+ai at work! what can it do for smart agriculture?” in 2022 IEEE Eighth
+International Conference on Multimedia Big Data (BigMM).
+IEEE,
+2022, pp. 87–93.
+[22] M. K. Han, J. and J. Pei, Data Mining: concepts and techniques.
+Morgan Kaufmann Publishers, 2012.
+[23] M. Negnevitsky, Artificial Intelligence: A Guide to Intelligent Systems,
+3rd ed.
+Pearson Education Limited, 2011.
+[24] G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye, and T.-
+Y. Liu, “Lightgbm: A highly efficient gradient boosting decision tree,”
+Advances in neural information processing systems, vol. 30, 2017.
+[25] H. Shi, “Best-first decision tree learning,” Ph.D. dissertation, The
+University of Waikato, 2007.
+[26] E. G¨urb¨uz, ¨O. Turgut, and ˙I. K¨ok, “Explainable ai-based malicious traffic
+detection and monitoring system in next-gen iot healthcare,” in 2023
+International Conference on Smart Applications, Communications and
+Networking (SmartNets).
+IEEE, 2023, pp. 1–6.
+[27] A. Bhattacharya, Applied Machine Learning Explainability Techniques,
+1st ed., 2022.
+[28] C. Molnar, Interpretable Machine Learning, 2nd ed., 2022. [Online].
+Available: https://christophm.github.io/interpretable-ml-book
+[29] M. T. Ribeiro, S. Singh, and C. Guestrin, “” why should i trust you?”
+explaining the predictions of any classifier,” in Proceedings of the 22nd
+ACM SIGKDD international conference on knowledge discovery and
+data mining, 2016, pp. 1135–1144.
+[30] “Smart agricultural
+production
+optimizing
+engine.”
+[On-
+line].
+Available:
+https://www.kaggle.com/datasets/chitrakumari25/
+smart-agricultural-production-optimizing-engine
