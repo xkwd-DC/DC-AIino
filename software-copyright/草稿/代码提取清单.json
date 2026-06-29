@@ -1,0 +1,214 @@
+{
+  "software_name": "极端气候下粮食生产风险核心因子识别与韧性提升可视化决策系统",
+  "version": "V1.0",
+  "project_root": "/home/darcy/DC/DC",
+  "file_count": 19,
+  "material_line_count": 7222,
+  "source_line_count": 7784,
+  "selected_source_line_count": 7203,
+  "lines_per_page": 50,
+  "total_pages": 145,
+  "target_pages": 60,
+  "available_candidate_line_count": 39113,
+  "available_candidate_pages": 783,
+  "supplement_status": "候选源码可达到前30页/后30页要求",
+  "mode": "front30_back30",
+  "selection_file": "软件著作权申请资料/草稿/代码文件选择.json",
+  "outputs": [
+    "代码-前30页.md",
+    "代码-后30页.md"
+  ],
+  "files": [
+    {
+      "path": "frontend/src/App.vue",
+      "source_line_count": 243,
+      "blank_line_count": 17,
+      "selected_line_start": 1,
+      "selected_line_end": 243,
+      "selected_line_count": 226,
+      "material_line_start": 1,
+      "material_line_end": 227
+    },
+    {
+      "path": "frontend/src/main.ts",
+      "source_line_count": 12,
+      "blank_line_count": 2,
+      "selected_line_start": 1,
+      "selected_line_end": 12,
+      "selected_line_count": 10,
+      "material_line_start": 228,
+      "material_line_end": 238
+    },
+    {
+      "path": "frontend/src/router/index.ts",
+      "source_line_count": 46,
+      "blank_line_count": 2,
+      "selected_line_start": 1,
+      "selected_line_end": 46,
+      "selected_line_count": 44,
+      "material_line_start": 239,
+      "material_line_end": 283
+    },
+    {
+      "path": "frontend/src/views/InferenceTrace.vue",
+      "source_line_count": 1016,
+      "blank_line_count": 60,
+      "selected_line_start": 1,
+      "selected_line_end": 1016,
+      "selected_line_count": 956,
+      "material_line_start": 284,
+      "material_line_end": 1240
+    },
+    {
+      "path": "frontend/src/views/Overview.vue",
+      "source_line_count": 864,
+      "blank_line_count": 37,
+      "selected_line_start": 1,
+      "selected_line_end": 864,
+      "selected_line_count": 827,
+      "material_line_start": 1241,
+      "material_line_end": 2068
+    },
+    {
+      "path": "frontend/src/views/ResiliencePath.vue",
+      "source_line_count": 987,
+      "blank_line_count": 53,
+      "selected_line_start": 1,
+      "selected_line_end": 987,
+      "selected_line_count": 934,
+      "material_line_start": 2069,
+      "material_line_end": 3003
+    },
+    {
+      "path": "frontend/src/views/RiskMap.vue",
+      "source_line_count": 1144,
+      "blank_line_count": 62,
+      "selected_line_start": 1,
+      "selected_line_end": 1144,
+      "selected_line_count": 1082,
+      "material_line_start": 3004,
+      "material_line_end": 4086
+    },
+    {
+      "path": "frontend/src/views/ScenarioSim.vue",
+      "source_line_count": 810,
+      "blank_line_count": 58,
+      "selected_line_start": 1,
+      "selected_line_end": 810,
+      "selected_line_count": 752,
+      "material_line_start": 4087,
+      "material_line_end": 4839
+    },
+    {
+      "path": "frontend/src/views/ShapDashboard.vue",
+      "source_line_count": 989,
+      "blank_line_count": 54,
+      "selected_line_start": 1,
+      "selected_line_end": 989,
+      "selected_line_count": 935,
+      "material_line_start": 4840,
+      "material_line_end": 5775
+    },
+    {
+      "path": "backend/api/predict.py",
+      "source_line_count": 649,
+      "blank_line_count": 96,
+      "selected_line_start": 1,
+      "selected_line_end": 649,
+      "selected_line_count": 553,
+      "material_line_start": 5776,
+      "material_line_end": 6329
+    },
+    {
+      "path": "backend/services/inference.py",
+      "source_line_count": 324,
+      "blank_line_count": 64,
+      "selected_line_start": 1,
+      "selected_line_end": 324,
+      "selected_line_count": 260,
+      "material_line_start": 6330,
+      "material_line_end": 6590
+    },
+    {
+      "path": "frontend/src/api/admin.ts",
+      "source_line_count": 48,
+      "blank_line_count": 3,
+      "selected_line_start": 1,
+      "selected_line_end": 48,
+      "selected_line_count": 45,
+      "material_line_start": 6591,
+      "material_line_end": 6636
+    },
+    {
+      "path": "frontend/src/api/health.ts",
+      "source_line_count": 12,
+      "blank_line_count": 2,
+      "selected_line_start": 1,
+      "selected_line_end": 12,
+      "selected_line_count": 10,
+      "material_line_start": 6637,
+      "material_line_end": 6647
+    },
+    {
+      "path": "frontend/src/api/http.ts",
+      "source_line_count": 27,
+      "blank_line_count": 3,
+      "selected_line_start": 1,
+      "selected_line_end": 27,
+      "selected_line_count": 24,
+      "material_line_start": 6648,
+      "material_line_end": 6672
+    },
+    {
+      "path": "frontend/src/api/predict.ts",
+      "source_line_count": 109,
+      "blank_line_count": 9,
+      "selected_line_start": 1,
+      "selected_line_end": 109,
+      "selected_line_count": 100,
+      "material_line_start": 6673,
+      "material_line_end": 6773
+    },
+    {
+      "path": "frontend/src/api/province.ts",
+      "source_line_count": 82,
+      "blank_line_count": 6,
+      "selected_line_start": 1,
+      "selected_line_end": 82,
+      "selected_line_count": 76,
+      "material_line_start": 6774,
+      "material_line_end": 6850
+    },
+    {
+      "path": "frontend/src/api/shap.ts",
+      "source_line_count": 47,
+      "blank_line_count": 4,
+      "selected_line_start": 1,
+      "selected_line_end": 47,
+      "selected_line_count": 43,
+      "material_line_start": 6851,
+      "material_line_end": 6894
+    },
+    {
+      "path": "frontend/src/stores/useProvinceStore.ts",
+      "source_line_count": 171,
+      "blank_line_count": 14,
+      "selected_line_start": 1,
+      "selected_line_end": 171,
+      "selected_line_count": 157,
+      "material_line_start": 6895,
+      "material_line_end": 7052
+    },
+    {
+      "path": "backend/app.py",
+      "source_line_count": 204,
+      "blank_line_count": 35,
+      "selected_line_start": 1,
+      "selected_line_end": 204,
+      "selected_line_count": 169,
+      "material_line_start": 7053,
+      "material_line_end": 7222
+    }
+  ],
+  "safe_software_filename": "极端气候下粮食生产风险核心因子识别与韧性提升可视化决策系统"
+}

@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "project": "稷韧云图 / DC",
+    "full_name": "极端气候下粮食生产风险核心因子识别与韧性提升可视化决策系统",
+    "level": "国家级大学生创新创业训练计划",
+    "cycle": "2026.06 – 2027.05（12个月）",
+    "funding": "1万元（报销制）",
+    "institution": "山西农业大学 信息科学与工程学院",
+    "updated": "2026-06-24",
+    "maintained_by": "Orchestrator（Opus）维护 · 单一事实源 · 已核对 STATUS/EVAL_BRIEFING/wiki/issues 之间的冲突",
+    "one_liner": "结题三选一即可：软著随时保底；论文主推——v5 城市级空间 CV 已通过(GO, overall R²=0.213, 3/5折正, commit 767cae9)，证明城市粒度泛化。配对表已出：XGB 随机0.774 vs 留省0.213（省份记忆虚高56点）；Att-LSTM 留省 CV 崩塌至-1.37。下一步诊断两个负折 + SHAP。"
+  },
+  "completion_routes": {
+    "note": "国家级大创结题硬指标三选一，任意一条达标即可结题",
+    "items": [
+      { "name": "软著", "role": "兜底 · 最稳", "detail": "潘妙齐一作；系统已实装（材料指南统计 6284 行代码，远超 CCPC 5K 门槛）；9/30 前提交即可", "status": "in_progress", "pct": 55, "blocker": "材料指南已写，尚未正式提交申请", "verdict": "数据不是门槛，最可靠的结题路线" },
+      { "name": "论文", "role": "主推", "detail": "潘妙齐一作；目标《农业工程学报》(中文核心 + EI + 广电总局第一批名单)；2026-12 投稿", "status": "in_progress", "pct": 50, "blocker": "v5 城市级空间 CV 已 GO；配对表已出(XGB 0.774→0.213 量化省份记忆虚高；LSTM 空间崩塌)；待诊断河北/河南两负折 + SHAP——核心结果链已打通，待补强", "verdict": "v5 赌注已验证为正；论文定位=诊断并修复空间泛化失效，非高精度预测器" },
+      { "name": "竞赛", "role": "已达上限但不够", "detail": "CRAIC 第28届人工智能创新大赛 · 省三等奖", "status": "insufficient", "pct": 100, "blocker": "省三 ≠ 省银，不满足结题硬指标（需项目负责人带队、省银及以上）", "verdict": "此路对结题不通，仅作 upside" }
+    ]
+  },
+  "tracks": [
+    { "name": "系统开发", "pct": 85, "status": "near_done", "note": "后端 API✅ · 前端 4 视图✅ · 16 端点测试✅ · GCP 实例未开机 · a11y 未修" },
+    { "name": "数据 (v5)", "pct": 80, "status": "in_progress", "note": "特征侧 10省148市✅；产量侧 6省81市；5省~70市可训练交集已落地并跑通空间 CV（910 obs）" },
+    { "name": "模型", "pct": 72, "status": "in_progress", "note": "v3 三模型基线 + 混合效应 PoC✅；★v5 城市级空间 CV 已 GO (commit 767cae9)；配对表已出✅：XGB 随机0.774 vs 留省0.213(省份记忆虚高56点)；Att-LSTM 随机0.603 vs 留省-1.37(空间崩塌,4/5折深负)" },
+    { "name": "论文", "pct": 40, "status": "in_progress", "note": "v1 草稿(§3/5/6/7)已写，基于 v3 省级数据；需 v5 结果更新" },
+    { "name": "软著", "pct": 55, "status": "in_progress", "note": "材料指南完成，9/30 前提交即可" }
+  ],
+  "people": [
+    { "name": "潘妙齐", "role": "项目负责人 · 后端 / 部署 / 论文主笔", "current": "GCP 上线部署（Issue #17, 5/24→6/25）+ 论文主笔", "done": ["后端 API + 16 端点测试", "API 全面切真"], "next": ["开 GCP 实例 → 完成 #17 部署", "软著材料定稿走流程"], "status": "active", "issue": "#17 OPEN" },
+    { "name": "熊鑫", "role": "算法 · XGBoost-SHAP / LSTM / Att-LSTM", "current": "训练复现文档（Issue #52）", "done": ["三模型基线 (0.907/0.886/0.816)", "混合效应模型 PoC (#42)"], "next": ["★ 用 v5 交集面板重跑三模型 + 城市级 leave-city/province-out CV（验证整个 v5 赌注）", "训练 pipeline 文档化 #52"], "status": "active", "issue": "#52 OPEN" },
+    { "name": "石灵子", "role": "数据工程 · MODIS / GIS / 时空对齐", "current": "v5 地级市面板（Issue #54 已于 6/16 关闭，但合并对齐未收尾）", "done": ["v4 数据扩展（6/4 提前完成）", "v5 特征侧 10省148市", "EPS 产量 6省81市"], "next": ["跑通 v5_06→v5_07（5省交集）+ 新增 dropna 出 ~70市可训练面板", "省名/市名对齐（产量带『省』后缀 + 豫18vs17/鄂17vs13）", "产出 alignment_report", "(stretch) 补黑/鲁/吉/湘/川 真实产量"], "status": "active", "issue": "#9 OPEN / #54 CLOSED" },
+    { "name": "常宇璇", "role": "文档 / 可视化 / 大赛材料", "current": "a11y WCAG 2.2 AA 修复", "done": ["文献综述 SHAP×Attention 互补叙事支撑 (#43)"], "next": ["a11y 4 视图 WCAG 2.2 AA 修复"], "status": "active", "issue": "—" }
+  ],
+  "data_versions": [
+    { "version": "v1–v3", "scale": "31省 × 13–15年（403行 × 27列）省级面板", "status": "done" },
+    { "version": "v4", "scale": "31省（403行 × 30列）省级 + 致灾因子/耕地比例/多年 CLCD", "status": "done", "note": "石灵子 6/4 提前完成，0 NaN" },
+    { "version": "v5", "scale": "目标 10粮食主产省 × 地级市 × 13年", "status": "in_progress", "note": "特征侧已完成 148 市；产量侧只回来 6 省；合并/对齐未收尾" }
+  ],
+  "v5_reality": {
+    "headline": "特征侧 10省148市 vs 产量侧 6省81市 → 可训练交集仅 5省~70市",
+    "feature_side": { "provinces": 10, "cities": 148, "list": "黑龙江/河南/山东/吉林/安徽/湖南/河北/四川/江苏/湖北", "sources": "MODIS NDVI·LST / CLCD 耕地比例 / NASA POWER 气象", "status": "done" },
+    "yield_side": {
+      "provinces": 6, "cities": 81, "rows": 1134, "years": "2011–2024", "missing": 0,
+      "breakdown": [
+        { "province": "河南省", "cities": 17 },
+        { "province": "安徽省", "cities": 16 },
+        { "province": "江苏省", "cities": 13 },
+        { "province": "湖北省", "cities": 13 },
+        { "province": "河北省", "cities": 11 },
+        { "province": "浙江省", "cities": 11 }
+      ]
+    },
+    "trainable_intersection": { "provinces": "豫/皖/苏/鄂/冀（5省）", "cities": "~70", "rows": "~910" },
+    "full_merge_panel": { "rows": 1924, "cols": 28, "note": "148市×13年；left join 后未匹配城市 production=NaN，未收敛到交集" },
+    "gaps": [
+      "孤儿：浙江（计划外，有产量无特征）",
+      "缺真实产量：黑/鲁/吉/湘/川（有特征无产量）；EVAL_BRIEFING 称山东/湖南/四川用省级值填充",
+      "省名不一致：产量侧带『省』后缀（河南省），特征侧无 → join key 需归一",
+      "市数不齐：河南 特征18 vs 产量17、湖北 17 vs 13 → 市名口径需对齐",
+      "2024 耕地缺口：CLCD 只到 2023，产量到 2024",
+      "脚本缺口：v5_07 是 left join，缺 dropna 砍交集步骤（需新增）"
+    ],
+    "doc_error": "⚠️ EVAL_BRIEFING.md 第49行错误：称黑龙江/吉林有产量（实际没有）、漏写浙江。该文件供外部 AI 评估者阅读，需修正。"
+  },
+  "models": [
+    { "name": "XGBoost + SHAP", "r2": "0.9072 ± 0.0383", "protocol": "random 8:2（v3 省级）", "status": "done" },
+    { "name": "LSTM", "r2": "0.8856 ± 0.0223", "protocol": "random 8:2（v3 省级）", "status": "done" },
+    { "name": "Attention-LSTM", "r2": "0.8160 ± 0.0502", "protocol": "random 8:2（v3 省级）", "status": "done" },
+    { "name": "混合效应模型", "r2": "PoC 完成", "protocol": "—", "status": "done" },
+    { "name": "严格 leave-province-out（v3 省级）", "r2": "中位 -16.83（31省仅1省>0）", "protocol": "省级 N=403，空间外推灾难性失败（省份记忆）", "status": "disclosed", "warn": true },
+    { "name": "v5 城市级 leave-province-out", "r2": "overall 0.213（3/5折正：苏0.44 皖0.23 鄂0.08；冀-0.27 豫-0.09）", "protocol": "5省70市×13年(910 obs) 城市级特征 严格空间 CV", "status": "go", "commit": "767cae9" },
+    { "name": "配对泛化表 (v5_09)", "r2": "XGB 随机0.774 vs 留省0.213（差56点=省份记忆虚高）；Att-LSTM 随机0.603 vs 留省-1.37（空间崩塌）", "protocol": "910 obs · 随机5折(故意身份泄漏) vs 留省CV · XGB留省R²精确复现0.2132", "status": "done", "commit": "未提交 reports/v5_paired_*" }
+  ],
+  "narrative_guardrails": {
+    "banned": ["climate→yield 高精度预测", "R²=0.91 证明跨省预测能力", "SHAP×Attention 一致性验证", "NDVI 是核心驱动因子（移除后 R² 仅降 0.003）"],
+    "honest": ["省内风险因子相对重要性识别", "random 8:2 R²=0.91；leave-province-out 退化至中位 -16.83，反映 N=403/31 截面上限", "SHAP 与 Attention 双视角互补（非一致）", "决策支持系统是核心交付，不依赖空间外推", "v5 城市级重构把留省外推从 -16.83 救回 +0.213（3/5折正），证明城市粒度是空间泛化的必要条件；但 0.213 仍弱，论文定位为『诊断并修复空间泛化失效』而非『高精度预测器』", "配对表量化省份记忆虚高：XGB 随机5折0.774 vs 留省0.213(差56点)；Att-LSTM 留省 CV 崩塌至-1.37(4/5折深负)→深度时序模型更依赖省份身份，XGBoost 是唯一空间稳健的模型"]
+  },
+  "milestones": [
+    { "date": "2026-05-26", "title": "升级国家级大创", "status": "done" },
+    { "date": "2026-05-27", "title": "API 全面切真 + 安全/可访问性修复 + 论文初稿", "status": "done" },
+    { "date": "2026-06-04", "title": "v4 数据扩展提前完成（石灵子）", "status": "done" },
+    { "date": "2026-06-08", "title": "v5 地级市面板启动（Issue #54）", "status": "done" },
+    { "date": "2026-06-16", "title": "v5 EPS 产量导入（6省81市）", "status": "done" },
+    { "date": "2026-06-24", "title": "v5 城市级空间 CV 通过（GO, overall R²=0.213, 3/5折正）", "status": "done" },
+    { "date": "2026-06-25", "title": "GCP v0.1 上线目标（#17）", "status": "at_risk" },
+    { "date": "2026-09-30", "title": "软著提交截止", "status": "pending" },
+    { "date": "2026-12-31", "title": "论文投稿目标", "status": "pending" },
+    { "date": "2027-04", "title": "结题验收", "status": "pending" }
+  ],
+  "risks": [
+    { "level": "medium", "title": "v5 赌注已部分验证", "detail": "✅ 城市级空间 CV 已 GO：-16.83 → +0.213（3/5折正, commit 767cae9），核心假设成立。残余：overall 0.213 偏弱 + 河北/河南两折为负待诊断（局部偏移，非系统失败）；配对表与 SHAP 待出。" },
+    { "level": "high", "title": "论文数据可信度", "detail": "4-5 个计划省份缺真实产量，省级值填充会被《农业工程学报》审稿人抓；~70 市样本量是否够分量存疑。" },
+    { "level": "medium", "title": "结题时间线 + 部署阻塞", "detail": "GCP 实例未开机阻塞 #17 部署；a11y 未修；软著/论文两个 deadline（9/30、12/31）并行。" }
+  ],
+  "next_30_days": [
+    { "owner": "石灵子", "task": "v5_06→v5_07 跑通 5 省交集 + 新增 dropna 出 ~70市可训练面板 + 省名/市名对齐 + alignment_report" },
+    { "owner": "熊鑫", "task": "★配对表已出✅(XGB 0.774→0.213，LSTM 崩塌)；下一步：诊断河北/河南两负折(试 per-province 截距/偏差校正) + v5 城市模型 SHAP 归因 + 把 v5_09 报告纳入论文" },
+    { "owner": "潘妙齐", "task": "开 GCP 实例完成 #17 部署 + 软著材料定稿走流程" },
+    { "owner": "常宇璇", "task": "a11y WCAG 2.2 AA 修复" },
+    { "owner": "Orchestrator", "task": "修正 EVAL_BRIEFING.md 产量覆盖错误" },
+    { "owner": "决策点", "task": "看 v5 城市级 CV 结果再定：是否值得补黑/鲁/吉/湘/川真实产量冲 10 省" }
+  ],
+  "data_sufficiency": {
+    "for_copyright": "✅ 数据非门槛，系统早已满足软著要求。",
+    "for_paper": "⚠️→🟡 数据量够城市级升级，空间外推已验证为正(GO 0.213)。仍未到可投：①只有5省~70市真实产量，4-5省缺数据（省级填充=审稿风险）②overall 0.213 偏弱 + 河北/河南两折为负待诊断 ③浙江孤儿 + 2024耕地缺口。",
+    "recommendation": "GO 关已过，写论文方向确定（诊断并修复空间泛化失效）。下一步出配对表+负折诊断+SHAP，再决定要不要补省冲更高 R²。"
+  },
+  "open_issues": [
+    { "id": 52, "title": "训练 pipeline 文档化（reproducibility）", "owner": "熊鑫", "labels": "task, ml/training" },
+    { "id": 17, "title": "M3 系统开发 Phase 0-5 tracking（5/24→6/25）", "owner": "潘妙齐" },
+    { "id": 9, "title": "M1 数据工程 tracking", "owner": "石灵子" }
+  ]
+}

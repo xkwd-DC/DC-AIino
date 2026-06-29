@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>稷韧云图 · 作战室</title>
+<style>
+/* ── Design tokens ── */
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c2330;
+  --surface-3: #242c3a;
+  --border: #2a3444;
+  --border-subtle: #1e2836;
+
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-muted: #565f6d;
+
+  --green: #3fb950;
+  --green-dim: #1a3a22;
+  --green-text: #7ee787;
+
+  --amber: #d29922;
+  --amber-dim: #3a2a0a;
+  --amber-text: #e3b341;
+
+  --red: #f85149;
+  --red-dim: #3a0d0b;
+  --red-text: #ff7b72;
+
+  --blue: #58a6ff;
+  --blue-dim: #0d2340;
+
+  --gray-dim: #1c2330;
+  --gray-text: #8b949e;
+
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { min-height: 100vh; }
+
+a { color: var(--blue); text-decoration: none; }
+
+/* ── Layout ── */
+.shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+/* Sticky header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13,17,23,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+}
+.site-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.header-brand span { color: var(--amber-text); }
+.header-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex: 1;
+}
+.header-meta .chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+.updated-chip {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ── Section scaffold ── */
+.section {
+  margin-top: 40px;
+}
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ── Hero meta block ── */
+.hero {
+  margin-top: 32px;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(93,163,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-one-liner {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+  margin-bottom: 20px;
+  max-width: 900px;
+}
+.hero-one-liner .hl { color: var(--amber-text); }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.meta-label {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.meta-value {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ── Completion routes (hero section) ── */
+.routes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .routes-grid { grid-template-columns: 1fr; }
+}
+.route-card {
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  border: 1px solid;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.route-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.route-card.in_progress {
+  background: linear-gradient(145deg, var(--amber-dim), var(--surface));
+  border-color: var(--amber);
+}
+.route-card.insufficient {
+  background: var(--gray-dim);
+  border-color: var(--border);
+  opacity: 0.75;
+}
+.route-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.route-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+.route-role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.in_progress .route-role-badge { background: var(--amber-dim); color: var(--amber-text); border: 1px solid var(--amber); }
+.insufficient .route-role-badge { background: var(--surface-3); color: var(--gray-text); border: 1px solid var(--border); }
+
+.route-verdict {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-dim);
+}
+.in_progress .route-verdict { color: var(--amber-text); }
+
+.route-pct-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.route-bar-track {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.route-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.in_progress .route-bar-fill { background: var(--amber); }
+.insufficient .route-bar-fill { background: var(--gray-text); }
+
+.route-detail {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.route-blocker {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.2);
+  border-left: 2px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 0 4px 4px 0;
+}
+.route-blocker strong { color: var(--text-dim); }
+.routes-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+/* ── Tracks ── */
+.tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.track-row {
+  display: grid;
+  grid-template-columns: 120px 60px 1fr 320px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: background 0.12s;
+}
+.track-row:hover { background: var(--surface-2); }
+@media (max-width: 800px) {
+  .track-row { grid-template-columns: 1fr 48px; }
+  .track-bar-wrap, .track-note { grid-column: 1 / -1; }
+}
+.track-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.track-pct {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+}
+.track-pct.green { color: var(--green-text); }
+.track-pct.amber { color: var(--amber-text); }
+.track-pct.red   { color: var(--red-text); }
+
+.track-bar-wrap {
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.track-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+.fill-green { background: var(--green); }
+.fill-amber { background: var(--amber); }
+.fill-red   { background: var(--red); }
+
+.track-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── People ── */
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.person-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.person-card:hover {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}
+.person-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.person-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.person-role {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.person-issue {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--blue-dim);
+  color: var(--blue);
+  border: 1px solid rgba(88,166,255,0.2);
+  white-space: nowrap;
+}
+.person-issue.none { background: var(--surface-3); color: var(--text-muted); border-color: var(--border); }
+
+.person-current {
+  font-size: 12.5px;
+  color: var(--amber-text);
+  background: var(--amber-dim);
+  border: 1px solid rgba(210,153,34,0.2);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.person-section-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+.person-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.person-list li {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.4;
+}
+.person-list li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--text-muted);
+}
+.person-list li.star-item {
+  color: var(--amber-text);
+  font-weight: 600;
+}
+.person-list li.star-item::before { content: '★'; color: var(--amber); font-size: 9px; top: 1px; }
+
+/* ── V5 Reality ── */
+.v5-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 768px) { .v5-layout { grid-template-columns: 1fr; } }
+
+.v5-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.v5-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.v5-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.v5-stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+.v5-stat-unit { font-size: 13px; color: var(--text-dim); }
+.v5-list-row {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.v5-list-row strong { color: var(--text); }
+
+.province-bar-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.province-bar-row {
+  display: grid;
+  grid-template-columns: 80px 28px 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.province-bar-mini {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.province-bar-mini-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
+}
+
+.v5-headline {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--amber-text);
+  padding: 16px 20px;
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.v5-intersection {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.v5-intersection-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.v5-intersection-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.v5-int-item { display: flex; flex-direction: column; }
+.v5-int-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green-text);
+}
+.v5-int-label { font-size: 11px; color: var(--text-muted); }
+
+.v5-gaps {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.v5-gaps-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.gap-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.gap-item:last-child { border-bottom: none; }
+.gap-check { color: var(--amber-text); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+
+.doc-error-banner {
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--red-text);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+}
+.doc-error-icon { font-size: 18px; flex-shrink: 0; }
+
+/* ── Models table ── */
+.models-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.models-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.models-table th {
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.models-table td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  vertical-align: top;
+}
+.models-table tr:hover td { background: var(--surface-2); }
+.models-table tr.warn-row td {
+  background: var(--red-dim);
+  color: var(--red-text);
+}
+.models-table tr.warn-row:hover td { background: rgba(58,13,11,0.8); }
+.model-name { font-weight: 600; color: var(--text); }
+.warn-row .model-name { color: var(--red-text); }
+.r2-value { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-done { background: var(--green-dim); color: var(--green-text); }
+.status-disclosed { background: var(--red-dim); color: var(--red-text); }
+
+/* ── Data sufficiency ── */
+.sufficiency-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 800px) { .sufficiency-grid { grid-template-columns: 1fr; } }
+
+.suf-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid;
+}
+.suf-card.green { background: var(--green-dim); border-color: var(--green); }
+.suf-card.amber { background: var(--amber-dim); border-color: var(--amber); }
+.suf-card.blue  { background: var(--blue-dim);  border-color: var(--blue); }
+
+.suf-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.green .suf-label { color: var(--green-text); }
+.amber .suf-label { color: var(--amber-text); }
+.blue  .suf-label { color: var(--blue); }
+
+.suf-text {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.green .suf-text { color: var(--green-text); }
+.amber .suf-text { color: var(--amber-text); }
+.blue  .suf-text { color: var(--text-dim); }
+
+/* ── Milestones timeline ── */
+.timeline {
+  position: relative;
+  padding-left: 28px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
+}
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-item:hover { border-color: var(--border); }
+
+.timeline-dot {
+  position: absolute;
+  left: -23px;
+  top: 18px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  z-index: 1;
+}
+.dot-done    { background: var(--green); }
+.dot-at_risk { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dot-pending { background: var(--surface-3); border-color: var(--border); }
+
+.timeline-item.at_risk {
+  border-color: var(--amber);
+  background: linear-gradient(135deg, var(--amber-dim), var(--surface));
+}
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.timeline-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: "SF Mono", monospace;
+  white-space: nowrap;
+}
+.timeline-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  flex: 1;
+}
+.done .timeline-title    { color: var(--green-text); }
+.at_risk .timeline-title { color: var(--amber-text); }
+.pending .timeline-title { color: var(--text-dim); }
+.at-risk-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: var(--amber-dim);
+  color: var(--amber-text);
+  border: 1px solid var(--amber);
+  border-radius: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Risks ── */
+.risks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.risk-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid;
+  transition: transform 0.15s;
+}
+.risk-card:hover { transform: translateY(-2px); }
+.risk-card.high   { background: var(--red-dim);   border-color: var(--red); }
+.risk-card.medium { background: var(--amber-dim); border-color: var(--amber); }
+
+.risk-level-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.high .risk-level-badge   { background: rgba(248,81,73,0.2); color: var(--red-text); }
+.medium .risk-level-badge { background: rgba(210,153,34,0.2); color: var(--amber-text); }
+
+.risk-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.high .risk-title   { color: var(--red-text); }
+.medium .risk-title { color: var(--amber-text); }
+
+.risk-detail {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ── Next 30 days ── */
+.next-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.next-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: start;
+  gap: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.12s;
+}
+.next-row:last-child { border-bottom: none; }
+.next-row:hover { background: var(--surface-2); }
+.next-row.star { background: linear-gradient(90deg, var(--amber-dim), var(--surface)); border-color: rgba(210,153,34,0.15); }
+.next-row.star:hover { background: linear-gradient(90deg, var(--amber-dim), var(--surface-2)); }
+
+.next-owner {
+  padding: 14px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface);
+  position: relative;
+}
+.next-row.star .next-owner { color: var(--amber-text); background: var(--amber-dim); }
+
+.next-task {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.next-row.star .next-task {
+  color: var(--amber-text);
+  font-weight: 600;
+}
+.next-row.star .next-task .star-symbol {
+  color: var(--amber);
+  font-size: 14px;
+}
+
+/* ── Guardrails ── */
+.guardrails-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 700px) { .guardrails-grid { grid-template-columns: 1fr; } }
+
+.guardrails-col {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid;
+}
+.guardrails-col.banned { background: var(--red-dim); border-color: var(--red); }
+.guardrails-col.honest { background: var(--green-dim); border-color: var(--green); }
+
+.guardrails-col-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.banned .guardrails-col-title { color: var(--red-text); }
+.honest .guardrails-col-title { color: var(--green-text); }
+
+.guardrail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.guardrail-item:last-child { border-bottom: none; }
+.banned .guardrail-item { border-color: rgba(248,81,73,0.15); color: var(--red-text); }
+.honest .guardrail-item { border-color: rgba(63,185,80,0.15); color: var(--green-text); }
+.guardrail-icon { flex-shrink: 0; font-size: 13px; }
+
+/* ── Open issues ── */
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.issue-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  transition: border-color 0.12s;
+}
+.issue-row:hover { border-color: var(--blue); }
+.issue-id {
+  font-family: "SF Mono", monospace;
+  color: var(--blue);
+  font-size: 12px;
+  white-space: nowrap;
+  background: var(--blue-dim);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+.issue-title { flex: 1; color: var(--text-dim); }
+.issue-owner {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ── Status legend ── */
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 40px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Utilities ── */
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- Sticky top nav -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="header-brand"><span>稷韧云图</span> · 作战室</div>
+    <div class="header-meta">
+      <span class="chip" id="hdr-level"></span>
+      <span class="chip" id="hdr-cycle"></span>
+      <span class="chip" id="hdr-funding"></span>
+      <span class="chip" id="hdr-inst"></span>
+      <span class="updated-chip" id="hdr-updated"></span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- 1. Hero meta -->
+  <section class="section">
+    <div class="hero">
+      <div class="hero-one-liner" id="hero-one-liner"></div>
+      <div class="meta-grid" id="hero-meta-grid"></div>
+    </div>
+  </section>
+
+  <!-- 2. Completion routes (hero) -->
+  <section class="section">
+    <div class="section-title">结题三选一 <span style="color:var(--amber-text);font-size:12px;margin-left:4px;text-transform:none;letter-spacing:0">▶ 最重要</span></div>
+    <div class="routes-grid" id="routes-grid"></div>
+    <div class="routes-note mt12" id="routes-note"></div>
+  </section>
+
+  <!-- 3. Tracks -->
+  <section class="section">
+    <div class="section-title">主线进度</div>
+    <div class="tracks-list" id="tracks-list"></div>
+  </section>
+
+  <!-- 4. People -->
+  <section class="section">
+    <div class="section-title">人员任务</div>
+    <div class="people-grid" id="people-grid"></div>
+  </section>
+
+  <!-- 5. V5 Reality -->
+  <section class="section">
+    <div class="section-title">数据真相（v5）</div>
+    <div class="v5-headline" id="v5-headline"></div>
+    <div class="v5-layout">
+      <div class="v5-card" id="v5-feature-card"></div>
+      <div class="v5-card" id="v5-yield-card"></div>
+    </div>
+    <div class="v5-intersection" id="v5-intersection"></div>
+    <div class="v5-gaps" id="v5-gaps"></div>
+    <div class="doc-error-banner" id="doc-error-banner"></div>
+  </section>
+
+  <!-- 6. Models -->
+  <section class="section">
+    <div class="section-title">模型</div>
+    <div class="models-table-wrap">
+      <table class="models-table">
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th>R²</th>
+            <th>验证协议</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody id="models-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7. Data sufficiency -->
+  <section class="section">
+    <div class="section-title">数据够不够</div>
+    <div class="sufficiency-grid" id="sufficiency-grid"></div>
+  </section>
+
+  <!-- 8. Milestones -->
+  <section class="section">
+    <div class="section-title">里程碑</div>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <!-- 9. Risks -->
+  <section class="section">
+    <div class="section-title">风险 Top</div>
+    <div class="risks-grid" id="risks-grid"></div>
+  </section>
+
+  <!-- 10. Next 30 days -->
+  <section class="section">
+    <div class="section-title">未来 30 天</div>
+    <div class="next-table-wrap" id="next-table"></div>
+  </section>
+
+  <!-- 11. Guardrails -->
+  <section class="section">
+    <div class="section-title">叙事守门</div>
+    <div class="guardrails-grid" id="guardrails-grid"></div>
+  </section>
+
+  <!-- Status legend -->
+  <div class="legend">
+    <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-right:4px">图例</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>完成 / 达标</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>进行中 / 风险</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>阻塞 / 禁止</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--gray-text)"></span>不足 / 中性</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--surface-3);border:1px solid var(--border)"></span>待办</span>
+  </div>
+
+  <!-- 12. Footer / open issues -->
+  <section class="section">
+    <div class="section-title">未关闭 Issues</div>
+    <div class="issues-list" id="issues-list"></div>
+  </section>
+
+  <div class="footer">
+    <span>数据来源：<code>project_state.json</code> · 单一事实源</span>
+    <span id="footer-maintained"></span>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+const STATE = {
+  "meta": {
+    "project": "稷韧云图 / DC",
+    "full_name": "极端气候下粮食生产风险核心因子识别与韧性提升可视化决策系统",
+    "level": "国家级大学生创新创业训练计划",
+    "cycle": "2026.06 – 2027.05（12个月）",
+    "funding": "1万元（报销制）",
+    "institution": "山西农业大学 信息科学与工程学院",
+    "updated": "2026-06-24",
+    "maintained_by": "Orchestrator（Opus）维护 · 单一事实源 · 已核对 STATUS/EVAL_BRIEFING/wiki/issues 之间的冲突",
+    "one_liner": "结题三选一即可：软著随时保底；论文主推——v5 城市级空间 CV 已通过(GO, overall R²=0.213, 3/5折正, commit 767cae9)，证明城市粒度泛化。配对表已出：XGB 随机0.774 vs 留省0.213（省份记忆虚高56点）；Att-LSTM 留省 CV 崩塌至-1.37。下一步诊断两个负折 + SHAP。"
+  },
+  "completion_routes": {
+    "note": "国家级大创结题硬指标三选一，任意一条达标即可结题",
+    "items": [
+      {
+        "name": "软著",
+        "role": "兜底 · 最稳",
+        "detail": "潘妙齐一作；系统已实装（材料指南统计 6284 行代码，远超 CCPC 5K 门槛）；9/30 前提交即可",
+        "status": "in_progress",
+        "pct": 55,
+        "blocker": "材料指南已写，尚未正式提交申请",
+        "verdict": "数据不是门槛，最可靠的结题路线"
+      },
+      {
+        "name": "论文",
+        "role": "主推",
+        "detail": "潘妙齐一作；目标《农业工程学报》(中文核心 + EI + 广电总局第一批名单)；2026-12 投稿",
+        "status": "in_progress",
+        "pct": 50,
+        "blocker": "v5 城市级空间 CV 已 GO；配对表已出(XGB 0.774→0.213 量化省份记忆虚高；LSTM 空间崩塌)；待诊断河北/河南两负折 + SHAP——核心结果链已打通，待补强",
+        "verdict": "v5 赌注已验证为正；论文定位=诊断并修复空间泛化失效，非高精度预测器"
+      },
+      {
+        "name": "竞赛",
+        "role": "已达上限但不够",
+        "detail": "CRAIC 第28届人工智能创新大赛 · 省三等奖",
+        "status": "insufficient",
+        "pct": 100,
+        "blocker": "省三 ≠ 省银，不满足结题硬指标（需项目负责人带队、省银及以上）",
+        "verdict": "此路对结题不通，仅作 upside"
+      }
+    ]
+  },
+  "tracks": [
+    {
+      "name": "系统开发",
+      "pct": 85,
+      "status": "near_done",
+      "note": "后端 API✅ · 前端 4 视图✅ · 16 端点测试✅ · GCP 实例未开机 · a11y 未修"
+    },
+    {
+      "name": "数据 (v5)",
+      "pct": 80,
+      "status": "in_progress",
+      "note": "特征侧 10省148市✅；产量侧 6省81市；5省~70市可训练交集已落地并跑通空间 CV（910 obs）"
+    },
+    {
+      "name": "模型",
+      "pct": 72,
+      "status": "in_progress",
+      "note": "v3 三模型基线 + 混合效应 PoC✅；★v5 城市级空间 CV 已 GO (commit 767cae9)；配对表已出✅：XGB 随机0.774 vs 留省0.213(省份记忆虚高56点)；Att-LSTM 随机0.603 vs 留省-1.37(空间崩塌,4/5折深负)"
+    },
+    {
+      "name": "论文",
+      "pct": 40,
+      "status": "in_progress",
+      "note": "v1 草稿(§3/5/6/7)已写，基于 v3 省级数据；需 v5 结果更新"
+    },
+    {
+      "name": "软著",
+      "pct": 55,
+      "status": "in_progress",
+      "note": "材料指南完成，9/30 前提交即可"
+    }
+  ],
+  "people": [
+    {
+      "name": "潘妙齐",
+      "role": "项目负责人 · 后端 / 部署 / 论文主笔",
+      "current": "GCP 上线部署（Issue #17, 5/24→6/25）+ 论文主笔",
+      "done": [
+        "后端 API + 16 端点测试",
+        "API 全面切真"
+      ],
+      "next": [
+        "开 GCP 实例 → 完成 #17 部署",
+        "软著材料定稿走流程"
+      ],
+      "status": "active",
+      "issue": "#17 OPEN"
+    },
+    {
+      "name": "熊鑫",
+      "role": "算法 · XGBoost-SHAP / LSTM / Att-LSTM",
+      "current": "训练复现文档（Issue #52）",
+      "done": [
+        "三模型基线 (0.907/0.886/0.816)",
+        "混合效应模型 PoC (#42)"
+      ],
+      "next": [
+        "★ 用 v5 交集面板重跑三模型 + 城市级 leave-city/province-out CV（验证整个 v5 赌注）",
+        "训练 pipeline 文档化 #52"
+      ],
+      "status": "active",
+      "issue": "#52 OPEN"
+    },
+    {
+      "name": "石灵子",
+      "role": "数据工程 · MODIS / GIS / 时空对齐",
+      "current": "v5 地级市面板（Issue #54 已于 6/16 关闭，但合并对齐未收尾）",
+      "done": [
+        "v4 数据扩展（6/4 提前完成）",
+        "v5 特征侧 10省148市",
+        "EPS 产量 6省81市"
+      ],
+      "next": [
+        "跑通 v5_06→v5_07（5省交集）+ 新增 dropna 出 ~70市可训练面板",
+        "省名/市名对齐（产量带『省』后缀 + 豫18vs17/鄂17vs13）",
+        "产出 alignment_report",
+        "(stretch) 补黑/鲁/吉/湘/川 真实产量"
+      ],
+      "status": "active",
+      "issue": "#9 OPEN / #54 CLOSED"
+    },
+    {
+      "name": "常宇璇",
+      "role": "文档 / 可视化 / 大赛材料",
+      "current": "a11y WCAG 2.2 AA 修复",
+      "done": [
+        "文献综述 SHAP×Attention 互补叙事支撑 (#43)"
+      ],
+      "next": [
+        "a11y 4 视图 WCAG 2.2 AA 修复"
+      ],
+      "status": "active",
+      "issue": "—"
+    }
+  ],
+  "data_versions": [
+    {
+      "version": "v1–v3",
+      "scale": "31省 × 13–15年（403行 × 27列）省级面板",
+      "status": "done"
+    },
+    {
+      "version": "v4",
+      "scale": "31省（403行 × 30列）省级 + 致灾因子/耕地比例/多年 CLCD",
+      "status": "done",
+      "note": "石灵子 6/4 提前完成，0 NaN"
+    },
+    {
+      "version": "v5",
+      "scale": "目标 10粮食主产省 × 地级市 × 13年",
+      "status": "in_progress",
+      "note": "特征侧已完成 148 市；产量侧只回来 6 省；合并/对齐未收尾"
+    }
+  ],
+  "v5_reality": {
+    "headline": "特征侧 10省148市 vs 产量侧 6省81市 → 可训练交集仅 5省~70市",
+    "feature_side": {
+      "provinces": 10,
+      "cities": 148,
+      "list": "黑龙江/河南/山东/吉林/安徽/湖南/河北/四川/江苏/湖北",
+      "sources": "MODIS NDVI·LST / CLCD 耕地比例 / NASA POWER 气象",
+      "status": "done"
+    },
+    "yield_side": {
+      "provinces": 6,
+      "cities": 81,
+      "rows": 1134,
+      "years": "2011–2024",
+      "missing": 0,
+      "breakdown": [
+        {
+          "province": "河南省",
+          "cities": 17
+        },
+        {
+          "province": "安徽省",
+          "cities": 16
+        },
+        {
+          "province": "江苏省",
+          "cities": 13
+        },
+        {
+          "province": "湖北省",
+          "cities": 13
+        },
+        {
+          "province": "河北省",
+          "cities": 11
+        },
+        {
+          "province": "浙江省",
+          "cities": 11
+        }
+      ]
+    },
+    "trainable_intersection": {
+      "provinces": "豫/皖/苏/鄂/冀（5省）",
+      "cities": "~70",
+      "rows": "~910"
+    },
+    "full_merge_panel": {
+      "rows": 1924,
+      "cols": 28,
+      "note": "148市×13年；left join 后未匹配城市 production=NaN，未收敛到交集"
+    },
+    "gaps": [
+      "孤儿：浙江（计划外，有产量无特征）",
+      "缺真实产量：黑/鲁/吉/湘/川（有特征无产量）；EVAL_BRIEFING 称山东/湖南/四川用省级值填充",
+      "省名不一致：产量侧带『省』后缀（河南省），特征侧无 → join key 需归一",
+      "市数不齐：河南 特征18 vs 产量17、湖北 17 vs 13 → 市名口径需对齐",
+      "2024 耕地缺口：CLCD 只到 2023，产量到 2024",
+      "脚本缺口：v5_07 是 left join，缺 dropna 砍交集步骤（需新增）"
+    ],
+    "doc_error": "⚠️ EVAL_BRIEFING.md 第49行错误：称黑龙江/吉林有产量（实际没有）、漏写浙江。该文件供外部 AI 评估者阅读，需修正。"
+  },
+  "models": [
+    {
+      "name": "XGBoost + SHAP",
+      "r2": "0.9072 ± 0.0383",
+      "protocol": "random 8:2（v3 省级）",
+      "status": "done"
+    },
+    {
+      "name": "LSTM",
+      "r2": "0.8856 ± 0.0223",
+      "protocol": "random 8:2（v3 省级）",
+      "status": "done"
+    },
+    {
+      "name": "Attention-LSTM",
+      "r2": "0.8160 ± 0.0502",
+      "protocol": "random 8:2（v3 省级）",
+      "status": "done"
+    },
+    {
+      "name": "混合效应模型",
+      "r2": "PoC 完成",
+      "protocol": "—",
+      "status": "done"
+    },
+    {
+      "name": "严格 leave-province-out（v3 省级）",
+      "r2": "中位 -16.83（31省仅1省>0）",
+      "protocol": "省级 N=403，空间外推灾难性失败（省份记忆）",
+      "status": "disclosed",
+      "warn": true
+    },
+    {
+      "name": "v5 城市级 leave-province-out",
+      "r2": "overall 0.213（3/5折正：苏0.44 皖0.23 鄂0.08；冀-0.27 豫-0.09）",
+      "protocol": "5省70市×13年(910 obs) 城市级特征 严格空间 CV",
+      "status": "go",
+      "commit": "767cae9"
+    },
+    {
+      "name": "配对泛化表 (v5_09)",
+      "r2": "XGB 随机0.774 vs 留省0.213（差56点=省份记忆虚高）；Att-LSTM 随机0.603 vs 留省-1.37（空间崩塌）",
+      "protocol": "910 obs · 随机5折(故意身份泄漏) vs 留省CV · XGB留省R²精确复现0.2132",
+      "status": "done",
+      "commit": "未提交 reports/v5_paired_*"
+    }
+  ],
+  "narrative_guardrails": {
+    "banned": [
+      "climate→yield 高精度预测",
+      "R²=0.91 证明跨省预测能力",
+      "SHAP×Attention 一致性验证",
+      "NDVI 是核心驱动因子（移除后 R² 仅降 0.003）"
+    ],
+    "honest": [
+      "省内风险因子相对重要性识别",
+      "random 8:2 R²=0.91；leave-province-out 退化至中位 -16.83，反映 N=403/31 截面上限",
+      "SHAP 与 Attention 双视角互补（非一致）",
+      "决策支持系统是核心交付，不依赖空间外推",
+      "v5 城市级重构把留省外推从 -16.83 救回 +0.213（3/5折正），证明城市粒度是空间泛化的必要条件；但 0.213 仍弱，论文定位为『诊断并修复空间泛化失效』而非『高精度预测器』",
+      "配对表量化省份记忆虚高：XGB 随机5折0.774 vs 留省0.213(差56点)；Att-LSTM 留省 CV 崩塌至-1.37(4/5折深负)→深度时序模型更依赖省份身份，XGBoost 是唯一空间稳健的模型"
+    ]
+  },
+  "milestones": [
+    {
+      "date": "2026-05-26",
+      "title": "升级国家级大创",
+      "status": "done"
+    },
+    {
+      "date": "2026-05-27",
+      "title": "API 全面切真 + 安全/可访问性修复 + 论文初稿",
+      "status": "done"
+    },
+    {
+      "date": "2026-06-04",
+      "title": "v4 数据扩展提前完成（石灵子）",
+      "status": "done"
+    },
+    {
+      "date": "2026-06-08",
+      "title": "v5 地级市面板启动（Issue #54）",
+      "status": "done"
+    },
+    {
+      "date": "2026-06-16",
+      "title": "v5 EPS 产量导入（6省81市）",
+      "status": "done"
+    },
+    {
+      "date": "2026-06-24",
+      "title": "v5 城市级空间 CV 通过（GO, overall R²=0.213, 3/5折正）",
+      "status": "done"
+    },
+    {
+      "date": "2026-06-25",
+      "title": "GCP v0.1 上线目标（#17）",
+      "status": "at_risk"
+    },
+    {
+      "date": "2026-09-30",
+      "title": "软著提交截止",
+      "status": "pending"
+    },
+    {
+      "date": "2026-12-31",
+      "title": "论文投稿目标",
+      "status": "pending"
+    },
+    {
+      "date": "2027-04",
+      "title": "结题验收",
+      "status": "pending"
+    }
+  ],
+  "risks": [
+    {
+      "level": "medium",
+      "title": "v5 赌注已部分验证",
+      "detail": "✅ 城市级空间 CV 已 GO：-16.83 → +0.213（3/5折正, commit 767cae9），核心假设成立。残余：overall 0.213 偏弱 + 河北/河南两折为负待诊断（局部偏移，非系统失败）；配对表与 SHAP 待出。"
+    },
+    {
+      "level": "high",
+      "title": "论文数据可信度",
+      "detail": "4-5 个计划省份缺真实产量，省级值填充会被《农业工程学报》审稿人抓；~70 市样本量是否够分量存疑。"
+    },
+    {
+      "level": "medium",
+      "title": "结题时间线 + 部署阻塞",
+      "detail": "GCP 实例未开机阻塞 #17 部署；a11y 未修；软著/论文两个 deadline（9/30、12/31）并行。"
+    }
+  ],
+  "next_30_days": [
+    {
+      "owner": "石灵子",
+      "task": "v5_06→v5_07 跑通 5 省交集 + 新增 dropna 出 ~70市可训练面板 + 省名/市名对齐 + alignment_report"
+    },
+    {
+      "owner": "熊鑫",
+      "task": "★配对表已出✅(XGB 0.774→0.213，LSTM 崩塌)；下一步：诊断河北/河南两负折(试 per-province 截距/偏差校正) + v5 城市模型 SHAP 归因 + 把 v5_09 报告纳入论文"
+    },
+    {
+      "owner": "潘妙齐",
+      "task": "开 GCP 实例完成 #17 部署 + 软著材料定稿走流程"
+    },
+    {
+      "owner": "常宇璇",
+      "task": "a11y WCAG 2.2 AA 修复"
+    },
+    {
+      "owner": "Orchestrator",
+      "task": "修正 EVAL_BRIEFING.md 产量覆盖错误"
+    },
+    {
+      "owner": "决策点",
+      "task": "看 v5 城市级 CV 结果再定：是否值得补黑/鲁/吉/湘/川真实产量冲 10 省"
+    }
+  ],
+  "data_sufficiency": {
+    "for_copyright": "✅ 数据非门槛，系统早已满足软著要求。",
+    "for_paper": "⚠️→🟡 数据量够城市级升级，空间外推已验证为正(GO 0.213)。仍未到可投：①只有5省~70市真实产量，4-5省缺数据（省级填充=审稿风险）②overall 0.213 偏弱 + 河北/河南两折为负待诊断 ③浙江孤儿 + 2024耕地缺口。",
+    "recommendation": "GO 关已过，写论文方向确定（诊断并修复空间泛化失效）。下一步出配对表+负折诊断+SHAP，再决定要不要补省冲更高 R²。"
+  },
+  "open_issues": [
+    {
+      "id": 52,
+      "title": "训练 pipeline 文档化（reproducibility）",
+      "owner": "熊鑫",
+      "labels": "task, ml/training"
+    },
+    {
+      "id": 17,
+      "title": "M3 系统开发 Phase 0-5 tracking（5/24→6/25）",
+      "owner": "潘妙齐"
+    },
+    {
+      "id": 9,
+      "title": "M1 数据工程 tracking",
+      "owner": "石灵子"
+    }
+  ]
+};
+
+// ── Render helpers ──────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function pctColor(pct) {
+  if (pct >= 80) return 'green';
+  if (pct >= 50) return 'amber';
+  return 'red';
+}
+
+function pctFillClass(pct) {
+  if (pct >= 80) return 'fill-green';
+  if (pct >= 50) return 'fill-amber';
+  return 'fill-red';
+}
+
+function bar(pct, cls) {
+  return `<div class="track-bar-wrap"><div class="track-bar-fill ${esc(cls)}" style="width:${Math.min(pct,100)}%"></div></div>`;
+}
+
+// ── 1. Header ──────────────────────────────────────────────────
+(function renderHeader() {
+  const m = STATE.meta;
+  document.getElementById('hdr-level').textContent = m.level;
+  document.getElementById('hdr-cycle').textContent = m.cycle;
+  document.getElementById('hdr-funding').textContent = m.funding;
+  document.getElementById('hdr-inst').textContent = m.institution;
+  document.getElementById('hdr-updated').textContent = '更新：' + m.updated;
+
+  document.getElementById('hero-one-liner').innerHTML = esc(m.one_liner)
+    .replace('软著随时保底', '<span class="hl">软著随时保底</span>')
+    .replace('论文是主推', '<span class="hl">论文是主推</span>');
+
+  const fields = [
+    ['项目全称', m.full_name],
+    ['项目级别', m.level],
+    ['周期', m.cycle],
+    ['经费', m.funding],
+    ['单位', m.institution],
+    ['维护', m.maintained_by]
+  ];
+  document.getElementById('hero-meta-grid').innerHTML = fields.map(([label, val]) => `
+    <div class="meta-item">
+      <span class="meta-label">${esc(label)}</span>
+      <span class="meta-value">${esc(val)}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('footer-maintained').textContent = m.maintained_by;
+})();
+
+// ── 2. Completion routes ──────────────────────────────────────
+(function renderRoutes() {
+  const cr = STATE.completion_routes;
+  document.getElementById('routes-grid').innerHTML = cr.items.map(item => `
+    <div class="route-card ${esc(item.status)}">
+      <div class="route-header">
+        <div class="route-name">${esc(item.name)}</div>
+        <div class="route-role-badge">${esc(item.role)}</div>
+      </div>
+      <div class="route-verdict">${esc(item.verdict)}</div>
+      <div class="route-pct-label">
+        <span>进度</span>
+        <span>${item.pct}%</span>
+      </div>
+      <div class="route-bar-track">
+        <div class="route-bar-fill" style="width:${item.pct}%"></div>
+      </div>
+      <div class="route-detail">${esc(item.detail)}</div>
+      <div class="route-blocker"><strong>阻塞：</strong>${esc(item.blocker)}</div>
+    </div>
+  `).join('');
+  document.getElementById('routes-note').textContent = cr.note;
+})();
+
+// ── 3. Tracks ─────────────────────────────────────────────────
+(function renderTracks() {
+  document.getElementById('tracks-list').innerHTML = STATE.tracks.map(t => {
+    const col = pctColor(t.pct);
+    const fillCls = pctFillClass(t.pct);
+    return `
+    <div class="track-row">
+      <div class="track-name">${esc(t.name)}</div>
+      <div class="track-pct ${col}">${t.pct}%</div>
+      <div class="track-bar-wrap" style=""><div class="track-bar-fill ${fillCls}" style="width:${t.pct}%"></div></div>
+      <div class="track-note">${esc(t.note)}</div>
+    </div>`;
+  }).join('');
+})();
+
+// ── 4. People ─────────────────────────────────────────────────
+(function renderPeople() {
+  document.getElementById('people-grid').innerHTML = STATE.people.map(p => {
+    const isBlank = p.issue === '—';
+    const issueClass = isBlank ? 'none' : '';
+
+    const doneItems = p.done.map(d => `<li>${esc(d)}</li>`).join('');
+    const nextItems = p.next.map(n => {
+      const isStar = n.startsWith('★');
+      return `<li class="${isStar ? 'star-item' : ''}">${esc(n)}</li>`;
+    }).join('');
+
+    return `
+    <div class="person-card">
+      <div class="person-header">
+        <div>
+          <div class="person-name">${esc(p.name)}</div>
+          <div class="person-role">${esc(p.role)}</div>
+        </div>
+        <div class="person-issue ${issueClass}">${esc(p.issue)}</div>
+      </div>
+      <div class="person-current">${esc(p.current)}</div>
+      <div class="person-section-label">已完成</div>
+      <ul class="person-list">${doneItems}</ul>
+      <div class="person-section-label">下一步</div>
+      <ul class="person-list">${nextItems}</ul>
+    </div>`;
+  }).join('');
+})();
+
+// ── 5. V5 Reality ─────────────────────────────────────────────
+(function renderV5() {
+  const v = STATE.v5_reality;
+
+  document.getElementById('v5-headline').textContent = v.headline;
+
+  // Feature side
+  const fs = v.feature_side;
+  document.getElementById('v5-feature-card').innerHTML = `
+    <div class="v5-card-title">特征侧 ✅</div>
+    <div class="v5-stat">
+      <span class="v5-stat-number" style="color:var(--green-text)">${fs.provinces}</span>
+      <span class="v5-stat-unit">省</span>
+      <span class="v5-stat-number" style="color:var(--green-text);margin-left:16px">${fs.cities}</span>
+      <span class="v5-stat-unit">市</span>
+    </div>
+    <div class="v5-list-row"><strong>省份：</strong>${esc(fs.list)}</div>
+    <div class="v5-list-row mt8"><strong>来源：</strong>${esc(fs.sources)}</div>
+  `;
+
+  // Yield side
+  const ys = v.yield_side;
+  const maxCities = Math.max(...ys.breakdown.map(b => b.cities));
+  const breakdownHTML = ys.breakdown.map(b => `
+    <div class="province-bar-row">
+      <span>${esc(b.province)}</span>
+      <span style="text-align:right;color:var(--text-dim)">${b.cities}</span>
+      <div class="province-bar-mini">
+        <div class="province-bar-mini-fill" style="width:${Math.round(b.cities/maxCities*100)}%"></div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('v5-yield-card').innerHTML = `
+    <div class="v5-card-title">产量侧 ⚠️</div>
+    <div class="v5-stat">
+      <span class="v5-stat-number" style="color:var(--amber-text)">${ys.provinces}</span>
+      <span class="v5-stat-unit">省</span>
+      <span class="v5-stat-number" style="color:var(--amber-text);margin-left:16px">${ys.cities}</span>
+      <span class="v5-stat-unit">市</span>
+      <span class="v5-stat-number" style="color:var(--text-dim);margin-left:16px;font-size:18px">${ys.rows}</span>
+      <span class="v5-stat-unit">行</span>
+    </div>
+    <div class="v5-list-row"><strong>年份：</strong>${esc(ys.years)}　<strong>缺失值：</strong>${ys.missing}</div>
+    <div class="province-bar-list mt8">${breakdownHTML}</div>
+  `;
+
+  // Intersection
+  const ti = v.trainable_intersection;
+  document.getElementById('v5-intersection').innerHTML = `
+    <div class="v5-intersection-title">可训练交集</div>
+    <div class="v5-intersection-stats">
+      <div class="v5-int-item">
+        <span class="v5-int-num">${esc(ti.provinces)}</span>
+        <span class="v5-int-label">省份</span>
+      </div>
+      <div class="v5-int-item">
+        <span class="v5-int-num" style="font-size:28px">${esc(ti.cities)}</span>
+        <span class="v5-int-label">城市</span>
+      </div>
+      <div class="v5-int-item">
+        <span class="v5-int-num" style="font-size:28px">${esc(ti.rows)}</span>
+        <span class="v5-int-label">行（估算）</span>
+      </div>
+    </div>
+    <div class="mt12" style="font-size:12px;color:var(--text-muted)">
+      全合并面板：${v.full_merge_panel.rows}行 × ${v.full_merge_panel.cols}列 — ${esc(v.full_merge_panel.note)}
+    </div>
+  `;
+
+  // Gaps
+  document.getElementById('v5-gaps').innerHTML = `
+    <div class="v5-gaps-title">开放问题 / 数据缺口</div>
+    ${v.gaps.map(g => `
+      <div class="gap-item">
+        <span class="gap-check">⚑</span>
+        <span>${esc(g)}</span>
+      </div>
+    `).join('')}
+  `;
+
+  // Doc error
+  document.getElementById('doc-error-banner').innerHTML = `
+    <span class="doc-error-icon">🚨</span>
+    <span><strong>文档错误（需修正）：</strong>${esc(v.doc_error)}</span>
+  `;
+})();
+
+// ── 6. Models ─────────────────────────────────────────────────
+(function renderModels() {
+  document.getElementById('models-tbody').innerHTML = STATE.models.map(m => {
+    const warnClass = m.warn ? 'warn-row' : '';
+    const statusCls = m.status === 'done' ? 'status-done' : 'status-disclosed';
+    const statusLabel = m.status === 'done' ? '已完成' : '已披露';
+    return `
+    <tr class="${warnClass}">
+      <td class="model-name">${esc(m.name)}${m.warn ? ' ⚠️' : ''}</td>
+      <td class="r2-value">${esc(m.r2)}</td>
+      <td>${esc(m.protocol)}</td>
+      <td><span class="status-badge ${statusCls}">${statusLabel}</span></td>
+    </tr>`;
+  }).join('');
+})();
+
+// ── 7. Data sufficiency ───────────────────────────────────────
+(function renderSufficiency() {
+  const ds = STATE.data_sufficiency;
+  document.getElementById('sufficiency-grid').innerHTML = `
+    <div class="suf-card green">
+      <div class="suf-label">软著 · 数据</div>
+      <div class="suf-text">${esc(ds.for_copyright)}</div>
+    </div>
+    <div class="suf-card amber">
+      <div class="suf-label">论文 · 数据</div>
+      <div class="suf-text">${esc(ds.for_paper)}</div>
+    </div>
+    <div class="suf-card blue">
+      <div class="suf-label">建议</div>
+      <div class="suf-text">${esc(ds.recommendation)}</div>
+    </div>
+  `;
+})();
+
+// ── 8. Milestones ─────────────────────────────────────────────
+(function renderMilestones() {
+  const sorted = [...STATE.milestones].sort((a, b) => a.date.localeCompare(b.date));
+  document.getElementById('timeline').innerHTML = sorted.map(m => {
+    const dotCls = `dot-${m.status}`;
+    const cardCls = m.status;
+    const badge = m.status === 'at_risk' ? `<span class="at-risk-badge">⚡ 风险</span>` : '';
+    const statusLabel = { done: '✅ 完成', at_risk: '⚡ 风险', pending: '○ 待办' }[m.status] || m.status;
+    return `
+    <div class="timeline-item ${cardCls}">
+      <div class="timeline-dot ${dotCls}"></div>
+      <div class="timeline-header">
+        <span class="timeline-date">${esc(m.date)}</span>
+        <span class="timeline-title">${esc(m.title)}</span>
+        ${badge}
+        <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${statusLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+})();
+
+// ── 9. Risks ──────────────────────────────────────────────────
+(function renderRisks() {
+  const levelLabel = { high: '高风险', medium: '中风险' };
+  document.getElementById('risks-grid').innerHTML = STATE.risks.map(r => `
+    <div class="risk-card ${esc(r.level)}">
+      <div class="risk-level-badge">${levelLabel[r.level] || r.level}</div>
+      <div class="risk-title">${esc(r.title)}</div>
+      <div class="risk-detail">${esc(r.detail)}</div>
+    </div>
+  `).join('');
+})();
+
+// ── 10. Next 30 days ──────────────────────────────────────────
+(function renderNext() {
+  document.getElementById('next-table').innerHTML = STATE.next_30_days.map(row => {
+    const isStar = row.task.startsWith('★');
+    const taskDisplay = isStar
+      ? `<span class="star-symbol">★</span>${esc(row.task.slice(1))}`
+      : esc(row.task);
+    return `
+    <div class="next-row ${isStar ? 'star' : ''}">
+      <div class="next-owner">${esc(row.owner)}</div>
+      <div class="next-task">${taskDisplay}</div>
+    </div>`;
+  }).join('');
+})();
+
+// ── 11. Guardrails ────────────────────────────────────────────
+(function renderGuardrails() {
+  const ng = STATE.narrative_guardrails;
+  const bannedItems = ng.banned.map(b => `
+    <div class="guardrail-item">
+      <span class="guardrail-icon">✕</span>
+      <span>${esc(b)}</span>
+    </div>`).join('');
+  const honestItems = ng.honest.map(h => `
+    <div class="guardrail-item">
+      <span class="guardrail-icon">✓</span>
+      <span>${esc(h)}</span>
+    </div>`).join('');
+
+  document.getElementById('guardrails-grid').innerHTML = `
+    <div class="guardrails-col banned">
+      <div class="guardrails-col-title">❌ 不能说</div>
+      ${bannedItems}
+    </div>
+    <div class="guardrails-col honest">
+      <div class="guardrails-col-title">✅ 必须这样说</div>
+      ${honestItems}
+    </div>
+  `;
+})();
+
+// ── 12. Open issues ───────────────────────────────────────────
+(function renderIssues() {
+  document.getElementById('issues-list').innerHTML = STATE.open_issues.map(iss => `
+    <div class="issue-row">
+      <span class="issue-id">#${esc(String(iss.id))}</span>
+      <span class="issue-title">${esc(iss.title)}</span>
+      <span class="issue-owner">${esc(iss.owner)}</span>
+    </div>
+  `).join('');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2882 @@
+{
+  "project_root": "/home/darcy/DC/DC",
+  "selection_required": true,
+  "model_selection_required": true,
+  "confirmation_required": true,
+  "user_confirmed": true,
+  "target_pages": 60,
+  "lines_per_page": 50,
+  "target_lines": 3000,
+  "estimated_selected_lines": 0,
+  "estimated_selected_pages": 0,
+  "estimated_all_candidate_lines": 39113,
+  "estimated_all_candidate_pages": 783,
+  "supplement_rule": "模型优先选择能体现软件核心功能和真实运行逻辑的源码；不足60页时再从其他相关源码中补充；候选源码仍不足时才生成全部代码材料。",
+  "confirmation_stage": "code-selection",
+  "next_action": "请由模型填写 草稿/代码文件选择.json 的抽取选择和选择理由，再让用户确认；确认后运行 confirm_stage.py --stage code-selection。",
+  "instructions": "The script only inventories source files. The model must choose selected/model_reason before user confirmation. Selected files are extracted in full with blank-only lines removed.",
+  "files": [
+    {
+      "path": "frontend/src/App.vue",
+      "selected": true,
+      "line_count": 243,
+      "material_line_count": 226,
+      "priority": 0,
+      "selection_tier": "frontend",
+      "evidence": "入口文件证据",
+      "model_reason": "主布局组件，实现顶部导航栏（M00-M05六大功能页签）、系统健康检查调用及全局页面框架，体现软件整体结构"
+    },
+    {
+      "path": "frontend/src/main.ts",
+      "selected": true,
+      "line_count": 12,
+      "material_line_count": 10,
+      "priority": 0,
+      "selection_tier": "frontend",
+      "evidence": "入口文件证据",
+      "model_reason": "应用入口，初始化 Vue 3 应用、挂载根组件，是整个前端系统的启动点"
+    },
+    {
+      "path": "frontend/src/router/index.ts",
+      "selected": true,
+      "line_count": 46,
+      "material_line_count": 44,
+      "priority": 10,
+      "selection_tier": "frontend",
+      "evidence": "路由文件证据",
+      "model_reason": "路由配置文件，定义六个功能模块路由（/overview、/risk-map、/shap、/scenario、/pathway、/monitor），直接对应软件功能架构"
+    },
+    {
+      "path": "frontend/src/views/InferenceTrace.vue",
+      "selected": true,
+      "line_count": 1016,
+      "material_line_count": 956,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M05 推理溯源监控页，以 3 秒轮询 /api/admin/predicts 接口，维护 50 条推理记录的环形缓冲区，实时展示模型输入参数、输出预测值和时间戳，提供系统运行透明度"
+    },
+    {
+      "path": "frontend/src/views/Overview.vue",
+      "selected": true,
+      "line_count": 864,
+      "material_line_count": 827,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M00 系统概览页，展示 31 省份 403 样本 KPI 卡片、R²=0.907 随机验证与 leave-year-out R²=0.894 精度说明、XGB vs Attention-LSTM Top3 特征对比，是用户进入系统后的数据总览入口"
+    },
+    {
+      "path": "frontend/src/views/ResiliencePath.vue",
+      "selected": true,
+      "line_count": 987,
+      "material_line_count": 934,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M04 韧性提升路径页，基于 11 条规则引擎根据当前省份风险值生成短期/中期/长期行动建议，使用 DOMPurify 净化输出，将模型结果转化为可操作的政策建议"
+    },
+    {
+      "path": "frontend/src/views/RiskMap.vue",
+      "selected": true,
+      "line_count": 1144,
+      "material_line_count": 1082,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M01 风险地图页，基于 ECharts GeoJSON 实现全国省级粮食生产风险可视化热图，含 2011-2023 年份滑块、省份点击弹出历史产量折线图，是系统的核心空间可视化功能"
+    },
+    {
+      "path": "frontend/src/views/ScenarioSim.vue",
+      "selected": true,
+      "line_count": 810,
+      "material_line_count": 752,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M03 情景模拟页，提供灌溉率、洪涝灾害、日照、温度、SPEI 干旱指数五个参数滑块，前端 200ms 防抖即时估算，同步调用后端三模型（XGBoost/LSTM/Attention-LSTM）对比预测，是系统的核心交互决策工具"
+    },
+    {
+      "path": "frontend/src/views/ShapDashboard.vue",
+      "selected": true,
+      "line_count": 989,
+      "material_line_count": 935,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "M02 SHAP 归因仪表板，展示 11 个特征变量对粮食产量的 SHAP 贡献度，区分正向（绿色）和负向（红色）影响因子，支持四种视图模式，帮助用户理解模型决策依据"
+    },
+    {
+      "path": "backend/api/__init__.py",
+      "selected": false,
+      "line_count": 12,
+      "material_line_count": 9,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/api/predict.py",
+      "selected": true,
+      "line_count": 649,
+      "material_line_count": 553,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": "核心预测 API 端点，实现三模型（XGBoost/LSTM/Attention-LSTM）的 HTTP 接口，接收省份特征参数，调用 inference 服务，返回预测产量和置信区间，是前后端预测功能对接的关键文件"
+    },
+    {
+      "path": "backend/api/province.py",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/api/shap_api.py",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/services/inference.py",
+      "selected": true,
+      "line_count": 324,
+      "material_line_count": 260,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": "ML 模型推理服务，加载 XGBoost/LSTM/Attention-LSTM 三个预训练模型，封装特征预处理、模型前向推理、后处理逻辑，是整个系统机器学习能力的核心实现"
+    },
+    {
+      "path": "backend/services/panel_repo.py",
+      "selected": false,
+      "line_count": 218,
+      "material_line_count": 167,
+      "priority": 30,
+      "selection_tier": "supplement",
+      "evidence": "数据交互文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/api/admin.ts",
+      "selected": true,
+      "line_count": 48,
+      "material_line_count": 45,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "管理/监控 API 封装，获取模型推理日志列表，供 M05 推理溯源模块轮询使用"
+    },
+    {
+      "path": "frontend/src/api/health.ts",
+      "selected": true,
+      "line_count": 12,
+      "material_line_count": 10,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "后端健康检查 API 封装，供 App.vue 在应用加载时检测服务状态"
+    },
+    {
+      "path": "frontend/src/api/http.ts",
+      "selected": true,
+      "line_count": 27,
+      "material_line_count": 24,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "Axios HTTP 请求基础封装，统一设置 baseURL、超时、请求/响应拦截器，所有 API 调用的底层基础"
+    },
+    {
+      "path": "frontend/src/api/predict.ts",
+      "selected": true,
+      "line_count": 109,
+      "material_line_count": 100,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "风险预测 API 封装，包含单省预测、批量预测、三模型对比预测（XGBoost/LSTM/Attention-LSTM）接口，是核心业务功能的前端对接层"
+    },
+    {
+      "path": "frontend/src/api/province.ts",
+      "selected": true,
+      "line_count": 82,
+      "material_line_count": 76,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "省份面板数据 API 封装，支持省份列表、历史产量、风险评分等查询，供风险地图和概览模块使用"
+    },
+    {
+      "path": "frontend/src/api/shap.ts",
+      "selected": true,
+      "line_count": 47,
+      "material_line_count": 43,
+      "priority": 30,
+      "selection_tier": "frontend",
+      "evidence": "数据交互文件证据",
+      "model_reason": "SHAP 归因分析 API 封装，获取特征贡献度数据，供 M02 SHAP 仪表板渲染"
+    },
+    {
+      "path": "frontend/src/stores/useProvinceStore.ts",
+      "selected": true,
+      "line_count": 171,
+      "material_line_count": 157,
+      "priority": 40,
+      "selection_tier": "frontend",
+      "evidence": "状态或数据文件证据",
+      "model_reason": "Pinia 省份状态管理，集中管理当前选中省份、历史数据缓存、加载状态，被多个页面模块共享"
+    },
+    {
+      "path": "backend/models/att_lstm_feature_columns.json",
+      "selected": false,
+      "line_count": 13,
+      "material_line_count": 13,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/att_lstm_history.json",
+      "selected": false,
+      "line_count": 206,
+      "material_line_count": 206,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/att_lstm_seeds_results.json",
+      "selected": false,
+      "line_count": 316,
+      "material_line_count": 316,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/feature_columns.json",
+      "selected": false,
+      "line_count": 13,
+      "material_line_count": 13,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/lstm_feature_columns.json",
+      "selected": false,
+      "line_count": 13,
+      "material_line_count": 13,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/lstm_history.json",
+      "selected": false,
+      "line_count": 180,
+      "material_line_count": 180,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/lstm_seeds_results.json",
+      "selected": false,
+      "line_count": 153,
+      "material_line_count": 153,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/mixed_effects_v1_results.json",
+      "selected": false,
+      "line_count": 394,
+      "material_line_count": 394,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/ndvi_ablation_v3.json",
+      "selected": false,
+      "line_count": 52,
+      "material_line_count": 52,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/rank_corr_v3.json",
+      "selected": false,
+      "line_count": 58,
+      "material_line_count": 58,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/resilience_path_poc.json",
+      "selected": false,
+      "line_count": 491,
+      "material_line_count": 491,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/strict_cv_v3_results.json",
+      "selected": false,
+      "line_count": 343,
+      "material_line_count": 343,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/xgb_seeds_results.json",
+      "selected": false,
+      "line_count": 158,
+      "material_line_count": 158,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/models/xgb_y_butter_seeds_results.json",
+      "selected": false,
+      "line_count": 128,
+      "material_line_count": 128,
+      "priority": 70,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/06_ClaudeCode指挥手册_潘妙齐.html",
+      "selected": false,
+      "line_count": 2189,
+      "material_line_count": 1884,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/09.5_上手指南_Hermes+DeepSeek.html",
+      "selected": false,
+      "line_count": 1041,
+      "material_line_count": 908,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/craic/2026-05-30/答辩讲解参考.html",
+      "selected": false,
+      "line_count": 569,
+      "material_line_count": 546,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/craic/2026-05-30/粮食生产风险智能分析系统_Demo.html",
+      "selected": false,
+      "line_count": 1831,
+      "material_line_count": 1627,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/onboarding/新成员上手指南.html",
+      "selected": false,
+      "line_count": 672,
+      "material_line_count": 591,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/index.html",
+      "selected": false,
+      "line_count": 14,
+      "material_line_count": 14,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/00-design-system.html",
+      "selected": false,
+      "line_count": 2295,
+      "material_line_count": 2026,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/01-risk-map.html",
+      "selected": false,
+      "line_count": 1714,
+      "material_line_count": 1546,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/02-shap-dashboard.html",
+      "selected": false,
+      "line_count": 1242,
+      "material_line_count": 1139,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/03-scenario-sim.html",
+      "selected": false,
+      "line_count": 1703,
+      "material_line_count": 1555,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/04-resilience-pathway.html",
+      "selected": false,
+      "line_count": 1264,
+      "material_line_count": 1175,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/prototypes/index.html",
+      "selected": false,
+      "line_count": 1330,
+      "material_line_count": 1215,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/404.html",
+      "selected": false,
+      "line_count": 21,
+      "material_line_count": 20,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md--53ZafLP.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-4-ivh8NW.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-83J33K0U.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-8q4b2uAp.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-B-b0udsd.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-B3pjtWz3.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-B66wXt6u.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-B9X6Ma1_.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BbcA3idl.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BFRAMxBJ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BFzzaJ-0.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bgq1nyYE.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bh3WOD2K.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BHjWd0uW.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bi0Y3N9R.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Biqz0-JS.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BJg47vz3.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BN9COpBF.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BnTnJeNz.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bo79xyYe.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BOGAGgaw.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BPRv2JAS.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BQ-6RenZ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BqoF-dr7.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BV0Zc4bP.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-BwkLwiKE.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bwr_E_GB.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bxx8cEGJ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Bz2xU1G0.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-C1eEdc1A.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-C3iqUIPG.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-C6aylV5R.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-C9GIEDnQ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CGWV4UZ7.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Cjx3dK8S.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CMDDsh5i.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CMmpO-C6.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CpZiZC-G.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-cSPUWpP6.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CUjDzQ-R.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CUngW3cr.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-CwIihU1Z.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-D0t-MieZ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-D1-8xE7c.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-D5lKns3Z.js",
+      "selected": false,
+      "line_count": 5,
+      "material_line_count": 5,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DaFfVSW6.js",
+      "selected": false,
+      "line_count": 5,
+      "material_line_count": 5,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DDjWkUUa.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DdQdTyn7.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DH9TcSHG.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DKadcrKC.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DNpLt3g0.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DNSUnhKu.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DOeyNHCU.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DOpeJ1I5.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DqkxHH2g.js",
+      "selected": false,
+      "line_count": 5,
+      "material_line_count": 5,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DrJFE4BA.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DRqxc55v.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DShNyOMz.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DVVIEfy-.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DxNq7JEn.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DyMA1nDV.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-DYS9jBI_.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-G5ueH_ss.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-giInuwwq.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-iOYsAeTD.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-ktJzwY6O.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-L0HDk_EL.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-MG7H4tBu.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Ol9SIIsy.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-Ox7uvARa.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-PxENo2MF.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-rlKN2-Uj.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-v6pY_OeV.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-VtdklLJa.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-YIY2WoQ_.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/md-z3bNFLow.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/modules/unplugin-icons-tEjGVunW.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/404-b-PmC1B5.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/404-BG8vDIl3.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/404-ClfWDI5v.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/404-CZEh01b4.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/404-DISqRAVn.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/center-Bbaxr_gk.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/center-CQMv5xeF.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/center-CW63xeX8.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/center-DFwDHhwn.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/center-u2uI9VLK.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/context-A72-Lv-q.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/context-BFJi3AuD.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/context-C3FICwNb.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/context-D88Df9BB.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/context-M6BW2uNy.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/default-BJFvQr4I.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/default-CkGs8GZs.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/default-D9j6SD92.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/default-DaRGl1dj.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/default-DpIo5dZt.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingControls-4lN_Y9Wt.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingControls-CA_fL5c_.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingControls-Cl2Wh1Pd.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingControls-CRaDPQWp.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingControls-xofpBI84.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingLayer-BrAJ746E.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingLayer-C3qTgM-Q.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingLayer-DVi4eNnu.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingLayer-k3JsfKYK.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/DrawingLayer-TjsAEelh.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/entry-AZOIuAhT.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/entry-C8__xdCX.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/entry-ChgAtwcq.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/entry-Cj6j6JRJ.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/entry-CXKka9we.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/IconButton.vue_vue_type_script_setup_true_lang-DdLzILtG.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/iframe.vue_vue_type_script_setup_true_lang-DdwadJi-.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/md-BnBI-n3a.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/md-BNveF5Ll.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/md-BRqCS5s9.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/md-BWKNCmG8.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/md-DRrdbB_c.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/notes-B0Hlrquw.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/notes-BIDdgPVW.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/notes-BtGw0AK9.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/notes-CJJLNhsp.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/notes-D0gUA2uH.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/useSlideInfo-Bsl7j5eF.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/useSlideInfo-Bve8Wdm4.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/useSlideInfo-C4RJ1qAN.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/useSlideInfo-CVoH68bA.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/slidev/useSlideInfo-DDxE8c-w.js",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/index.html",
+      "selected": false,
+      "line_count": 21,
+      "material_line_count": 20,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/data/a11y.ts",
+      "selected": false,
+      "line_count": 32,
+      "material_line_count": 30,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/data/mockProvinces.ts",
+      "selected": false,
+      "line_count": 147,
+      "material_line_count": 131,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/data/recommendation.ts",
+      "selected": false,
+      "line_count": 338,
+      "material_line_count": 324,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "slidev/shots.mjs",
+      "selected": false,
+      "line_count": 34,
+      "material_line_count": 30,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "大创全景.html",
+      "selected": false,
+      "line_count": 331,
+      "material_line_count": 296,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "结题战略规划_2026-06-06.html",
+      "selected": false,
+      "line_count": 424,
+      "material_line_count": 398,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/404-n_Eqdu3W.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/DrawingControls-Cxk9a9ub.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/entry-15QH0Q6e.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/NoteDisplay-CGTG5ZHT.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/play-D_7yfuao.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/presenter-DuVsNMW5.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/shortcuts-DHgzE6mW.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/deck/assets/SlideWrapper-DchzhrKm.css",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/styles/global.css",
+      "selected": false,
+      "line_count": 89,
+      "material_line_count": 77,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/src/styles/tokens.css",
+      "selected": false,
+      "line_count": 73,
+      "material_line_count": 61,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "slidev/style.css",
+      "selected": false,
+      "line_count": 142,
+      "material_line_count": 129,
+      "priority": 90,
+      "selection_tier": "frontend",
+      "evidence": "样式文件证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/app.py",
+      "selected": true,
+      "line_count": 204,
+      "material_line_count": 169,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "Flask 主应用文件，注册蓝图（predict/province/shap/admin）、配置 CORS、限流（Flask-Limiter）、安全响应头，定义 Flask 3 应用的整体后端架构"
+    },
+    {
+      "path": "backend/data/provinces_baseline.json",
+      "selected": false,
+      "line_count": 33,
+      "material_line_count": 33,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/data/schema.sql",
+      "selected": false,
+      "line_count": 117,
+      "material_line_count": 102,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/limiter.py",
+      "selected": false,
+      "line_count": 68,
+      "material_line_count": 51,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/security_headers.py",
+      "selected": false,
+      "line_count": 108,
+      "material_line_count": 83,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/tests/conftest.py",
+      "selected": false,
+      "line_count": 27,
+      "material_line_count": 21,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/tests/test_api.py",
+      "selected": false,
+      "line_count": 175,
+      "material_line_count": 122,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/tests/test_panel_endpoints.py",
+      "selected": false,
+      "line_count": 230,
+      "material_line_count": 187,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "backend/tests/test_predict_real.py",
+      "selected": false,
+      "line_count": 133,
+      "material_line_count": 108,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "check_state.sh",
+      "selected": false,
+      "line_count": 10,
+      "material_line_count": 10,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "compare_data_versions.py",
+      "selected": false,
+      "line_count": 74,
+      "material_line_count": 63,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "deploy/setup_letsencrypt.sh",
+      "selected": false,
+      "line_count": 150,
+      "material_line_count": 134,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "diagnose_v2.py",
+      "selected": false,
+      "line_count": 85,
+      "material_line_count": 73,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "diagnose_y_trend.py",
+      "selected": false,
+      "line_count": 73,
+      "material_line_count": 64,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "docs/figures/shap_v3_summary.json",
+      "selected": false,
+      "line_count": 21,
+      "material_line_count": 21,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "frontend/public/maps/china.json",
+      "selected": false,
+      "line_count": 211,
+      "material_line_count": 207,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "inspect_data.py",
+      "selected": false,
+      "line_count": 66,
+      "material_line_count": 57,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "retest_with_real_yield.py",
+      "selected": false,
+      "line_count": 68,
+      "material_line_count": 58,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/00_ingest_paper_panel.py",
+      "selected": false,
+      "line_count": 169,
+      "material_line_count": 143,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/00a_fetch_stats_gov_cn_local.py",
+      "selected": false,
+      "line_count": 272,
+      "material_line_count": 234,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/00b_fetch_nasa_power.py",
+      "selected": false,
+      "line_count": 165,
+      "material_line_count": 138,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/00c_fetch_spei.py",
+      "selected": false,
+      "line_count": 149,
+      "material_line_count": 123,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/00z_merge_panel.py",
+      "selected": false,
+      "line_count": 190,
+      "material_line_count": 157,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/01_download_cropland.py",
+      "selected": false,
+      "line_count": 183,
+      "material_line_count": 146,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/02_download_province_geojson.py",
+      "selected": false,
+      "line_count": 183,
+      "material_line_count": 150,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/03_request_modis_appeears.py",
+      "selected": false,
+      "line_count": 213,
+      "material_line_count": 181,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/04_poll_and_download_appeears.py",
+      "selected": false,
+      "line_count": 222,
+      "material_line_count": 187,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05_aggregate_modis_to_province.py",
+      "selected": false,
+      "line_count": 257,
+      "material_line_count": 214,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_calc_cropland_ratio.py",
+      "selected": false,
+      "line_count": 156,
+      "material_line_count": 126,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_compute_cropland_ratio.py",
+      "selected": false,
+      "line_count": 121,
+      "material_line_count": 99,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_cropland_weighted_v4.py",
+      "selected": false,
+      "line_count": 112,
+      "material_line_count": 88,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_modis_cropland_weighted.py",
+      "selected": false,
+      "line_count": 422,
+      "material_line_count": 354,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_preprocess_clcd.py",
+      "selected": false,
+      "line_count": 85,
+      "material_line_count": 70,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_preprocess_clcd_chunked.py",
+      "selected": false,
+      "line_count": 119,
+      "material_line_count": 95,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_preprocess_clcd_v2.py",
+      "selected": false,
+      "line_count": 144,
+      "material_line_count": 119,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_preprocess_clcd_v3.py",
+      "selected": false,
+      "line_count": 87,
+      "material_line_count": 71,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_preprocess_clcd_v4.py",
+      "selected": false,
+      "line_count": 101,
+      "material_line_count": 84,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/05b_step0_cropland_ratio.py",
+      "selected": false,
+      "line_count": 93,
+      "material_line_count": 76,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/06_align_panel.py",
+      "selected": false,
+      "line_count": 168,
+      "material_line_count": 132,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/07_fix_panel_v2.py",
+      "selected": false,
+      "line_count": 106,
+      "material_line_count": 85,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08_detrend_y.py",
+      "selected": false,
+      "line_count": 254,
+      "material_line_count": 203,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_build_v4.py",
+      "selected": false,
+      "line_count": 105,
+      "material_line_count": 90,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_check_sections.py",
+      "selected": false,
+      "line_count": 12,
+      "material_line_count": 9,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_compare.py",
+      "selected": false,
+      "line_count": 81,
+      "material_line_count": 70,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_d7_feasibility.py",
+      "selected": false,
+      "line_count": 86,
+      "material_line_count": 74,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_explore_master.py",
+      "selected": false,
+      "line_count": 33,
+      "material_line_count": 27,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_full_compare.py",
+      "selected": false,
+      "line_count": 87,
+      "material_line_count": 77,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_generate_v4.py",
+      "selected": false,
+      "line_count": 90,
+      "material_line_count": 79,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_step1.py",
+      "selected": false,
+      "line_count": 124,
+      "material_line_count": 105,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_train_test_split.py",
+      "selected": false,
+      "line_count": 49,
+      "material_line_count": 39,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08a_v4_sanity.py",
+      "selected": false,
+      "line_count": 99,
+      "material_line_count": 83,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08b_calc_cropland_ratio.py",
+      "selected": false,
+      "line_count": 79,
+      "material_line_count": 66,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08b_merge_cropland_ratio.py",
+      "selected": false,
+      "line_count": 121,
+      "material_line_count": 98,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08c_apply_yearly_cropland.py",
+      "selected": false,
+      "line_count": 135,
+      "material_line_count": 112,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/08c_calc_cropland_ratio_yearly.py",
+      "selected": false,
+      "line_count": 181,
+      "material_line_count": 148,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/09_v4_split.py",
+      "selected": false,
+      "line_count": 108,
+      "material_line_count": 87,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/10_v4_vs_v3_validation.py",
+      "selected": false,
+      "line_count": 84,
+      "material_line_count": 63,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_build_china_roi.py",
+      "selected": false,
+      "line_count": 105,
+      "material_line_count": 84,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_final_all.py",
+      "selected": false,
+      "line_count": 109,
+      "material_line_count": 87,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_import_eps_to_v5.py",
+      "selected": false,
+      "line_count": 98,
+      "material_line_count": 79,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_merge_eps_data.py",
+      "selected": false,
+      "line_count": 43,
+      "material_line_count": 36,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_merge_final.py",
+      "selected": false,
+      "line_count": 26,
+      "material_line_count": 22,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_parse_henan.py",
+      "selected": false,
+      "line_count": 258,
+      "material_line_count": 253,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_parse_hubei.py",
+      "selected": false,
+      "line_count": 192,
+      "material_line_count": 190,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_rebuild_yield.py",
+      "selected": false,
+      "line_count": 28,
+      "material_line_count": 23,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_save_eps_data.py",
+      "selected": false,
+      "line_count": 218,
+      "material_line_count": 206,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/_test_clcd_city_1year.py",
+      "selected": false,
+      "line_count": 81,
+      "material_line_count": 74,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/test_validate_modis_panel.py",
+      "selected": false,
+      "line_count": 191,
+      "material_line_count": 130,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v4_fetch.sh",
+      "selected": false,
+      "line_count": 180,
+      "material_line_count": 156,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_01_modis_city_aggregate.py",
+      "selected": false,
+      "line_count": 276,
+      "material_line_count": 230,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_02_clcd_city_cropland.py",
+      "selected": false,
+      "line_count": 197,
+      "material_line_count": 163,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_03_nasa_power_city.py",
+      "selected": false,
+      "line_count": 195,
+      "material_line_count": 163,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_06_merge_feature_matrix.py",
+      "selected": false,
+      "line_count": 187,
+      "material_line_count": 151,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_07_import_city_yield.py",
+      "selected": false,
+      "line_count": 419,
+      "material_line_count": 347,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_08_spatial_cv.py",
+      "selected": false,
+      "line_count": 423,
+      "material_line_count": 359,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/v5_09_paired_generalization.py",
+      "selected": false,
+      "line_count": 900,
+      "material_line_count": 779,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/data/validate_modis_panel.py",
+      "selected": false,
+      "line_count": 314,
+      "material_line_count": 259,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/explore_disaster.py",
+      "selected": false,
+      "line_count": 58,
+      "material_line_count": 52,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/generate_craic_ppt.py",
+      "selected": false,
+      "line_count": 1091,
+      "material_line_count": 977,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/load_panel_to_db.py",
+      "selected": false,
+      "line_count": 426,
+      "material_line_count": 360,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/mixed_effects_poc.py",
+      "selected": false,
+      "line_count": 311,
+      "material_line_count": 276,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/plot_shap_v3.py",
+      "selected": false,
+      "line_count": 208,
+      "material_line_count": 171,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/retrain_all.sh",
+      "selected": false,
+      "line_count": 192,
+      "material_line_count": 164,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "scripts/serve_demo.sh",
+      "selected": false,
+      "line_count": 63,
+      "material_line_count": 55,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "train_att_lstm_baseline.py",
+      "selected": false,
+      "line_count": 417,
+      "material_line_count": 355,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "train_lstm_baseline.py",
+      "selected": false,
+      "line_count": 416,
+      "material_line_count": 361,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "train_xgb_baseline.py",
+      "selected": false,
+      "line_count": 295,
+      "material_line_count": 255,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "train_xgb_compare.py",
+      "selected": false,
+      "line_count": 87,
+      "material_line_count": 73,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "train_xgb_y_butter_ablation.py",
+      "selected": false,
+      "line_count": 276,
+      "material_line_count": 234,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    },
+    {
+      "path": "verify_env.py",
+      "selected": false,
+      "line_count": 20,
+      "material_line_count": 17,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": ""
+    }
+  ],
+  "confirmation_note": "用户确认19个文件：16个前端文件（main.ts/App.vue/router/6页面/api层/store）+ 3个后端文件（app.py/predict.py/inference.py），共7203行约144页",
+  "confirmed_at": "2026-06-25T09:18:41+00:00"
+}
