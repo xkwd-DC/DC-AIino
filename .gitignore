@@ -1,0 +1,47 @@
+# Large data files - skip the huge zip
+【25170】中国县域统计年鉴2000-2024.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+.nuxt/
+.output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+temp_clone/
+temp_clone2/
+*.tmp
+
+# Large model files
+*.pkl
+*.joblib
+*.h5
+*.pb
+*.onnx
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Keep .gitignore but skip data archives
+data/*.zip
+data/*.rar
+data/*.7z
