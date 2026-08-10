@@ -1,0 +1,75 @@
+{
+  "experiment": "leave_province_out_anomaly",
+  "timestamp": "2026-07-05 15:47:01",
+  "data_path": "data\\interim\\paper_panel_v3.parquet",
+  "data_md5_12": "7f2070282216",
+  "n_rows": 403,
+  "n_provinces": 31,
+  "n_years": 13,
+  "year_range": [
+    2011,
+    2023
+  ],
+  "province_col": "province",
+  "year_col": "year",
+  "target_col": "yield_kg_per_ha",
+  "feature_cols": [
+    "irr",
+    "flood",
+    "sun",
+    "temp",
+    "spei",
+    "prec",
+    "mech",
+    "fert",
+    "drou_a",
+    "flood_a",
+    "ndvi"
+  ],
+  "hyper": {
+    "learning_rate": 0.1,
+    "max_depth": 6,
+    "n_estimators": 150,
+    "objective": "reg:squarederror"
+  },
+  "results": {
+    "A. 现状复现": {
+      "label": "A. 现状复现",
+      "target_desc": "yield_kg_per_ha (绝对产量)",
+      "global_r2": 0.09767815471249064,
+      "global_rmse": 1000.9653833490423,
+      "fold_r2_median": -16.83450494193462,
+      "fold_r2_mean": -176.85075836751693,
+      "fold_r2_std": 712.2974395337866,
+      "fold_r2_min": -4051.670558313978,
+      "fold_r2_max": 0.1728150866580681
+    },
+    "B. 异常值-省均值": {
+      "label": "B. 异常值-省均值",
+      "target_desc": "yield - province_mean",
+      "global_r2": -0.2194127814750746,
+      "global_rmse": 267.8154779693904,
+      "fold_r2_median": -0.3910946394884329,
+      "fold_r2_mean": -1.7213634636408761,
+      "fold_r2_std": 2.7382908088317195,
+      "fold_r2_min": -10.453531729678355,
+      "fold_r2_max": 0.612682494794732
+    },
+    "C. 异常值-省线性趋势": {
+      "label": "C. 异常值-省线性趋势",
+      "target_desc": "yield - province_linear_trend",
+      "global_r2": -0.17004554640148473,
+      "global_rmse": 142.22743420398686,
+      "fold_r2_median": -0.12081952044907296,
+      "fold_r2_mean": -1.4976104499773655,
+      "fold_r2_std": 5.858754025652146,
+      "fold_r2_min": -33.10974561048224,
+      "fold_r2_max": 0.7257187587036582
+    }
+  },
+  "interpretation": {
+    "delta_B_vs_A": -0.31709093618756523,
+    "delta_C_vs_A": -0.26772370111397537,
+    "either_positive": false
+  }
+}

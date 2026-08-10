@@ -40,6 +40,12 @@ const router = createRouter({
       component: () => import('@/views/InferenceTrace.vue'),
       meta: { title: '推演监控', code: 'M05' },
     },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('@/views/ChatAssistant.vue'),
+      meta: { title: '知识助手', code: 'M06' },
+    },
   ],
 })
 

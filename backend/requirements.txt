@@ -30,6 +30,26 @@ shap~=0.46.0
 # in-memory 后端默认;多 worker 部署需配 RATELIMIT_STORAGE_URI=redis://...
 flask-limiter~=3.8.0
 
+# --- RAG 模块 (Issue #44) ---
+# 嵌入模型: BGE-M3 本地推理，GPU 优先
+sentence-transformers>=3.0,<4.0
+# 向量库: 本地 ChromaDB 持久化
+chromadb>=0.5,<1.0
+# DeepSeek API 调用 (OpenAI 兼容协议)
+openai>=1.50,<2.0
+# PDF 文字提取
+pymupdf>=1.24,<2.0
+# 文件监控自动增量索引 (Issue #44)
+watchdog>=4.0,<7.0
+
+# --- GraphRAG 模块 (Issue #47) ---
+# 知识图谱构建与社区检测
+networkx>=3.2,<4.0
+# BM25 关键词检索（混合搜索）
+rank-bm25>=0.2,<1.0
+# 重排序模型（cross-encoder）
+FlagEmbedding>=1.3,<2.0
+
 # --- Parquet 引擎 (训练 / 推理读 paper_panel_v3.parquet 必需) ---
 # pandas 默认尝试 pyarrow → fastparquet,二者皆缺则 read_parquet 抛 ImportError。
 # 训练时 train_*.py 直接 pd.read_parquet,生产部署里 services.inference 不读 parquet,

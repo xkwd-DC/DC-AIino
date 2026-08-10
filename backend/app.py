@@ -64,6 +64,33 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 app.register_blueprint(predict_bp)
 
+# RAG 模块 — 知识库问答 (Issue #44)
+from api.rag_api import rag_bp
+app.register_blueprint(rag_bp)
+
+# GraphRAG 模块 — 知识图谱问答 (Issue #47)
+from api.graph_api import graph_bp
+app.register_blueprint(graph_bp)
+
+# RAG 文件监控 — 自动增量索引 (Issue #44)
+# 启动时执行完整性检查 + 开启 watchdog 监听 docs/ 变更
+try:
+    from rag.watcher import reindex_modified, start_watcher
+    import threading
+
+    def _rag_startup():
+        """后台线程：先做完整性检查，再开启文件监控。"""
+        try:
+            reindex_modified()
+        except Exception:
+            pass
+        start_watcher()
+
+    _watcher_thread = threading.Thread(target=_rag_startup, daemon=True)
+    _watcher_thread.start()
+except Exception:
+    pass  # RAG 监控非关键路径，静默失败
+
 # Rate limiting — flask-limiter 真装时启用,缺失时 no-op (见 limiter.py)
 # /api/predict   → 100/hour (CPU-heavy 真模型,DoS 防护,见 api/predict.py)
 # /api/provinces → 500/hour (静态面板数据,带宽防护)

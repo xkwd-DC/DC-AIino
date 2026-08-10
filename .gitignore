@@ -100,3 +100,11 @@ Thumbs.db
 # 熊鑫的入门 sklearn toy-data demo（pedagogical only，与本项目数据无关）
 /demo_train.py
 /demo_compare.py
+
+# v6 ???????? (2.2GB, ????????, ???)
+data/raw/statistical_yearbook/
+data/raw/statistical_yearbook_chunks/
+
+# RAG/GraphRAG ???? (?? scripts/CLI ??)
+backend/chroma_db/
+backend/graph_data/

@@ -5,7 +5,7 @@ print(f"Python: {sys.version.split()[0]}")
 print(f"路径:   {sys.executable}")
 print()
 
-libs = ["numpy", "pandas", "sklearn", "xgboost", "tensorflow", "shap", "matplotlib", "jupyter"]
+libs = ["tensorflow", "numpy", "pandas", "sklearn", "xgboost", "shap", "matplotlib", "jupyter"]
 ok = 0
 for name in libs:
     try:
