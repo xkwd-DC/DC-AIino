@@ -15,6 +15,7 @@ CV 设计：
 用法: python scripts/data/v6_04_train_xgb_lco.py
 输出: reports/v6_xgb_lco_report.md + reports/v6_xgb_fold_results.csv
 """
+import argparse
 from pathlib import Path
 import sys
 import warnings
@@ -52,12 +53,22 @@ XGB_PARAMS = {
 }
 
 
-def main() -> int:
-    df = pd.read_parquet(PANEL)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="v6 XGBoost LCO sanity")
+    parser.add_argument("--panel", type=str, default=str(PANEL),
+                        help="特征矩阵 parquet 路径（如 paper_panel_v6_climate_full.parquet）")
+    args = parser.parse_args(argv)
+    panel_path = Path(args.panel)
+    # 非默认面板 → 报告加后缀区分
+    suffix = "" if panel_path.name == PANEL.name else f"_{panel_path.stem.replace('paper_panel_', '')}"
+    report_path = Path(str(REPORT).replace("v6_xgb_lco_report.md", f"v6_xgb{suffix}_report.md"))
+    folds_path = Path(str(FOLDS).replace("v6_xgb_fold_results.csv", f"v6_xgb{suffix}_fold_results.csv"))
+
+    df = pd.read_parquet(panel_path)
     df = df[df["log_yield"].notna()].copy()
     df["log_sown"] = np.log1p(df["农作物总播种面积_千公顷"].fillna(0))
     df = df.dropna(subset=FEATURES)
-    print(f"训练样本: {len(df)} 行, {df['区县代码'].nunique()} 县, {df['年份'].nunique()} 年")
+    print(f"训练样本: {len(df)} 行, {df['区县代码'].nunique()} 县, {df['年份'].nunique()} 年 | 面板: {panel_path.name}")
 
     X = df[FEATURES].values
     y = df["log_yield"].values
@@ -101,8 +112,8 @@ def main() -> int:
     imp = imp.sort_values("importance", ascending=False)
 
     fold_df = pd.DataFrame(rows)
-    FOLDS.parent.mkdir(parents=True, exist_ok=True)
-    fold_df.to_csv(FOLDS, index=False)
+    folds_path.parent.mkdir(parents=True, exist_ok=True)
+    fold_df.to_csv(folds_path, index=False)
 
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -131,8 +142,8 @@ def main() -> int:
         f"| v6 县级 (本报告) | LCO | {overall_r2:+.4f} |",
         "",
     ]
-    REPORT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"✅ 报告 -> {REPORT}")
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"✅ 报告 -> {report_path}")
     return 0
 
 
