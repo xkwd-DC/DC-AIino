@@ -1,10 +1,10 @@
 # v6 XGBoost Leave-County-Out 报告（首轮 sanity）
 
-- 样本: 10407 行 = 1041 县 × 11 年（10 主产省）
+- 样本: 10407 行（1041 县 × 2012–2022 非平衡面板，10 主产省；385 县缺 1–10 年，2023 年产量缺失）
 - 目标: log_yield = log(粮食总产量_吨)
 - 特征 (14): temp, prec, sun, spei_annual_mean, spei_growing_season_mean, ndvi_yearly, lst_day_growing_mean_k, fert, irr, flood, drou_a, flood_a, cropland_ratio, log_sown
 - LCO overall R² = **+0.6604** (RMSE 0.8105)
-- 时间外推 R² (≤2019 → 2020-23) = **-0.8537** (RMSE 1.9332)
+- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **-0.8537** (RMSE 1.9332)
 
 ## 各折结果
 
@@ -44,6 +44,7 @@
 
 | 版本 | CV | R² |
 |---|---|---|
-| v4 省级 (XGBoost-SHAP) | LPO | 0.9072 |
+| v4 省级 (XGBoost-SHAP) | random 8:2 | 0.9072 |
+| v4 省级 (XGBoost-SHAP) | leave-province-out（真实 LPO） | -16.83（中位） |
 | v5 地级市 | 城市级 LPO | 0.213 |
 | v6 县级 (本报告) | LCO | +0.6604 |

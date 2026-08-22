@@ -7,12 +7,12 @@
                 → Reshape (1,14) → LSTM(64) → LSTM(32) → Dropout(0.2) → Dense(1)
 
 TIMESTEPS=1 时 timestep attention 无东西可注意，改在特征维学软掩码；
-权重可与 XGB SHAP 做"一致性"对照（论文三模型互补归因）。
+权重可与 XGB 时间模型 gain 重要性做对照（v6 未计算 SHAP）。
 
 与 v6_04/v6_05 同 split / 同特征 / 同目标，三模型可比。
 
 输出：reports/v6_att_lstm_lco_report.md + v6_att_lstm_fold_results.csv
-      + reports/v6_att_lstm_weights.csv（各折 attention 权重均值，供 SHAP 对照）
+      + reports/v6_att_lstm_weights.csv（各折 attention 权重均值，供 gain 重要性对照）
 """
 import sys
 from pathlib import Path
@@ -131,31 +131,31 @@ def main() -> int:
     p_t = model_t.predict(Xt_te, verbose=0).ravel()
     time_r2 = r2_score(y[te_t], p_t)
     time_rmse = mean_squared_error(y[te_t], p_t, squared=False)
-    print(f"Time-holdout (≤2019→2020-23): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
+    print(f"Time-holdout (≤2019→2020-22): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
 
     fold_df = pd.DataFrame(rows)
     FOLDS.parent.mkdir(parents=True, exist_ok=True)
     fold_df.to_csv(FOLDS, index=False)
     pd.DataFrame(w_rows).to_csv(WEIGHTS, index=False)
 
-    # attention 权重均值表（论文与 SHAP 对照用）
+    # attention 权重均值表（论文与 XGB gain 重要性对照用）
     w_mean = pd.DataFrame(w_rows).drop(columns="fold").mean().sort_values(ascending=False)
     w_md = w_mean.rename_axis("feature").reset_index(name="att_weight").to_markdown(index=False)
 
     lines = [
         "# v6 Attention-LSTM Leave-County-Out 报告（feature-level attention gating）",
         "",
-        f"- 样本: {len(df)} 行 = {df['区县代码'].nunique()} 县 × {df['年份'].nunique()} 年（10 主产省）",
+        f"- 样本: {len(df)} 行（{df['区县代码'].nunique()} 县 × {df['年份'].min()}–{df['年份'].max()} 非平衡面板，10 主产省；部分县缺 1–10 年，2023 年产量缺失）",
         f"- 目标: log_yield  特征 ({len(FEATURES)}): " + ", ".join(FEATURES),
         "- 结构: Input→Reshape→Dense(softmax 软掩码)→Multiply→LSTM(64)→LSTM(32)→Dropout→Dense(1)",
         f"- LCO overall R² = **{overall_r2:+.4f}** (RMSE {overall_rmse:.4f})",
-        f"- 时间外推 R² (≤2019 → 2020-23) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
+        f"- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
         "",
         "## 各折结果",
         "",
         fold_df.to_markdown(index=False),
         "",
-        "## 特征 attention 权重均值（与 XGB SHAP 对照）",
+        "## 特征 attention 权重均值（与 XGB 时间模型 gain 重要性对照，非 SHAP）",
         "",
         w_md,
         "",

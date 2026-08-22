@@ -1,10 +1,10 @@
 # v6 Attention-LSTM Leave-County-Out 报告（feature-level attention gating）
 
-- 样本: 10407 行 = 1041 县 × 11 年（10 主产省）
+- 样本: 10407 行（1041 县 × 2012–2022 非平衡面板，10 主产省；385 县缺 1–10 年，2023 年产量缺失）
 - 目标: log_yield  特征 (14): temp, prec, sun, spei_annual_mean, spei_growing_season_mean, ndvi_yearly, lst_day_growing_mean_k, fert, irr, flood, drou_a, flood_a, cropland_ratio, log_sown
 - 结构: Input→Reshape→Dense(softmax 软掩码)→Multiply→LSTM(64)→LSTM(32)→Dropout→Dense(1)
 - LCO overall R² = **+0.0412** (RMSE 1.3618)
-- 时间外推 R² (≤2019 → 2020-23) = **-0.5846** (RMSE 1.7874)
+- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **-0.5846** (RMSE 1.7874)
 
 ## 各折结果
 
@@ -21,7 +21,7 @@
 |      9 |      9365 |     1042 |  0.0234 | 1.4896 |
 |     10 |      9376 |     1031 |  0.0679 | 1.3992 |
 
-## 特征 attention 权重均值（与 XGB SHAP 对照）
+## 特征 attention 权重均值（与 XGB 时间模型 gain 重要性对照，非 SHAP）
 
 | feature                  |   att_weight |
 |:-------------------------|-------------:|

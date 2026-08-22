@@ -1,10 +1,10 @@
 # v6 LSTM Leave-County-Out 报告（与 XGB 同 split 可比）
 
-- 样本: 10407 行 = 1041 县 × 11 年（10 主产省）
+- 样本: 10407 行（1041 县 × 2012–2022 非平衡面板，10 主产省；385 县缺 1–10 年，2023 年产量缺失）
 - 目标: log_yield = log(粮食总产量_吨)  特征 (14): temp, prec, sun, spei_annual_mean, spei_growing_season_mean, ndvi_yearly, lst_day_growing_mean_k, fert, irr, flood, drou_a, flood_a, cropland_ratio, log_sown
-- 结构: LSTM(64)→LSTM(32)→Dropout(0.2)→Dense(1), TIMESTEPS=1, LR=0.001, EPOCHS=300
+- 结构: LSTM(96)→LSTM(48)→Dropout(0.2)→Dense(1), TIMESTEPS=1, LR=0.001, EPOCHS=300
 - LCO overall R² = **+0.0488** (RMSE 1.3564)
-- 时间外推 R² (≤2019 → 2020-23) = **-1.4759** (RMSE 2.2342)
+- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **-1.4759** (RMSE 2.2342)
 
 ## 各折结果
 
@@ -27,4 +27,4 @@
 |---|---|---|
 | v6 XGBoost | LCO | +0.6604 |
 | v6 LSTM (本报告) | LCO | +0.0488 |
-| v6 时间外推 | ≤2019→20-23 | -1.4759 |
+| v6 时间外推 | ≤2019→20-22 | -1.4759 |

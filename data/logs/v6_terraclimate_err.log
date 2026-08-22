@@ -1,0 +1,92 @@
+00:13:55 INFO 待下载 24 文件 (4 线程并行)
+HDF5-DIAG: Error detected in HDF5 (1.14.6) thread 15328:
+  #000: D:\bld\hdf5_1764770705948\work\src\H5F.c line 827 in H5Fopen(): unable to synchronously op04:23:17 WARNING TerraClimate_srad_2016.nc 下载中断 (attempt 1), 续传重试
+04:23:30 WARNING TerraClimate_srad_2016.nc 下载中断 (attempt 2), 续传重试
+en file
+    major: File accessibility
+    minor: Unable to open file
+  #002: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3680 in H5VL_file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3514 in H5VL__file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: D:\bld\hdf5_1764770705948\work\src\H5VLnative_file.c line 128 in H5VL__native_file_open(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #005: D:\bld\hdf5_1764770705948\work\src\H5Fint.c line 2085 in H5F_open(): unable to read superblock
+    major: File accessibility
+    minor: Read failed
+  #006: D:\bld\hdf5_1764770705948\work\src\H5Fsuper.c line 593 in H5F__super_read(): truncated file: eof = 11124736, sblock->base_addr = 0, stored_eof = 144158093
+    major: File accessibility
+    minor: File has been truncated
+03:21:24 WARNING TerraClimate_srad_2013.nc 不完整 (10 MB, attempt 1), 续传重试
+HDF5-DIAG: Error detected in HDF5 (1.14.6) thread 12464:
+  #000: D:\bld\hdf5_1764770705948\work\src\H5F.c line 827 in H5Fopen(): unable to synchronously open file
+    major: File accessibility
+    minor: Unable to open file
+  #001: D:\bld\hdf5_1764770705948\work\src\H5F.c line 788 in H5F__open_api_common(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #002: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3680 in H5VL_file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3514 in H5VL__file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: D:\bld\hdf5_1764770705948\work\src\H5VLnative_file.c line 128 in H5VL__native_file_open(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #005: D:\bld\hdf5_1764770705948\work\src\H5Fint.c line 2085 in H5F_open(): unable to read superblock
+    major: File accessibility
+    minor: Read failed
+  #006: D:\bld\hdf5_1764770705948\work\src\H5Fsuper.c line 593 in H5F__super_read(): truncated file: eof = 5308416, sblock->base_addr = 0, stored_eof = 144410568
+    major: File accessibility
+    minor: File has been truncated
+03:21:24 WARNING TerraClimate_srad_2015.nc 不完整 (5 MB, attempt 1), 续传重试
+HDF5-DIAG: Error detected in HDF5 (1.14.6) thread 23008:
+  #000: D:\bld\hdf5_1764770705948\work\src\H5F.c line 827 in H5Fopen(): unable to synchronously open file
+    major: File accessibility
+    minor: Unable to open file
+  #001: D:\bld\hdf5_1764770705948\work\src\H5F.c line 788 in H5F__open_api_common(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #002: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3680 in H5VL_file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3514 in H5VL__file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: D:\bld\hdf5_1764770705948\work\src\H5VLnative_file.c line 128 in H5VL__native_file_open(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #005: D:\bld\hdf5_1764770705948\work\src\H5Fint.c line 2085 in H5F_open(): unable to read superblock
+    major: File accessibility
+    minor: Read failed
+  #006: D:\bld\hdf5_1764770705948\work\src\H5Fsuper.c line 593 in H5F__super_read(): truncated file: eof = 4685824, sblock->base_addr = 0, stored_eof = 144170167
+    major: File accessibility
+    minor: File has been truncated
+03:21:24 WARNING TerraClimate_srad_2012.nc 不完整 (4 MB, attempt 1), 续传重试
+HDF5-DIAG: Error detected in HDF5 (1.14.6) thread 9248:
+  #000: D:\bld\hdf5_1764770705948\work\src\H5F.c line 827 in H5Fopen(): unable to synchronously open file
+    major: File accessibility
+    minor: Unable to open file
+  #001: D:\bld\hdf5_1764770705948\work\src\H5F.c line 788 in H5F__open_api_common(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #002: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3680 in H5VL_file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: D:\bld\hdf5_1764770705948\work\src\H5VLcallback.c line 3514 in H5VL__file_open(): open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: D:\bld\hdf5_1764770705948\work\src\H5VLnative_file.c line 128 in H5VL__native_file_open(): unable to open file
+    major: File accessibility
+    minor: Unable to open file
+  #005: D:\bld\hdf5_1764770705948\work\src\H5Fint.c line 2085 in H5F_open(): unable to read superblock
+    major: File accessibility
+    minor: Read failed
+  #006: D:\bld\hdf5_1764770705948\work\src\H5Fsuper.c line 593 in H5F__super_read(): truncated file: eof = 16941056, sblock->base_addr = 0, stored_eof = 144375120
+    major: File accessibility
+    minor: File has been truncated
+03:21:24 WARNING TerraClimate_srad_2014.nc 不完整 (16 MB, attempt 1), 续传重试

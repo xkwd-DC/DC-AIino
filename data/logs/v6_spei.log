@@ -1,0 +1,20 @@
+18:20:38 INFO 下载 spei03.nc → D:\DC\DC-AIino\data\raw\spei\spei03.nc (attempt 1, 续传 193 MB)
+18:20:41 INFO   下载 50% (0.19 / 0.35 GB)
+18:20:48 INFO   下载 60% (0.21 / 0.35 GB)
+18:21:13 INFO   下载 70% (0.25 / 0.35 GB)
+18:22:30 INFO   下载 80% (0.28 / 0.35 GB)
+18:23:41 WARNING attempt 1 下载中断 (('Connection broken: IncompleteRead(131202378 bytes read, 46594002 more expected)', IncompleteRead(131202378 bytes read, 46594002 more expected)))，5s 后续传重试
+18:23:46 INFO 下载 spei03.nc → D:\DC\DC-AIino\data\raw\spei\spei03.nc (attempt 2, 续传 318 MB)
+18:23:51 INFO   下载 80% (0.31 / 0.35 GB)
+18:23:59 INFO   下载 90% (0.32 / 0.35 GB)
+18:25:25 INFO   下载 100% (0.35 / 0.35 GB)
+18:25:25 INFO 下载完成: 0.35 GB
+18:25:25 INFO SPEI 网格: 360 lat x 720 lon (lat -89.8→89.8, lon -179.8→179.8)
+Traceback (most recent call last):
+  File "D:\DC\DC-AIino\scripts\data\v6_07_fetch_county_spei.py", line 165, in <module>
+    sys.exit(main())
+  File "D:\DC\DC-AIino\scripts\data\v6_07_fetch_county_spei.py", line 116, in main
+    cid, jj, ii, j0, i0, j1, i1 = build_cell_map(panel)
+  File "D:\DC\DC-AIino\scripts\data\v6_07_fetch_county_spei.py", line 105, in build_cell_map
+    assert jj.min() >= 0 and jj.max() < j1 - j0 and ii.min() >= 0 and ii.max() < i1 - i0, \
+AssertionError: 窗口外有县点，检查裁剪范围

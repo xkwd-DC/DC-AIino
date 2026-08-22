@@ -6,9 +6,9 @@
 样本：log_yield 非空 + 14 维特征非空（同 v6_04，10,407 行）
 目标：log_yield（与 v6_04 XGB 同口径）
 CV：KFold(10, shuffle=True, random_state=42) 按县分组 —— 与 v6_04 完全同 split
-时间外推：训练 ≤2019 → 测试 2020-2023
+时间外推：训练 ≤2019 → 测试 2020-2022（2023 年产量缺失）
 结构：TIMESTEPS=1（v5 惯例：把 LSTM 当非线性回归器）
-      Input(1,14) → LSTM(64) → LSTM(32) → Dropout(0.2) → Dense(1)
+      Input(1,14) → LSTM(96) → LSTM(48) → Dropout(0.2) → Dense(1)
       StandardScaler 仅在训练折 fit，测试折 transform（防泄漏）
 
 输出：reports/v6_lstm_lco_report.md + reports/v6_lstm_fold_results.csv
@@ -122,7 +122,7 @@ def main() -> int:
     p_t = model_t.predict(Xt_te, verbose=0).ravel()
     time_r2 = r2_score(y[te_t], p_t)
     time_rmse = mean_squared_error(y[te_t], p_t, squared=False)
-    print(f"Time-holdout (≤2019→2020-23): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
+    print(f"Time-holdout (≤2019→2020-22): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
 
     fold_df = pd.DataFrame(rows)
     FOLDS.parent.mkdir(parents=True, exist_ok=True)
@@ -131,11 +131,11 @@ def main() -> int:
     lines = [
         "# v6 LSTM Leave-County-Out 报告（与 XGB 同 split 可比）",
         "",
-        f"- 样本: {len(df)} 行 = {df['区县代码'].nunique()} 县 × {df['年份'].nunique()} 年（10 主产省）",
+        f"- 样本: {len(df)} 行（{df['区县代码'].nunique()} 县 × {df['年份'].min()}–{df['年份'].max()} 非平衡面板，10 主产省；部分县缺 1–10 年，2023 年产量缺失）",
         f"- 目标: log_yield = log(粮食总产量_吨)  特征 ({len(FEATURES)}): " + ", ".join(FEATURES),
-        f"- 结构: LSTM(64)→LSTM(32)→Dropout(0.2)→Dense(1), TIMESTEPS=1, LR={LR}, EPOCHS={EPOCHS}",
+        f"- 结构: LSTM(96)→LSTM(48)→Dropout(0.2)→Dense(1), TIMESTEPS=1, LR={LR}, EPOCHS={EPOCHS}",
         f"- LCO overall R² = **{overall_r2:+.4f}** (RMSE {overall_rmse:.4f})",
-        f"- 时间外推 R² (≤2019 → 2020-23) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
+        f"- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
         "",
         "## 各折结果",
         "",
@@ -147,7 +147,7 @@ def main() -> int:
         "|---|---|---|",
         "| v6 XGBoost | LCO | +0.6604 |",
         f"| v6 LSTM (本报告) | LCO | {overall_r2:+.4f} |",
-        f"| v6 时间外推 | ≤2019→20-23 | {time_r2:+.4f} |",
+        f"| v6 时间外推 | ≤2019→20-22 | {time_r2:+.4f} |",
         "",
     ]
     REPORT.write_text("\n".join(lines), encoding="utf-8")

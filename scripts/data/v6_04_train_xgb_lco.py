@@ -105,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
     p_t = model_t.predict(X[te_t.values])
     time_r2 = r2_score(y[te_t.values], p_t)
     time_rmse = mean_squared_error(y[te_t.values], p_t, squared=False)
-    print(f"Time-holdout (≤2019→2020-23): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
+    print(f"Time-holdout (≤2019→2020-22): R²={time_r2:+.4f} RMSE={time_rmse:.4f}")
 
     # ── 特征重要性 ──
     imp = pd.DataFrame({"feature": FEATURES, "importance": model_t.feature_importances_})
@@ -119,11 +119,11 @@ def main(argv: list[str] | None = None) -> int:
     lines = [
         "# v6 XGBoost Leave-County-Out 报告（首轮 sanity）",
         "",
-        f"- 样本: {len(df)} 行 = {df['区县代码'].nunique()} 县 × {df['年份'].nunique()} 年（10 主产省）",
+        f"- 样本: {len(df)} 行（{df['区县代码'].nunique()} 县 × {df['年份'].min()}–{df['年份'].max()} 非平衡面板，10 主产省；部分县缺 1–10 年，2023 年产量缺失）",
         f"- 目标: log_yield = log(粮食总产量_吨)",
         f"- 特征 ({len(FEATURES)}): " + ", ".join(FEATURES),
         f"- LCO overall R² = **{overall_r2:+.4f}** (RMSE {overall_rmse:.4f})",
-        f"- 时间外推 R² (≤2019 → 2020-23) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
+        f"- 时间外推 R² (≤2019 → 2020-22，2023 年产量缺失) = **{time_r2:+.4f}** (RMSE {time_rmse:.4f})",
         "",
         "## 各折结果",
         "",
@@ -137,7 +137,8 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "| 版本 | CV | R² |",
         "|---|---|---|",
-        "| v4 省级 (XGBoost-SHAP) | LPO | 0.9072 |",
+        "| v4 省级 (XGBoost-SHAP) | random 8:2 | 0.9072 |",
+        "| v4 省级 (XGBoost-SHAP) | leave-province-out（真实 LPO） | -16.83（中位） |",
         "| v5 地级市 | 城市级 LPO | 0.213 |",
         f"| v6 县级 (本报告) | LCO | {overall_r2:+.4f} |",
         "",

@@ -1,0 +1,39 @@
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+D:\DC\DC-AIino\.venv\lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+训练样本: 10407 行, 1041 县, 11 年
+  fold  1: R²=+0.0552 RMSE=1.3057 (test n=1063)
+  fold  2: R²=+0.0838 RMSE=1.3918 (test n=1026)
+  fold  3: R²=-0.0177 RMSE=1.4749 (test n=1053)
+  fold  4: R²=-0.0261 RMSE=1.3808 (test n=1036)
+  fold  5: R²=+0.0022 RMSE=1.2778 (test n=1039)
+  fold  6: R²=+0.0194 RMSE=1.5580 (test n=1037)
+  fold  7: R²=+0.0780 RMSE=1.1667 (test n=1057)
+  fold  8: R²=+0.1117 RMSE=1.1053 (test n=1023)
+  fold  9: R²=+0.0234 RMSE=1.4896 (test n=1042)
+  fold 10: R²=+0.0679 RMSE=1.3992 (test n=1031)
+
+LCO overall: R²=+0.0412  RMSE=1.3618
+Time-holdout (≤2019→2020-23): R²=-0.5846 RMSE=1.7874
+✅ 报告 -> D:\DC\DC-AIino\reports\v6_att_lstm_lco_report.md
