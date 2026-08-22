@@ -71,9 +71,9 @@ def main() -> int:
     inc = sel[sel["decision"].str.startswith("include")]
     print(f"\n✅ 推荐特征集 ({len(inc)}): {inc['feature'].tolist()}")
 
-    # 单产口径验证（论文讨论用）
+    # 单产口径验证（论文讨论用；与 v6_03 面板构建一致：千公顷→公顷 ×1000）
     pa = df.dropna(subset=["粮食总产量_吨", "农作物总播种面积_千公顷"]).copy()
-    pa["yield_ton_per_ha"] = pa["粮食总产量_吨"] / (pa["农作物总播种面积_千公顷"] * 100)
+    pa["yield_ton_per_ha"] = pa["粮食总产量_吨"] / (pa["农作物总播种面积_千公顷"] * 1000)
     print(f"\n单产可计算行数: {len(pa)} / {len(df)} ({len(pa)/len(df):.1%})")
     print(f"单产均值: {pa['yield_ton_per_ha'].mean():.3f} t/ha")
 
