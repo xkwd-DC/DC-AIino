@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="assets/vendor/gsap.min.js"></script>
+<style id="local-fonts">
+      /* 本地字体子集 — 由 tools/build-fonts-local.py 生成，不要手改。
+         只包含片子里出现过的字符；变量字体的 wght 轴保留，所以每个家族一个文件。 */
+      @font-face {
+        font-family: 'Noto Sans SC';
+        src: url('assets/fonts/NotoSansSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Noto Serif SC';
+        src: url('assets/fonts/NotoSerifSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('assets/fonts/JetBrainsMono-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+    </style>
+    <style>
+      [data-composition-id='beat-4-outro'] {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        background: transparent;
+        overflow: hidden;
+        --serif: 'Noto Serif SC', 'Songti SC', serif;
+        --sans: 'Noto Sans SC', -apple-system, sans-serif;
+        --mono: 'JetBrains Mono', 'SF Mono', monospace;
+      }
+
+      /* 场景外层：只负责整场淡出，内部镜头动作分开，避免同元素叠 transform */
+      [data-composition-id='beat-4-outro'] .scene {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      /* 场景内容层：整场进场（接住 beat 3 的速度匹配上移）与整场淡出分开，避免同元素叠 transform */
+      [data-composition-id='beat-4-outro'] .inner {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+
+      [data-composition-id='beat-4-outro'] .backdrop {
+        position: absolute;
+        inset: 0;
+        background-color: #162520;
+      }
+      [data-composition-id='beat-4-outro'] .glow-brand {
+        position: absolute;
+        left: 300px;
+        top: 90px;
+        width: 1320px;
+        height: 900px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(160, 183, 133, 0.07) 0%, rgba(160, 183, 133, 0) 66%);
+      }
+
+      /* ── 纵向卷轴窗口 ───────────────────────────────────────────── */
+      [data-composition-id='beat-4-outro'] .roll-window {
+        position: absolute;
+        left: 118px;
+        top: 168px;
+        width: 1060px;
+        height: 762px;
+        overflow: hidden;
+        background: #1f2f2a;
+        border: 1px solid #2a3d38;
+        border-radius: 6px;
+        transform-origin: center center;
+      }
+      [data-composition-id='beat-4-outro'] .roll {
+        position: absolute;
+        left: -620px;
+        top: 0;
+        width: 1920px;
+      }
+      [data-composition-id='beat-4-outro'] .roll img {
+        display: block;
+        width: 1920px;
+        height: auto;
+      }
+
+      [data-composition-id='beat-4-outro'] .caption {
+        position: absolute;
+        left: 118px;
+        top: 950px;
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.2em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-4-outro'] .caption-sep {
+        width: 1px;
+        height: 12px;
+        background: #2a3d38;
+        align-self: center;
+      }
+      [data-composition-id='beat-4-outro'] .caption-note {
+        font-family: var(--sans);
+        font-size: 15px;
+        letter-spacing: 0.04em;
+      }
+
+      /* ── 右栏：覆盖率读数 + 三枚阶段 chip ───────────────────────── */
+      [data-composition-id='beat-4-outro'] .meta {
+        position: absolute;
+        left: 1330px;
+        top: 168px;
+        width: 472px;
+        padding: 20px 22px 18px;
+        background: #283a35;
+        border: 1px solid #2a3d38;
+        border-radius: 6px;
+      }
+      [data-composition-id='beat-4-outro'] .meta-title {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 19px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-4-outro'] .meta-row {
+        margin-top: 12px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-top: 1px solid #2a3d38;
+        padding-top: 10px;
+      }
+      [data-composition-id='beat-4-outro'] .meta-key {
+        font-family: var(--sans);
+        font-size: 15px;
+        color: #a8b5ac;
+      }
+      [data-composition-id='beat-4-outro'] .meta-val {
+        font-family: var(--mono);
+        font-size: 17px;
+        color: #c5d4af;
+        font-variant-numeric: tabular-nums;
+      }
+
+      [data-composition-id='beat-4-outro'] .chips {
+        position: absolute;
+        left: 1330px;
+        top: 372px;
+        width: 472px;
+      }
+      [data-composition-id='beat-4-outro'] .chip {
+        position: relative;
+        margin-bottom: 18px;
+        padding: 18px 20px 16px 26px;
+        background: #1f2f2a;
+        border: 1px solid #2a3d38;
+        border-radius: 6px;
+      }
+      [data-composition-id='beat-4-outro'] .chip-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 3px;
+        height: 100%;
+        background: #c5d4af;
+        transform-origin: center top;
+      }
+      [data-composition-id='beat-4-outro'] .chip-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      [data-composition-id='beat-4-outro'] .chip-name {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 25px;
+        color: #6c7b72;
+        letter-spacing: 0.04em;
+      }
+      [data-composition-id='beat-4-outro'] .chip-stage {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        color: #6c7b72;
+      }
+      [data-composition-id='beat-4-outro'] .chip-period {
+        margin-top: 12px;
+        font-family: var(--mono);
+        font-size: 16px;
+        letter-spacing: 0.12em;
+        color: #6c7b72;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-4-outro'] .chip-tags {
+        margin-top: 10px;
+        font-family: var(--sans);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        color: #6c7b72;
+      }
+
+      /* ── 压暗层：让落版文字在卷轴上方依然有对比度 ───────────────── */
+      [data-composition-id='beat-4-outro'] .dim {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        background: radial-gradient(
+          ellipse 1180px 620px at 50% 50%,
+          rgba(22, 37, 32, 0.95) 0%,
+          rgba(22, 37, 32, 0.82) 44%,
+          rgba(22, 37, 32, 0.18) 78%,
+          rgba(22, 37, 32, 0) 100%
+        );
+      }
+
+      /* ── 落版 ─────────────────────────────────────────────────── */
+      [data-composition-id='beat-4-outro'] .lock {
+        position: absolute;
+        left: 0;
+        top: 300px;
+        width: 1920px;
+        text-align: center;
+      }
+      [data-composition-id='beat-4-outro'] .lock-badge {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #6f8c5c, #a0b785);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 46px;
+        color: #162520;
+      }
+      [data-composition-id='beat-4-outro'] .lock-name {
+        margin-top: 30px;
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 76px;
+        letter-spacing: 0.08em;
+        text-indent: 0.08em;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-4-outro'] .lock-sub {
+        margin-top: 20px;
+        font-family: var(--sans);
+        font-size: 25px;
+        letter-spacing: 0.06em;
+        color: #a8b5ac;
+      }
+      [data-composition-id='beat-4-outro'] .lock-mono {
+        margin-top: 12px;
+        font-family: var(--mono);
+        font-size: 15px;
+        letter-spacing: 0.34em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-4-outro'] .tagline-wrap {
+        position: relative;
+        margin-top: 42px;
+        height: 56px;
+      }
+      [data-composition-id='beat-4-outro'] .tagline-glow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 900px;
+        height: 150px;
+        margin: -75px 0 0 -450px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(197, 212, 175, 0.22) 0%, rgba(197, 212, 175, 0) 68%);
+        opacity: 0;
+      }
+      [data-composition-id='beat-4-outro'] .tagline {
+        position: relative;
+        font-family: var(--sans);
+        font-weight: 400;
+        font-size: 35px;
+        letter-spacing: 0.04em;
+        color: #c5d4af;
+      }
+      [data-composition-id='beat-4-outro'] .foot {
+        position: absolute;
+        left: 0;
+        top: 946px;
+        width: 1920px;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 15px;
+        letter-spacing: 0.22em;
+        color: #95a39b;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-composition-id="beat-4-outro" data-start="0" data-width="1920" data-height="1080">
+      <div id="b4-scene" class="scene">
+        <div id="b4-backdrop" class="backdrop">
+          <div class="glow-brand" data-layout-ignore></div>
+        </div>
+
+        <div id="b4-inner" class="inner">
+          <div id="b4-roll-window" class="roll-window" data-layout-allow-overflow>
+            <div id="b4-roll" class="roll">
+              <img
+                id="b4-roll-img"
+                src="shots/04-pathway-full.png"
+                alt="韧性路径推荐：短期应急 / 中期建设 / 长期战略"
+              />
+            </div>
+          </div>
+
+          <!-- 压暗层压在卷轴之上、读数之下：落版落定时把卷轴推进暗处，文字保持对比度 -->
+          <div id="b4-dim" class="dim" data-layout-ignore></div>
+
+          <div id="b4-caption" class="caption">
+            <span>M04 · RESILIENCE PATHWAY ENGINE</span>
+            <span class="caption-sep"></span>
+            <span class="caption-note">样本：河南 · 主产区主导型</span>
+          </div>
+
+          <div id="b4-meta" class="meta">
+            <div class="meta-title">路径覆盖</div>
+            <div class="meta-row">
+              <span class="meta-key">路径长度</span>
+              <span class="meta-val">9 项</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-key">预算量级</span>
+              <span class="meta-val">¥ 中</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-key">覆盖年限</span>
+              <span class="meta-val">0 — 5 年</span>
+            </div>
+          </div>
+
+          <div id="b4-chips" class="chips">
+            <div id="b4-chip-1" class="chip">
+              <div class="chip-bar"></div>
+              <div class="chip-head">
+                <span class="chip-name">短期应急</span>
+                <span class="chip-stage">STAGE 1</span>
+              </div>
+              <div class="chip-period">PERIOD · 0 — 1 年</div>
+              <div class="chip-tags">监测 · 预警 · 培训</div>
+            </div>
+            <div id="b4-chip-2" class="chip">
+              <div class="chip-bar"></div>
+              <div class="chip-head">
+                <span class="chip-name">中期建设</span>
+                <span class="chip-stage">STAGE 2</span>
+              </div>
+              <div class="chip-period">PERIOD · 1 — 3 年</div>
+              <div class="chip-tags">基础设施 · 品种结构 · 技术推广</div>
+            </div>
+            <div id="b4-chip-3" class="chip">
+              <div class="chip-bar"></div>
+              <div class="chip-head">
+                <span class="chip-name">长期战略</span>
+                <span class="chip-stage">STAGE 3</span>
+              </div>
+              <div class="chip-period">PERIOD · 3 — 5 年</div>
+              <div class="chip-tags">制度建设 · 产业升级 · 协同治理</div>
+            </div>
+          </div>
+
+          <div id="b4-lock" class="lock">
+            <div id="b4-lock-badge" class="lock-badge">粮</div>
+            <div id="b4-lock-name" class="lock-name">稷韧云图</div>
+            <div id="b4-lock-sub" class="lock-sub">极端气候下粮食生产风险智能分析</div>
+            <div id="b4-lock-mono" class="lock-mono">FOOD-RISK INTELLIGENCE PLATFORM</div>
+            <div class="tagline-wrap">
+              <div id="b4-glow" class="tagline-glow" data-layout-ignore></div>
+              <div id="b4-tagline" class="tagline">让 AI，看见每一粒粮食的气候风险。</div>
+            </div>
+          </div>
+
+          <div id="b4-foot" class="foot">31 省 · 2011 — 2023 · 三模型互补归因</div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // ── 入场 ────────────────────────────────────────────────────────────
+        // 接住 beat 3 的速度匹配上移：整场从 y +160 / blur 28px 升上来
+        tl.fromTo(
+          '#b4-inner',
+          { y: 160, filter: 'blur(28px)', opacity: 0 },
+          { y: 0, filter: 'blur(0px)', opacity: 1, duration: 0.7, ease: 'power2.out' },
+          0.06,
+        );
+        tl.fromTo('#b4-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.05);
+        tl.fromTo(
+          '#b4-roll-window',
+          { opacity: 0, y: 30, scale: 1.02 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.62, ease: 'expo.out' },
+          0.14,
+        );
+        // 卷轴：从"短期应急"滚到"长期战略"，2 倍图 1:1 呈现，1180×762 视口裁切
+        tl.fromTo('#b4-roll', { y: -260 }, { y: -1010, duration: 1.85, ease: 'none' }, 0.35);
+
+        tl.fromTo('#b4-caption', { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.55, ease: 'power2.out' }, 0.4);
+        tl.fromTo('#b4-meta', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.5);
+        tl.fromTo(
+          '#b4-meta .meta-row',
+          { opacity: 0, x: 22 },
+          { opacity: 1, x: 0, duration: 0.45, stagger: 0.12, ease: 'power2.out' },
+          0.58,
+        );
+
+        // 三枚阶段 chip：随卷轴依次点亮（灰 → 品牌绿）
+        [['#b4-chip-1', 0.72], ['#b4-chip-2', 1.2], ['#b4-chip-3', 1.72]].forEach(([sel, at]) => {
+          tl.fromTo(sel, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, at - 0.18);
+          tl.fromTo(
+            sel + ' .chip-bar',
+            { scaleY: 0 },
+            { scaleY: 1, duration: 0.42, ease: 'power2.out', transformOrigin: 'center top' },
+            at - 0.1,
+          );
+          tl.to(sel, { backgroundColor: '#283a35', borderColor: '#44615a', duration: 0.42, ease: 'power2.out' }, at);
+          tl.to(sel + ' .chip-name', { color: '#e8e4d8', duration: 0.42, ease: 'power2.out' }, at);
+          tl.to(sel + ' .chip-stage', { color: '#c5d4af', duration: 0.42, ease: 'power2.out' }, at + 0.05);
+          tl.to(sel + ' .chip-period', { color: '#c5d4af', duration: 0.42, ease: 'power2.out' }, at + 0.05);
+          tl.to(sel + ' .chip-tags', { color: '#a8b5ac', duration: 0.42, ease: 'power2.out' }, at + 0.1);
+        });
+
+        // ── 卷轴退进暗处，落版升起 ──────────────────────────────────────────
+        tl.to('#b4-roll-window', { opacity: 0.16, scale: 0.955, duration: 0.85, ease: 'power2.inOut' }, 2.3);
+        tl.to('#b4-dim', { opacity: 1, duration: 0.8, ease: 'power2.inOut' }, 2.3);
+        tl.to('#b4-chips', { opacity: 0.2, duration: 0.75, ease: 'power2.inOut' }, 2.34);
+        tl.to('#b4-meta', { opacity: 0.14, duration: 0.75, ease: 'power2.inOut' }, 2.34);
+        tl.to('#b4-caption', { opacity: 0.18, duration: 0.75, ease: 'power2.inOut' }, 2.34);
+
+        tl.fromTo(
+          '#b4-lock-badge',
+          { opacity: 0, scale: 0.68, rotate: -8 },
+          { opacity: 1, scale: 1, rotate: 0, duration: 0.78, ease: 'expo.out' },
+          2.42,
+        );
+        tl.fromTo('#b4-lock-name', { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.72, ease: 'power3.out' }, 2.54);
+        tl.fromTo('#b4-lock-sub', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.62, ease: 'power2.out' }, 2.68);
+        tl.fromTo('#b4-lock-mono', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.62, ease: 'power2.out' }, 2.78);
+        tl.fromTo('#b4-tagline', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.66, ease: 'expo.out' }, 2.96);
+        tl.fromTo('#b4-foot', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 3.12);
+
+        // tagline 落定后一次很轻的亮度脉冲（唯一情绪释放点）
+        tl.fromTo('#b4-glow', { opacity: 0 }, { opacity: 0.5, duration: 0.46, ease: 'sine.out' }, 3.3);
+        tl.to('#b4-glow', { opacity: 0.2, duration: 1.05, ease: 'sine.inOut' }, 3.76);
+
+        // ── 收尾：全片唯一允许的整场淡出 ───────────────────────────────────
+        tl.to('#b4-scene', { opacity: 0, duration: 0.55, ease: 'power2.inOut' }, 4.55);
+
+        window.__timelines['beat-4-outro'] = tl;
+        tl.seek(0);
+      </script>
+    </div>
+  </body>
+</html>

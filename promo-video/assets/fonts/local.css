@@ -1,0 +1,23 @@
+/* 本地字体子集 — 由 tools/build-fonts-local.py 生成，不要手改。
+   只包含片子里出现过的字符；变量字体的 wght 轴保留，所以每个家族一个文件。 */
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('assets/fonts/NotoSansSC-subset.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  src: url('assets/fonts/NotoSerifSC-subset.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('assets/fonts/JetBrainsMono-subset.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}

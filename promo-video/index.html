@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <title>稷韧云图 · 20s 产品片</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #162520;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        background: #162520;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-at0g" id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+      <!-- 四个 beat：起止时间来自 narration.wav 的实测时间戳（beat-timing.json） -->
+      <!-- 相邻 beat 交叠 0.40s：出场的模糊/缩放退场与入场的反向动作在交叠区完成转场。
+           交叠的两个 beat 必须落在不同 track 上；视觉层级由 z-index 决定。 -->
+      <div data-hf-id="hf-m347" id="scene-1" style="z-index: 1" data-composition-id="beat-1-risk-map" data-composition-src="compositions/beat-1-risk-map.html" data-start="0" data-duration="6.14" data-track-index="1"></div>
+      <div data-hf-id="hf-bk9p" id="scene-2" style="z-index: 2" data-composition-id="beat-2-product" data-composition-src="compositions/beat-2-product.html" data-start="5.74" data-duration="4.88" data-track-index="2"></div>
+      <div data-hf-id="hf-26jz" id="scene-3" style="z-index: 3" data-composition-id="beat-3-proof" data-composition-src="compositions/beat-3-proof.html" data-start="10.27" data-duration="4.98" data-track-index="1"></div>
+      <div data-hf-id="hf-wofz" id="scene-4" style="z-index: 4" data-composition-id="beat-4-outro" data-composition-src="compositions/beat-4-outro.html" data-start="14.90" data-duration="5.10" data-track-index="2"></div>
+
+      <!-- 旁白母带：20.00s -->
+      <audio data-hf-id="hf-a3zi" id="narration" src="narration.wav" data-start="0" data-duration="20" data-track-index="0" data-volume="1"></audio>
+      <!-- 环境音床 -->
+      <audio data-hf-id="hf-txuw" id="underscore" src="underscore.wav" data-start="0" data-duration="20" data-track-index="2" data-volume="0.16"></audio>
+
+      <!-- 数据落位音效 -->
+      <audio data-hf-id="hf-8vkm" id="sfx-tick-1" src="sfx-tick.wav" data-start="0.30" data-duration="0.16" data-track-index="3" data-volume="0.42"></audio>
+      <audio data-hf-id="hf-odja" id="sfx-tick-2" src="sfx-tick.wav" data-start="2.60" data-duration="0.16" data-track-index="4" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-6xpj" id="sfx-tick-3" src="sfx-tick.wav" data-start="5.95" data-duration="0.16" data-track-index="5" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-h86z" id="sfx-tick-4" src="sfx-tick.wav" data-start="6.45" data-duration="0.16" data-track-index="6" data-volume="0.30"></audio>
+      <!-- 四源芯片逐枚盖章落位（beat 2，0.12s 级联） -->
+      <audio data-hf-id="hf-hs9l" id="sfx-tick-4b" src="sfx-tick.wav" data-start="6.57" data-duration="0.16" data-track-index="13" data-volume="0.28"></audio>
+      <audio data-hf-id="hf-ql4s" id="sfx-tick-4c" src="sfx-tick.wav" data-start="6.69" data-duration="0.16" data-track-index="14" data-volume="0.26"></audio>
+      <audio data-hf-id="hf-k5hm" id="sfx-tick-4d" src="sfx-tick.wav" data-start="6.81" data-duration="0.16" data-track-index="15" data-volume="0.24"></audio>
+      <audio data-hf-id="hf-zofa" id="sfx-tick-5" src="sfx-tick.wav" data-start="10.45" data-duration="0.16" data-track-index="7" data-volume="0.38"></audio>
+      <audio data-hf-id="hf-rsw7" id="sfx-tick-6" src="sfx-tick.wav" data-start="12.90" data-duration="0.16" data-track-index="8" data-volume="0.44"></audio>
+      <!-- beat 4：落版徽标落定时一次干净的 tick（14.90 + 2.42） -->
+      <audio data-hf-id="hf-7s5c" id="sfx-tick-7" src="sfx-tick.wav" data-start="17.32" data-duration="0.16" data-track-index="9" data-volume="0.40"></audio>
+
+      <!-- 转场气声：落在三个场景边界上 -->
+      <audio data-hf-id="hf-2p2y" id="sfx-whoosh-1" src="sfx-whoosh.wav" data-start="5.62" data-duration="0.62" data-track-index="10" data-volume="0.30"></audio>
+      <audio data-hf-id="hf-uxbu" id="sfx-whoosh-2" src="sfx-whoosh.wav" data-start="10.15" data-duration="0.62" data-track-index="11" data-volume="0.30"></audio>
+      <audio data-hf-id="hf-npiy" id="sfx-whoosh-3" src="sfx-whoosh.wav" data-start="14.78" data-duration="0.62" data-track-index="12" data-volume="0.26"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      // 根组合没有自己的动画：时间轴交给四个子组合，总长由 data-duration 决定
+      const tl = gsap.timeline({ paused: true });
+      tl.set({}, {}, 20);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="assets/vendor/gsap.min.js"></script>
+<style id="local-fonts">
+      /* 本地字体子集 — 由 tools/build-fonts-local.py 生成，不要手改。
+         只包含片子里出现过的字符；变量字体的 wght 轴保留，所以每个家族一个文件。 */
+      @font-face {
+        font-family: 'Noto Sans SC';
+        src: url('assets/fonts/NotoSansSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Noto Serif SC';
+        src: url('assets/fonts/NotoSerifSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('assets/fonts/JetBrainsMono-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+    </style>
+    <style>
+      [data-composition-id='beat-1-risk-map'] {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        background: transparent;
+        overflow: hidden;
+        --serif: 'Noto Serif SC', 'Songti SC', serif;
+        --sans: 'Noto Sans SC', -apple-system, sans-serif;
+        --mono: 'JetBrains Mono', 'SF Mono', monospace;
+      }
+
+      /* 场景外层：只负责整场退场（缩放 + 模糊），与内部镜头推进分开，避免同元素叠 transform */
+      [data-composition-id='beat-1-risk-map'] .scene {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      [data-composition-id='beat-1-risk-map'] .backdrop {
+        position: absolute;
+        inset: 0;
+        background-color: #162520;
+      }
+
+      [data-composition-id='beat-1-risk-map'] .glow-a,
+      [data-composition-id='beat-1-risk-map'] .glow-b {
+        position: absolute;
+        border-radius: 50%;
+      }
+      [data-composition-id='beat-1-risk-map'] .glow-a {
+        left: -180px;
+        top: -220px;
+        width: 900px;
+        height: 900px;
+        background: radial-gradient(circle, rgba(160, 183, 133, 0.09) 0%, rgba(160, 183, 133, 0) 68%);
+      }
+      [data-composition-id='beat-1-risk-map'] .glow-b {
+        right: -220px;
+        bottom: -260px;
+        width: 1000px;
+        height: 1000px;
+        background: radial-gradient(circle, rgba(230, 182, 85, 0.07) 0%, rgba(230, 182, 85, 0) 66%);
+      }
+
+      /* 点阵网格：整片缓慢漂移，避免大面死黑 */
+      [data-composition-id='beat-1-risk-map'] .grid {
+        position: absolute;
+        left: -80px;
+        top: -80px;
+        width: 2160px;
+        height: 1280px;
+        background-image: radial-gradient(circle, #2a3d38 1.1px, rgba(42, 61, 56, 0) 1.1px);
+        background-size: 64px 64px;
+        opacity: 0.38;
+      }
+
+      /* 镜头推进层 */
+      [data-composition-id='beat-1-risk-map'] .stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+
+      /* ── 顶部品牌条 ───────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .brand {
+        position: absolute;
+        left: 90px;
+        top: 44px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      [data-composition-id='beat-1-risk-map'] .brand-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        /* 徽标暗端从 #6F8C5C 提到 #86A46E：原配色下深色"粮"字对比度只有 2.87:1，
+           validate 的 WCAG 检查会报；提亮后约 6:1，仍保持品牌绿的观感 */
+        background: linear-gradient(135deg, #86a46e, #c5d4af);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 22px;
+        color: #162520;
+      }
+      [data-composition-id='beat-1-risk-map'] .brand-name {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 22px;
+        color: #e8e4d8;
+        letter-spacing: 0.02em;
+      }
+      [data-composition-id='beat-1-risk-map'] .brand-sub {
+        margin-top: 4px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.24em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-1-risk-map'] .module-tag {
+        position: absolute;
+        right: 90px;
+        top: 52px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.22em;
+        color: #95a39b;
+      }
+
+      /* ── 标题 ─────────────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .title {
+        position: absolute;
+        left: 92px;
+        top: 116px;
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 46px;
+        letter-spacing: 0.02em;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-1-risk-map'] .subtitle {
+        position: absolute;
+        left: 94px;
+        top: 182px;
+        font-family: var(--sans);
+        font-size: 20px;
+        color: #a8b5ac;
+      }
+
+      /* ── 地图 ─────────────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .map-panel {
+        position: absolute;
+        left: 100px;
+        top: 232px;
+        width: 836px;
+        height: 668px;
+      }
+      [data-composition-id='beat-1-risk-map'] .map-color {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        clip-path: inset(0 100% 0 0);
+      }
+      [data-composition-id='beat-1-risk-map'] .scanline {
+        position: absolute;
+        left: 0;
+        top: 12px;
+        width: 2px;
+        height: calc(100% - 24px);
+        background: #c5d4af;
+        box-shadow: 0 0 26px 8px rgba(197, 212, 175, 0.32);
+      }
+
+      /* 高风险省份标注 */
+      [data-composition-id='beat-1-risk-map'] .callout {
+        position: absolute;
+        display: flex;
+        align-items: center;
+      }
+      [data-composition-id='beat-1-risk-map'] .callout-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #c5d4af;
+        box-shadow: 0 0 12px 3px rgba(197, 212, 175, 0.45);
+        flex: none;
+      }
+      [data-composition-id='beat-1-risk-map'] .callout-line {
+        width: 44px;
+        height: 1px;
+        background: #44615a;
+        flex: none;
+        transform-origin: left center;
+      }
+      [data-composition-id='beat-1-risk-map'] .callout-tag {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 6px 12px;
+        /* 底不要太透：半透时地图的红棕色会透上来，把 0.0400 的对比度压到 4.06:1 */
+        background: rgba(22, 37, 32, 0.96);
+        border: 1px solid #2a3d38;
+        border-radius: 4px;
+      }
+      [data-composition-id='beat-1-risk-map'] .callout-name {
+        font-family: var(--sans);
+        font-size: 17px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-1-risk-map'] .callout-val {
+        font-family: var(--mono);
+        font-size: 17px;
+        /* 用 risk-1 #F2DDB8 而不是 #F0CB76：半透底上后者只有 4.45:1，差一点到 AA */
+        color: #f2ddb8;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ── 年份读数 ─────────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .year-label {
+        position: absolute;
+        left: 100px;
+        top: 924px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.2em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-window {
+        position: absolute;
+        left: 100px;
+        top: 950px;
+        width: 200px;
+        height: 72px;
+        overflow: hidden;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-strip {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-item {
+        height: 72px;
+        display: flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 60px;
+        color: #e8e4d8;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-range {
+        position: absolute;
+        left: 330px;
+        top: 976px;
+        font-family: var(--mono);
+        font-size: 17px;
+        color: #a8b5ac;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-scale {
+        position: absolute;
+        left: 330px;
+        top: 1006px;
+        width: 606px;
+        height: 1px;
+        background: #2a3d38;
+      }
+      [data-composition-id='beat-1-risk-map'] .year-scale-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 1px;
+        background: #44615a;
+        transform-origin: left center;
+      }
+
+      /* ── 右栏：图例 ───────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .legend {
+        position: absolute;
+        left: 1080px;
+        top: 232px;
+        width: 750px;
+      }
+      [data-composition-id='beat-1-risk-map'] .legend-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      [data-composition-id='beat-1-risk-map'] .legend-title {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 24px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-1-risk-map'] .legend-unit {
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.16em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-1-risk-map'] .legend-ramp {
+        margin-top: 16px;
+        width: 750px;
+        height: 12px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #f2ddb8 0%, #e6b655 25%, #c68552 50%, #a56548 75%, #7e4530 100%);
+        transform-origin: left center;
+      }
+      [data-composition-id='beat-1-risk-map'] .legend-scale {
+        margin-top: 8px;
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 15px;
+        color: #95a39b;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ── 右栏：Top 10 ─────────────────────────────────────────── */
+      [data-composition-id='beat-1-risk-map'] .rank-head {
+        position: absolute;
+        left: 1080px;
+        top: 372px;
+        width: 750px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-title {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 24px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-year {
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.16em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-list {
+        position: absolute;
+        left: 1080px;
+        top: 424px;
+        width: 750px;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-row {
+        height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid #2a3d38;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-idx {
+        width: 28px;
+        font-family: var(--mono);
+        font-size: 15px;
+        color: #95a39b;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-name {
+        width: 92px;
+        font-family: var(--sans);
+        font-size: 19px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-track {
+        position: relative;
+        flex: 1;
+        height: 8px;
+        background: #1f2f2a;
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 8px;
+        transform-origin: left center;
+      }
+      [data-composition-id='beat-1-risk-map'] .rank-val {
+        width: 76px;
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 17px;
+        color: #c5d4af;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ── 右下角：真实界面小截图，证明地图来自在跑的系统 ─────────── */
+      [data-composition-id='beat-1-risk-map'] .pip {
+        position: absolute;
+        right: 90px;
+        top: 872px;
+        width: 300px;
+      }
+      [data-composition-id='beat-1-risk-map'] .pip-cap {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        color: #95a39b;
+        margin-bottom: 8px;
+      }
+      [data-composition-id='beat-1-risk-map'] .pip-frame {
+        width: 300px;
+        height: 169px;
+        overflow: hidden;
+        border: 1px solid #44615a;
+        border-radius: 4px;
+        background: #1f2f2a;
+      }
+      [data-composition-id='beat-1-risk-map'] .pip-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: left top;
+        transform-origin: left top;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-composition-id="beat-1-risk-map" data-start="0" data-width="1920" data-height="1080">
+      <div id="b1-scene" class="scene">
+        <div id="b1-backdrop" class="backdrop">
+          <div class="glow-a"></div>
+          <div class="glow-b"></div>
+          <div id="b1-grid" class="grid"></div>
+        </div>
+
+        <div id="b1-stage" class="stage">
+          <div id="b1-brand" class="brand">
+            <div class="brand-badge">粮</div>
+            <div>
+              <div class="brand-name">稷韧云图</div>
+              <div class="brand-sub">FOOD-RISK INTELLIGENCE PLATFORM</div>
+            </div>
+          </div>
+          <div id="b1-module-tag" class="module-tag">M01 · SPATIO-TEMPORAL RISK MAP</div>
+
+          <div id="b1-title" class="title">风险时空地图</div>
+          <!-- 与 beat 2 的 0.4s 交叠转场里会短暂压到对方标题上，属于转场本身，声明为 intentional -->
+          <div id="b1-subtitle" class="subtitle" data-layout-allow-overlap>
+            31 省 2011—2023 年粮食生产风险时空分布，西北高、东南低
+          </div>
+
+          <div id="b1-map-panel" class="map-panel">
+            <img id="b1-map" class="map-color" src="assets/map/china-risk.svg" alt="中国粮食生产风险分布" />
+            <div id="b1-scanline" class="scanline"></div>
+
+            <div id="b1-callout-1" class="callout" style="left: 22%; top: 38%">
+              <div class="callout-dot"></div>
+              <div class="callout-line"></div>
+              <div class="callout-tag">
+                <span class="callout-name">新疆</span>
+                <span class="callout-val">0.0360</span>
+              </div>
+            </div>
+            <div id="b1-callout-2" class="callout" style="left: 46%; top: 49%">
+              <div class="callout-dot"></div>
+              <div class="callout-line"></div>
+              <div class="callout-tag">
+                <span class="callout-name">青海</span>
+                <span class="callout-val">0.0400</span>
+              </div>
+            </div>
+            <div id="b1-callout-3" class="callout" style="left: 27%; top: 70%">
+              <div class="callout-dot"></div>
+              <div class="callout-line"></div>
+              <div class="callout-tag">
+                <span class="callout-name">西藏</span>
+                <span class="callout-val">0.0380</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="year-label">YEAR · 时间维度</div>
+          <!-- 13 格纵向滚轮：同一时刻只有一格落在 72px 窗口里，其余被裁掉是设计本身，
+               不是布局事故，所以对 layout 审查声明为 intentional。 -->
+          <div class="year-window" data-layout-allow-overflow>
+            <div id="b1-year-strip" class="year-strip" data-layout-ignore>
+              <div class="year-item">2011</div>
+              <div class="year-item">2012</div>
+              <div class="year-item">2013</div>
+              <div class="year-item">2014</div>
+              <div class="year-item">2015</div>
+              <div class="year-item">2016</div>
+              <div class="year-item">2017</div>
+              <div class="year-item">2018</div>
+              <div class="year-item">2019</div>
+              <div class="year-item">2020</div>
+              <div class="year-item">2021</div>
+              <div class="year-item">2022</div>
+              <div class="year-item">2023</div>
+            </div>
+          </div>
+          <div id="b1-year-range" class="year-range">2011 — 2023 · 13 年</div>
+          <div class="year-scale">
+            <div id="b1-year-scale-fill" class="year-scale-fill"></div>
+          </div>
+
+          <div id="b1-legend" class="legend">
+            <div class="legend-head">
+              <span class="legend-title">风险图例</span>
+              <span class="legend-unit">Y · DETRENDED VOLATILITY</span>
+            </div>
+            <div id="b1-legend-ramp" class="legend-ramp"></div>
+            <div class="legend-scale">
+              <span>低 0.011</span>
+              <span>高 0.043</span>
+            </div>
+          </div>
+
+          <div id="b1-rank-head" class="rank-head">
+            <span class="rank-title">Top 10 高风险省份</span>
+            <span class="rank-year">YEAR 2023</span>
+          </div>
+          <div id="b1-rank-list" class="rank-list">
+            <div class="rank-row">
+              <span class="rank-idx">01</span><span class="rank-name">青海</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 90.6%; background: #8f573b"></span></span>
+              <span class="rank-val">0.0400</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">02</span><span class="rank-name">西藏</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 84.4%; background: #96593f"></span></span>
+              <span class="rank-val">0.0380</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">03</span><span class="rank-name">新疆</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 78.1%; background: #a06145"></span></span>
+              <span class="rank-val">0.0360</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">04</span><span class="rank-name">甘肃</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 71.9%; background: #a96949"></span></span>
+              <span class="rank-val">0.0340</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">05</span><span class="rank-name">内蒙古</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 68.8%; background: #ad6d4b"></span></span>
+              <span class="rank-val">0.0330</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">06</span><span class="rank-name">宁夏</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 65.6%; background: #b3714c"></span></span>
+              <span class="rank-val">0.0320</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">07</span><span class="rank-name">陕西</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 56.3%; background: #be7d50"></span></span>
+              <span class="rank-val">0.0290</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">08</span><span class="rank-name">山西</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 53.1%; background: #c28151"></span></span>
+              <span class="rank-val">0.0280</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">09</span><span class="rank-name">云南</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 50%; background: #c68552"></span></span>
+              <span class="rank-val">0.0270</span>
+            </div>
+            <div class="rank-row">
+              <span class="rank-idx">10</span><span class="rank-name">广西</span>
+              <span class="rank-track"><span class="rank-fill" style="width: 50%; background: #c68552"></span></span>
+              <span class="rank-val">0.0270</span>
+            </div>
+          </div>
+
+          <div id="b1-pip" class="pip">
+            <div class="pip-cap">SAME DATA · RUNNING SYSTEM</div>
+            <div class="pip-frame" data-layout-allow-overflow>
+              <img class="pip-img" src="shots/01-risk-map.png" alt="系统内 M01 风险地图页实拍" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // 入场统一用 fromTo：from 会在 seek 到时间轴末端之外时被重置回初始态，
+        // 而渲染器正是非线性 seek，所以这里一律显式写死起点和终点。
+        tl.fromTo('#b1-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0);
+        tl.fromTo('#b1-brand', { opacity: 0, y: -22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.12);
+        tl.fromTo('#b1-module-tag', { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }, 0.2);
+        tl.fromTo('#b1-title', { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out' }, 0.22);
+        tl.fromTo('#b1-subtitle', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 0.36);
+
+        // 地图：整体浮出 + 自西向东扫开
+        tl.fromTo(
+          '#b1-map-panel',
+          { opacity: 0, scale: 1.03 },
+          { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' },
+          0.3,
+        );
+        tl.fromTo(
+          '#b1-map',
+          { clipPath: 'inset(0 100% 0 0)' },
+          { clipPath: 'inset(0 0% 0 0)', duration: 1.75, ease: 'power2.inOut' },
+          0.5,
+        );
+        tl.fromTo('#b1-scanline', { x: 0, opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'none' }, 0.5);
+        tl.to('#b1-scanline', { x: 836, duration: 1.75, ease: 'power2.inOut' }, 0.5);
+        tl.to('#b1-scanline', { opacity: 0, duration: 0.28, ease: 'power1.out' }, 2.12);
+
+        // 高风险省份标注：引线先画，再出标签
+        ['#b1-callout-1', '#b1-callout-2', '#b1-callout-3'].forEach((sel, i) => {
+          const at = 1.62 + i * 0.16;
+          tl.fromTo(
+            sel + ' .callout-dot',
+            { scale: 0, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.32, ease: 'back.out(2.4)' },
+            at,
+          );
+          tl.fromTo(
+            sel + ' .callout-line',
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.34, ease: 'power2.out', transformOrigin: 'left center' },
+            at + 0.06,
+          );
+          tl.fromTo(
+            sel + ' .callout-tag',
+            { opacity: 0, x: -14 },
+            { opacity: 1, x: 0, duration: 0.38, ease: 'power3.out' },
+            at + 0.16,
+          );
+        });
+
+        // 年份读数：用 13 格的纵向滚轮，纯 transform，seek 到任意帧都稳定
+        tl.fromTo('#b1-year-strip', { y: 0 }, { y: -864, duration: 1.35, ease: 'power2.inOut' }, 0.55);
+        tl.fromTo('#b1-year-range', { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 1.7);
+        tl.fromTo('#b1-year-scale-fill', { scaleX: 0 }, { scaleX: 1, duration: 1.35, ease: 'power2.inOut' }, 0.55);
+
+        // 图例
+        tl.fromTo('#b1-legend', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 1.15);
+        tl.fromTo('#b1-legend-ramp', { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: 'power2.out' }, 1.25);
+
+        // Top10：标题先落，条形逐行顶出
+        tl.fromTo('#b1-rank-head', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 1.35);
+        tl.fromTo(
+          '#b1-rank-list .rank-row',
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power2.out' },
+          1.45,
+        );
+        tl.fromTo(
+          '#b1-rank-list .rank-fill',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.55, stagger: 0.06, ease: 'power2.out', transformOrigin: 'left center' },
+          1.5,
+        );
+
+        // 右下角实拍小卡：说明这张图来自正在运行的系统
+        tl.fromTo('#b1-pip', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 2.35);
+        tl.fromTo(
+          '#b1-pip .pip-img',
+          { scale: 1 },
+          { scale: 1.14, duration: 3.4, ease: 'sine.inOut' },
+          2.5,
+        );
+
+        // ── 中段持续运动 ────────────────────────────────────────────────────
+        tl.fromTo('#b1-stage', { scale: 1, x: 0 }, { scale: 1.055, x: -26, duration: 6.14, ease: 'none' }, 0);
+        tl.fromTo('#b1-grid', { x: 0, y: 0 }, { x: -26, y: 14, duration: 6.14, ease: 'none' }, 0);
+        tl.fromTo(
+          '#b1-rank-list .rank-val',
+          { opacity: 0.55 },
+          { opacity: 1, duration: 1.1, stagger: 0.05, yoyo: true, repeat: 1, ease: 'sine.inOut' },
+          2.4,
+        );
+
+        // ── 退场：与下一镜交叠 0.40s（zoom through）────────────────────────
+        tl.to('#b1-scene', { scale: 1.18, filter: 'blur(22px)', opacity: 0, duration: 0.4, ease: 'power3.in' }, 5.74);
+
+        window.__timelines['beat-1-risk-map'] = tl;
+        tl.seek(0);
+      </script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="assets/vendor/gsap.min.js"></script>
+<style id="local-fonts">
+      /* 本地字体子集 — 由 tools/build-fonts-local.py 生成，不要手改。
+         只包含片子里出现过的字符；变量字体的 wght 轴保留，所以每个家族一个文件。 */
+      @font-face {
+        font-family: 'Noto Sans SC';
+        src: url('assets/fonts/NotoSansSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Noto Serif SC';
+        src: url('assets/fonts/NotoSerifSC-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('assets/fonts/JetBrainsMono-subset.woff2') format('woff2-variations');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+    </style>
+    <style>
+      [data-composition-id="beat-2-product"] {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        background: transparent;
+        overflow: hidden;
+        --serif: 'Noto Serif SC', 'Songti SC', serif;
+        --sans: 'Noto Sans SC', -apple-system, sans-serif;
+        --mono: 'JetBrains Mono', 'SF Mono', monospace;
+      }
+
+      /* 场景外层：只负责入场（反向 zoom through，接住 beat 1 的推近退场） */
+      [data-composition-id='beat-2-product'] .scene {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      /* 擦除层：只负责退场（竖直数据擦除），与入场 transform 分层，避免同元素叠 transform */
+      [data-composition-id='beat-2-product'] .wipe {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+
+      [data-composition-id='beat-2-product'] .backdrop {
+        position: absolute;
+        inset: 0;
+        background-color: #162520;
+      }
+
+      [data-composition-id='beat-2-product'] .glow-a,
+      [data-composition-id='beat-2-product'] .glow-b {
+        position: absolute;
+        border-radius: 50%;
+      }
+      [data-composition-id='beat-2-product'] .glow-a {
+        left: -200px;
+        top: 380px;
+        width: 940px;
+        height: 940px;
+        background: radial-gradient(circle, rgba(160, 183, 133, 0.09) 0%, rgba(160, 183, 133, 0) 68%);
+      }
+      [data-composition-id='beat-2-product'] .glow-b {
+        right: -240px;
+        top: -300px;
+        width: 1080px;
+        height: 1080px;
+        background: radial-gradient(circle, rgba(230, 182, 85, 0.07) 0%, rgba(230, 182, 85, 0) 66%);
+      }
+
+      [data-composition-id='beat-2-product'] .grid {
+        position: absolute;
+        left: -80px;
+        top: -80px;
+        width: 2160px;
+        height: 1280px;
+        background-image: radial-gradient(circle, #2a3d38 1.1px, rgba(42, 61, 56, 0) 1.1px);
+        background-size: 64px 64px;
+        opacity: 0.34;
+      }
+
+      /* 镜头层：从右上向左下缓移，与 beat 1 的推近形成方向反差 */
+      [data-composition-id='beat-2-product'] .stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+
+      /* ── 品牌行进：几何与 beat 1 的 .brand-row 完全一致 ─────────── */
+      [data-composition-id='beat-2-product'] .brand-row {
+        position: absolute;
+        left: 74px;
+        top: 46px;
+        height: 74px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      [data-composition-id='beat-2-product'] .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    /* 徽标暗端提亮到 #86A46E：原 #6F8757 配深色"粮"字只有 2.87:1，达不到 WCAG 3:1 */
+    background: linear-gradient(140deg, #c5d4af 0%, #86a46e 100%);
+        color: #162520;
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      [data-composition-id='beat-2-product'] .brand-name {
+        font-family: var(--serif);
+        font-size: 23px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-2-product'] .brand-divider {
+        width: 1px;
+        height: 20px;
+        background: #44615a;
+      }
+      [data-composition-id='beat-2-product'] .brand-label {
+        font-family: var(--mono);
+        font-size: 14px;
+        letter-spacing: 0.16em;
+        color: #95a39b;
+      }
+
+      /* ── 标题 ─────────────────────────────────────────────────── */
+      [data-composition-id='beat-2-product'] .title {
+        position: absolute;
+        left: 74px;
+        top: 132px;
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 46px;
+        letter-spacing: 0.02em;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-2-product'] .subtitle {
+        position: absolute;
+        left: 76px;
+        top: 196px;
+        font-family: var(--sans);
+        font-size: 20px;
+        color: #a8b5ac;
+      }
+
+      /* ── 左栏：四源芯片 ───────────────────────────────────────── */
+      [data-composition-id='beat-2-product'] .sources-label {
+        position: absolute;
+        left: 76px;
+        top: 266px;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-2-product'] .chip {
+        position: absolute;
+        left: 74px;
+        width: 330px;
+        height: 96px;
+        padding: 15px 16px;
+        box-sizing: border-box;
+        background: #283a35;
+        border: 1px solid #2a3d38;
+        border-radius: 4px;
+      }
+      [data-composition-id='beat-2-product'] .chip-top {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      [data-composition-id='beat-2-product'] .chip-idx {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: #95a39b;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-2-product'] .chip-name {
+        font-family: var(--sans);
+        font-size: 18px;
+        color: #e8e4d8;
+      }
+      [data-composition-id='beat-2-product'] .chip-sub {
+        margin-top: 6px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+      }
+      [data-composition-id='beat-2-product'] .chip-src {
+        color: #95a39b;
+      }
+      [data-composition-id='beat-2-product'] .chip-ready {
+        color: #c5d4af;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-2-product'] .chip-track {
+        position: absolute;
+        left: 16px;
+        bottom: 16px;
+        width: 298px;
+        height: 4px;
+        background: #1f2f2a;
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      [data-composition-id='beat-2-product'] .chip-fill {
+        display: block;
+        width: 100%;
+        height: 4px;
+        background: #a0b785;
+        transform-origin: left center;
+      }
+
+      /* ── 主面板：真实界面（透视）──────────────────────────────── */
+      [data-composition-id='beat-2-product'] .panel-persp {
+        position: absolute;
+        left: 470px;
+        top: 250px;
+        width: 932px;
+        height: 620px;
+        perspective: 1600px;
+      }
+      [data-composition-id='beat-2-product'] .panel {
+        width: 932px;
+        height: 620px;
+        border: 1px solid #44615a;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #1f2f2a;
+        transform: rotateY(-7deg);
+        transform-origin: center center;
+        box-shadow: 0 44px 90px rgba(0, 0, 0, 0.55);
+      }
+      [data-composition-id='beat-2-product'] .panel-head {
+        height: 47px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px;
+        box-sizing: border-box;
+        border-bottom: 1px solid #2a3d38;
+        background: #1f2f2a;
+      }
+      [data-composition-id='beat-2-product'] .panel-tag {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        color: #c5d4af;
+      }
+      [data-composition-id='beat-2-product'] .panel-live {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-2-product'] .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #a0b785;
+        flex: none;
+      }
+      [data-composition-id='beat-2-product'] .panel-body {
+        position: relative;
+        width: 930px;
+        height: 571px;
+        overflow: hidden;
+        background: #162520;
+      }
+      [data-composition-id='beat-2-product'] .panel-shot {
+        position: absolute;
+        left: -101px;
+        top: -66px;
+        width: 1135px;
+      }
+
+      /* ── 右上：三模型互补归因三角 ─────────────────────────────── */
+      [data-composition-id='beat-2-product'] .tri-label {
+        position: absolute;
+        left: 1440px;
+        top: 252px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-2-product'] .edge {
+        position: absolute;
+        height: 1px;
+        transform-origin: left center;
+      }
+      [data-composition-id='beat-2-product'] .edge-line {
+        display: block;
+        width: 100%;
+        height: 1px;
+        background: #44615a;
+        transform-origin: left center;
+      }
+      [data-composition-id='beat-2-product'] .node {
+        position: absolute;
+        width: 190px;
+        height: 58px;
+        padding: 9px 12px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        background: #283a35;
+        border: 1px solid #44615a;
+        border-radius: 4px;
+      }
+      [data-composition-id='beat-2-product'] .node-name {
+        font-family: var(--sans);
+        font-size: 16px;
+        color: #e8e4d8;
+        letter-spacing: 0.02em;
+      }
+      [data-composition-id='beat-2-product'] .node-val {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: #c5d4af;
+        font-variant-numeric: tabular-nums;
+      }
+      [data-composition-id='beat-2-product'] .hub {
+        position: absolute;
+        left: 1546px;
+        top: 470px;
+        width: 168px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #1f2f2a;
+        border: 1px solid #44615a;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        color: #c5d4af;
+      }
+
+      /* ── 右下：知识助手漂浮卡 ─────────────────────────────────── */
+      [data-composition-id='beat-2-product'] .chat-card {
+        position: absolute;
+        left: 1420px;
+        top: 680px;
+        width: 410px;
+        background: #283a35;
+        border: 1px solid #44615a;
+        border-radius: 5px;
+        overflow: hidden;
+        box-shadow: 0 26px 54px rgba(0, 0, 0, 0.45);
+      }
+      [data-composition-id='beat-2-product'] .chat-head {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        box-sizing: border-box;
+        border-bottom: 1px solid #2a3d38;
+        background: #1f2f2a;
+      }
+      [data-composition-id='beat-2-product'] .chat-tag {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        color: #c5d4af;
+      }
+      [data-composition-id='beat-2-product'] .chat-meta {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        color: #95a39b;
+      }
+      [data-composition-id='beat-2-product'] .chat-body {
+        position: relative;
+        width: 408px;
+        height: 204px;
+        overflow: hidden;
+        background: #162520;
+      }
+      [data-composition-id='beat-2-product'] .chat-shot {
+        position: absolute;
+        /* 裁到空态图标 + 标题 + 两排建议胶囊（640 CSS 宽），整排胶囊不被切边 */
+        left: -405px;
+        top: -205px;
+        width: 1187px;
+      }
+      [data-composition-id='beat-2-product'] .chat-caption {
+        position: absolute;
+        left: 1420px;
+        top: 934px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        color: #95a39b;
+      }
+
+      /* ── 底部数据线 ───────────────────────────────────────────── */
+      [data-composition-id='beat-2-product'] .ticker-rule {
+        position: absolute;
+        left: 74px;
+        top: 962px;
+        width: 1772px;
+        height: 1px;
+        background: #2a3d38;
+      }
+      [data-composition-id='beat-2-product'] .ticker-window {
+        position: absolute;
+        left: 74px;
+        top: 976px;
+        width: 1772px;
+        height: 34px;
+        overflow: hidden;
+      }
+      [data-composition-id='beat-2-product'] .ticker-strip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        gap: 48px;
+        white-space: nowrap;
+        font-family: var(--mono);
+        font-size: 15px;
+        letter-spacing: 0.06em;
+        color: #a8b5ac;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-composition-id="beat-2-product" data-start="0" data-width="1920" data-height="1080">
+      <div id="b2-scene" class="scene">
+        <div id="b2-wipe" class="wipe">
+          <div class="backdrop">
+            <div class="glow-a"></div>
+            <div class="glow-b"></div>
+            <div id="b2-grid" class="grid"></div>
+          </div>
+
+          <div id="b2-stage" class="stage">
+            <div id="b2-brand" class="brand-row">
+              <div class="brand-mark">粮</div>
+              <div class="brand-name">稷韧云图</div>
+              <div class="brand-divider"></div>
+              <div class="brand-label">M00 · SYSTEM OVERVIEW</div>
+            </div>
+
+            <div id="b2-title" class="title">四类数据源，三模型互补归因</div>
+            <div id="b2-subtitle" class="subtitle">31 省 2011—2023 · 省级统计 × 遥感 × 气象 × GIS 四源融合</div>
+
+            <!-- 左栏：四源芯片 -->
+            <div id="b2-sources-label" class="sources-label">DATA SOURCES · 四源融合就绪度</div>
+
+            <div id="b2-chip-1" class="chip" style="top: 300px">
+              <div class="chip-top">
+                <span class="chip-idx">S·01</span>
+                <span class="chip-name">省级统计数据</span>
+              </div>
+              <div class="chip-sub">
+                <span class="chip-src">年鉴 + 公报</span>
+                <span class="chip-ready">已就绪 100%</span>
+              </div>
+              <div class="chip-track"><span class="chip-fill"></span></div>
+            </div>
+            <div id="b2-chip-2" class="chip" style="top: 420px">
+              <div class="chip-top">
+                <span class="chip-idx">S·02</span>
+                <span class="chip-name">MODIS 卫星遥感</span>
+              </div>
+              <div class="chip-sub">
+                <span class="chip-src">NDVI + LST</span>
+                <span class="chip-ready">已就绪 100%</span>
+              </div>
+              <div class="chip-track"><span class="chip-fill"></span></div>
+            </div>
+            <div id="b2-chip-3" class="chip" style="top: 540px">
+              <div class="chip-top">
+                <span class="chip-idx">S·03</span>
+                <span class="chip-name">气象逐日观测</span>
+              </div>
+              <div class="chip-sub">
+                <span class="chip-src">CMDC + SPEI</span>
+                <span class="chip-ready">已就绪 100%</span>
+              </div>
+              <div class="chip-track"><span class="chip-fill"></span></div>
+            </div>
+            <div id="b2-chip-4" class="chip" style="top: 660px">
+              <div class="chip-top">
+                <span class="chip-idx">S·04</span>
+                <span class="chip-name">GIS 空间矢量</span>
+              </div>
+              <div class="chip-sub">
+                <span class="chip-src">CLCD + 行政区划</span>
+                <span class="chip-ready">已就绪 100%</span>
+              </div>
+              <div class="chip-track"><span class="chip-fill"></span></div>
+            </div>
+
+            <!-- 主面板 -->
+            <div id="b2-panel-persp" class="panel-persp">
+              <div id="b2-panel" class="panel">
+                <div class="panel-head">
+                  <span class="panel-tag">M00 · 核心云图 · 系统总览</span>
+                  <span class="panel-live"><span id="b2-live-dot" class="live-dot"></span>LIVE · 实时推演</span>
+                </div>
+                <div class="panel-body">
+                  <img
+                    id="b2-panel-shot"
+                    class="panel-shot"
+                    data-layout-ignore
+                    src="shots/00-overview.png"
+                    alt="核心云图系统总览界面"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 右上：三模型互补归因 -->
+            <div id="b2-tri-label" class="tri-label">TRI-MODEL R² · RANDOM 8:2 协议 · 10 种子均值</div>
+
+            <div class="edge" style="left: 1630px; top: 490px; width: 151px; transform: rotate(-82.4deg)">
+              <span class="edge-line"></span>
+            </div>
+            <div class="edge" style="left: 1630px; top: 490px; width: 184px; transform: rotate(130.6deg)">
+              <span class="edge-line"></span>
+            </div>
+            <div class="edge" style="left: 1630px; top: 490px; width: 188px; transform: rotate(48.2deg)">
+              <span class="edge-line"></span>
+            </div>
+
+            <div id="b2-node-1" class="node" style="left: 1555px; top: 311px">
+              <span class="node-name">XGB-SHAP</span>
+              <span class="node-val">R² 0.907</span>
+            </div>
+            <div id="b2-node-2" class="node" style="left: 1415px; top: 601px">
+              <span class="node-name">LSTM</span>
+              <span class="node-val">R² 0.886</span>
+            </div>
+            <div id="b2-node-3" class="node" style="left: 1660px; top: 601px">
+              <span class="node-name">Attention-LSTM</span>
+              <span class="node-val">R² 0.816</span>
+            </div>
+
+            <div id="b2-hub" class="hub">三模型互补归因</div>
+
+            <!-- 右下：知识助手漂浮卡 -->
+            <div id="b2-chat" class="chat-card">
+              <div class="chat-head">
+                <span class="chat-tag">M06 · 知识助手</span>
+                <span class="chat-meta">GRAPH-RAG · 全库</span>
+              </div>
+              <div class="chat-body">
+                <img
+                  id="b2-chat-shot"
+                  class="chat-shot"
+                  data-layout-ignore
+                  src="shots/06-chat.png"
+                  alt="知识助手界面"
+                />
+              </div>
+            </div>
+            <div id="b2-chat-caption" class="chat-caption">检索增强问答 · 图谱深度推理 · 文献知识库</div>
+
+            <!-- 底部数据线 -->
+            <div id="b2-ticker-rule" class="ticker-rule"></div>
+            <div class="ticker-window" data-layout-allow-overflow>
+              <div id="b2-ticker" class="ticker-strip" data-layout-allow-overflow>
+                <span>31 省 · 2011—2023 · 13 年 · 403 样本 · 11 维特征 · 4 类数据源 · 三模型互补归因 ·</span>
+                <span>31 省 · 2011—2023 · 13 年 · 403 样本 · 11 维特征 · 4 类数据源 · 三模型互补归因 ·</span>
+                <span>31 省 · 2011—2023 · 13 年 · 403 样本 · 11 维特征 · 4 类数据源 · 三模型互补归因 ·</span>
+                <span>31 省 · 2011—2023 · 13 年 · 403 样本 · 11 维特征 · 4 类数据源 · 三模型互补归因 ·</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // ── 入场：接住 beat 1 的 zoom through，从 0.86 / blur 22 反向推进来 ──
+        tl.fromTo(
+          '#b2-scene',
+          { opacity: 0, scale: 0.86, filter: 'blur(22px)' },
+          { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.45, ease: 'power2.out' },
+          0,
+        );
+        tl.fromTo('#b2-grid', { opacity: 0 }, { opacity: 0.34, duration: 0.6, ease: 'power1.out' }, 0.05);
+
+        tl.fromTo('#b2-brand', { opacity: 0, y: -22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.12);
+        tl.fromTo('#b2-title', { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out' }, 0.22);
+        tl.fromTo('#b2-subtitle', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 0.38);
+
+        // 主面板：从左下斜推上来，透视角度从 -14° 收到 -7°
+        tl.fromTo(
+          '#b2-panel-persp',
+          { opacity: 0, x: -30, y: 90 },
+          { opacity: 1, x: 0, y: 0, duration: 0.7, ease: 'expo.out' },
+          0.42,
+        );
+        tl.fromTo('#b2-panel', { rotationY: -14 }, { rotationY: -7, duration: 0.7, ease: 'expo.out' }, 0.42);
+        tl.fromTo('#b2-panel-shot', { scale: 1 }, { scale: 1.015, duration: 4.88, ease: 'none' }, 0);
+
+        // 四源芯片：从左下逐枚盖章落位（首枚对齐 index.html 6.45s 的 tick）
+        tl.fromTo('#b2-sources-label', { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 0.5);
+        tl.fromTo(
+          '.chip',
+          { opacity: 0, x: -46, y: 34, scale: 1.18 },
+          { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.46, stagger: 0.12, ease: 'back.out(1.6)' },
+          0.72,
+        );
+        tl.fromTo(
+          '.chip-fill',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.5, stagger: 0.12, ease: 'power2.out', transformOrigin: 'left center' },
+          0.8,
+        );
+        tl.fromTo(
+          '.chip-fill',
+          { opacity: 0.68 },
+          { opacity: 1, duration: 0.65, yoyo: true, repeat: 2, ease: 'sine.inOut', immediateRender: false },
+          2.2,
+        );
+
+        // 面板状态灯
+        tl.fromTo(
+          '#b2-live-dot',
+          { scale: 0.7, opacity: 0.45 },
+          { scale: 1, opacity: 1, duration: 0.9, yoyo: true, repeat: 3, ease: 'sine.inOut' },
+          1.2,
+        );
+
+        // 三模型标签：飞入 + 连线画出 + 中心锁定
+        tl.fromTo('#b2-tri-label', { opacity: 0, x: 16 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 1.24);
+        tl.fromTo(
+          '#b2-node-1',
+          { opacity: 0, x: -26, y: -22, scale: 0.94 },
+          { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.7)' },
+          1.42,
+        );
+        tl.fromTo(
+          '#b2-node-2',
+          { opacity: 0, x: -30, y: 24, scale: 0.94 },
+          { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.7)' },
+          1.54,
+        );
+        tl.fromTo(
+          '#b2-node-3',
+          { opacity: 0, x: 30, y: 24, scale: 0.94 },
+          { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.7)' },
+          1.66,
+        );
+        tl.fromTo('.edge-line', { scaleX: 0 }, { scaleX: 1, duration: 0.42, stagger: 0.06, ease: 'power2.out' }, 1.92);
+        tl.fromTo('#b2-hub', { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: 0.42, ease: 'power3.out' }, 2.06);
+
+        // 末位落定后，前两枚轻微回弹
+        tl.to(['#b2-node-1', '#b2-node-2'], { scale: 1.03, duration: 0.14, ease: 'power2.out' }, 2.52);
+        tl.to(['#b2-node-1', '#b2-node-2'], { scale: 1, duration: 0.22, ease: 'power2.inOut' }, 2.66);
+
+        // 知识助手漂浮卡
+        tl.fromTo(
+          '#b2-chat',
+          { opacity: 0, y: 26, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' },
+          1.85,
+        );
+        tl.fromTo('#b2-chat-caption', { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 2.05);
+        tl.to('#b2-chat', { y: -6, duration: 0.55, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 2.6);
+
+        // 底部数据线：规则线先落，ticker 连续位移
+        tl.fromTo(
+          '#b2-ticker-rule',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.7, ease: 'power2.out', transformOrigin: 'left center' },
+          0.95,
+        );
+        tl.fromTo('#b2-ticker', { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power1.out' }, 1.05);
+        tl.fromTo('#b2-ticker', { x: 0 }, { x: -520, duration: 4.88, ease: 'none', immediateRender: false }, 0);
+
+        // ── 中段持续运动 ────────────────────────────────────────────────────
+        tl.fromTo('#b2-stage', { x: 40, y: -40, scale: 0.94 }, { x: 0, y: 0, scale: 1, duration: 4.88, ease: 'none' }, 0);
+        tl.fromTo('#b2-grid', { x: 0, y: 0 }, { x: -24, y: 12, duration: 4.88, ease: 'none', immediateRender: false }, 0);
+
+        // ── 退场：竖直数据擦除，与 beat 3 的入场交叠 ────────────────────────
+        tl.to('#b2-wipe', { clipPath: 'inset(50% 0% 50% 0%)', duration: 0.4, ease: 'power3.in' }, 4.48);
+
+        window.__timelines['beat-2-product'] = tl;
+        tl.seek(0);
+      </script>
+    </div>
+  </body>
+</html>
