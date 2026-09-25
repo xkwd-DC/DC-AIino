@@ -38,8 +38,9 @@ export interface GraphQueryResponse {
 export function queryRAG(
   question: string,
   history?: Array<{ role: string; content: string }>,
+  collection: string = 'dc_knowledge',
 ): Promise<RAGQueryResponse> {
-  return http.post('/rag/query', { question, history })
+  return http.post('/rag/query', { question, history, collection })
 }
 
 /** GraphRAG 图谱问答（global / local / basic 自动路由）。 */

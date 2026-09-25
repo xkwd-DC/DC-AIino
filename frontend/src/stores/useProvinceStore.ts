@@ -30,6 +30,17 @@ import { PROVINCES_PROFILE, type ProvinceProfile } from '@/data/recommendation'
 
 const DEFAULT_PROVINCE = '河南'
 
+/** 省份 → baseline 风险指数 y 的查表。
+ *  grain.db 行不含 `y` 字段（只有 yield_kg_per_ha / y_butter / y_linear），
+ * 而地图着色与 M04 规则引擎依赖 `y`（detrended volatility ∈ [0.005, 0.055]）。
+ * 用省份自身的 baseline y 作为缺失时的回退，避免地图/规则引擎拿到 0。
+ */
+const BASELINE_Y = new Map(PROVINCES_BASE.map((p) => [p.name, p.y]))
+
+function baselineYOf(name: string): number | undefined {
+  return BASELINE_Y.get(name)
+}
+
 function defaultIdxFor(arr: { name: string }[]): number {
   const idx = arr.findIndex((p) => p.name === DEFAULT_PROVINCE)
   return idx >= 0 ? idx : 0
@@ -42,7 +53,7 @@ function normalizeRow(row: ProvinceRow): ProvinceBase {
   const flood = row.flood ?? row.flood_r ?? 0
   return {
     name,
-    y: row.y ?? 0,
+    y: row.y ?? baselineYOf(name) ?? 0,
     irr: row.irr ?? 0,
     flood,
     sun: row.sun ?? 0,

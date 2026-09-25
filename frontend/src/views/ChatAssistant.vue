@@ -35,6 +35,7 @@ const messages = ref<Message[]>([])
 const inputText = ref('')
 const isLoading = ref(false)
 const searchMode = ref<SearchMode>('rag')
+const ragScope = ref<'dc_knowledge' | 'dc_papers'>('dc_knowledge')
 const errorMsg = ref('')
 const messageList = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
@@ -144,7 +145,7 @@ async function queryByMode(text: string): Promise<{
     .slice(-8)
     .map((m) => ({ role: m.role, content: m.content }))
 
-  const res: RAGQueryResponse = await queryRAG(text, history)
+  const res: RAGQueryResponse = await queryRAG(text, history, ragScope.value)
   return {
     answer: res.answer,
     sources: res.sources,
@@ -225,6 +226,14 @@ onBeforeUnmount(() => { /* noop */ })
           <span class="mode-desc">知识图谱推理</span>
         </button>
       </div>
+
+      <label v-if="searchMode === 'rag'" class="scope-select" aria-label="检索范围">
+        <span class="scope-label">范围</span>
+        <select v-model="ragScope" class="scope-dropdown">
+          <option value="dc_knowledge">全库</option>
+          <option value="dc_papers">论文</option>
+        </select>
+      </label>
 
       <button
         type="button"
@@ -430,6 +439,33 @@ onBeforeUnmount(() => { /* noop */ })
 .mode-label { font-weight: 600; font-family: var(--font-sans); }
 
 .mode-desc { font-size: 11px; opacity: 0.7; }
+
+.scope-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.scope-label { font-size: 12px; opacity: 0.85; }
+
+.scope-dropdown {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.scope-dropdown:focus { outline: none; }
 
 .clear-btn {
   padding: 6px 14px;
