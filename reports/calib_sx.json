@@ -1,0 +1,95 @@
+{
+  "rows": [
+    {
+      "province": "山西",
+      "year": 2014,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2014/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2015,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2015/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2016,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2016/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2017,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2017/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2018,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2018/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2019,
+      "status": "可机读",
+      "tables": 364,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2019/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2020,
+      "status": "可机读",
+      "tables": 290,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2020/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2021,
+      "status": "可机读",
+      "tables": 344,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2021/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2022,
+      "status": "可机读",
+      "tables": 341,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2022/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2023,
+      "status": "可机读",
+      "tables": 340,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2023/zk/left.htm",
+      "verified_template": true
+    }
+  ],
+  "decision": "闸门未通过：暂无可机读的省 → 退回省级长面板（全国冬麦主产省 × 20+ 年）"
+}

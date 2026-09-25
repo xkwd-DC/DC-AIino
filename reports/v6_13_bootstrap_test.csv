@@ -1,0 +1,2 @@
+pair,n_boot,n_common,delta_point,delta_boot_mean,ci_lo,ci_hi,p_delta_le_0
+CLIM3->CLIMG,80,10407,0.1888,0.1571,0.1241,0.1848,0.0

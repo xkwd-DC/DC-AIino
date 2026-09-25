@@ -1,0 +1,275 @@
+{
+  "rows": [
+    {
+      "province": "山西",
+      "year": 2019,
+      "status": "可机读",
+      "tables": 364,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2019/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2020,
+      "status": "可机读",
+      "tables": 290,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2020/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2021,
+      "status": "可机读",
+      "tables": 344,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2021/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2022,
+      "status": "可机读",
+      "tables": 341,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2022/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "山西",
+      "year": 2023,
+      "status": "可机读",
+      "tables": 340,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shanxi.gov.cn/tjsj/tjnj/nj2023/zk/left.htm",
+      "verified_template": true
+    },
+    {
+      "province": "河南",
+      "year": 2019,
+      "status": "可机读",
+      "tables": 497,
+      "xls_hits": 3,
+      "toc_url": "https://oss.henan.gov.cn/sbgt-wztipt/attachment/hntjj/hntj/lib/tjnj/2019/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河南",
+      "year": 2020,
+      "status": "可机读",
+      "tables": 491,
+      "xls_hits": 3,
+      "toc_url": "https://oss.henan.gov.cn/sbgt-wztipt/attachment/hntjj/hntj/lib/tjnj/2020nj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河南",
+      "year": 2021,
+      "status": "可机读",
+      "tables": 458,
+      "xls_hits": 3,
+      "toc_url": "https://oss.henan.gov.cn/sbgt-wztipt/attachment/hntjj/hntj/lib/tjnj/2021nj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河南",
+      "year": 2022,
+      "status": "可机读",
+      "tables": 422,
+      "xls_hits": 3,
+      "toc_url": "https://oss.henan.gov.cn/sbgt-wztipt/attachment/hntjj/hntj/lib/tjnj/2022/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河南",
+      "year": 2023,
+      "status": "可机读",
+      "tables": 377,
+      "xls_hits": 3,
+      "toc_url": "https://oss.henan.gov.cn/sbgt-wztipt/attachment/hntjj/hntj/lib/tjnj/2023nj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河北",
+      "year": 2019,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.hebei.gov.cn/hetj/tjnj/nj2019/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河北",
+      "year": 2020,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.hebei.gov.cn/hetj/tjnj/nj2020/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河北",
+      "year": 2021,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.hebei.gov.cn/hetj/tjnj/nj2021/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河北",
+      "year": 2022,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.hebei.gov.cn/hetj/tjnj/nj2022/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "河北",
+      "year": 2023,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.hebei.gov.cn/hetj/tjnj/nj2023/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "山东",
+      "year": 2019,
+      "status": "可机读",
+      "tables": 328,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shandong.gov.cn/tjnj/nj2019/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "山东",
+      "year": 2020,
+      "status": "可机读",
+      "tables": 257,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shandong.gov.cn/tjnj/nj2020/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "山东",
+      "year": 2021,
+      "status": "可机读",
+      "tables": 310,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shandong.gov.cn/tjnj/nj2021/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "山东",
+      "year": 2022,
+      "status": "仅图片或PDF",
+      "tables": 320,
+      "xls_hits": 0,
+      "toc_url": "http://tjj.shandong.gov.cn/tjnj/nj2022/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "山东",
+      "year": 2023,
+      "status": "可机读",
+      "tables": 313,
+      "xls_hits": 3,
+      "toc_url": "http://tjj.shandong.gov.cn/tjnj/nj2023/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "北京",
+      "year": 2019,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://nj.tjj.beijing.gov.cn/nj/main/2019-tjnj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "北京",
+      "year": 2020,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://nj.tjj.beijing.gov.cn/nj/main/2020-tjnj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "北京",
+      "year": 2021,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://nj.tjj.beijing.gov.cn/nj/main/2021-tjnj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "北京",
+      "year": 2022,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://nj.tjj.beijing.gov.cn/nj/main/2022-tjnj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "北京",
+      "year": 2023,
+      "status": "目录为空",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://nj.tjj.beijing.gov.cn/nj/main/2023-tjnj/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "天津",
+      "year": 2019,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://stats.tj.gov.cn/tjsj_52032/tjnj/nj2019/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "天津",
+      "year": 2020,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://stats.tj.gov.cn/tjsj_52032/tjnj/nj2020/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "天津",
+      "year": 2021,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://stats.tj.gov.cn/tjsj_52032/tjnj/nj2021/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "天津",
+      "year": 2022,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://stats.tj.gov.cn/tjsj_52032/tjnj/nj2022/zk/left.htm",
+      "verified_template": false
+    },
+    {
+      "province": "天津",
+      "year": 2023,
+      "status": "目录不存在",
+      "tables": 0,
+      "xls_hits": 0,
+      "toc_url": "https://stats.tj.gov.cn/tjsj_52032/tjnj/nj2023/zk/left.htm",
+      "verified_template": false
+    }
+  ],
+  "decision": "闸门未通过：暂无可机读的省 → 退回省级长面板（全国冬麦主产省 × 20+ 年）"
+}
