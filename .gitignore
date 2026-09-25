@@ -108,3 +108,31 @@ data/raw/statistical_yearbook_chunks/
 # RAG/GraphRAG ???? (?? scripts/CLI ??)
 backend/chroma_db/
 backend/graph_data/
+
+# 检索评测：冒烟跑当次不留档，正式对照表（dc_rag_v1_*）入仓当实验证据
+backend/eval/reports/smoke_*
+
+# ---- 本地环境与运行产物（2026-09-25 清理）----
+.venv-sx/
+.venv-tts/
+backend/chroma_db.bak-*/
+_*.log
+_*.log.err
+_*.err
+_*.out
+_*.docx
+_shots/
+_tmp_scrape/
+docs/figures/_*
+data/*.zip
+
+# promo-video：保留工程源，渲染产物与缓存不入仓
+promo-video/.cache/
+promo-video/.venv-tts/
+promo-video/renders/
+promo-video/shots/
+promo-video/capture/
+promo-video/snapshots/
+
+# 软著截图的历史备份
+软著/screenshots/_backup_*/
