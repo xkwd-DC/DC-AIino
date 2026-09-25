@@ -37,6 +37,7 @@ def rag_query_endpoint():
         {
             "question": "极端气候对粮食产量的影响机制？",
             "top_k": 5,          // 可选，1-20
+            "collection": "dc_papers",  // 可选，dc_knowledge / dc_papers
             "history": [          // 可选
                 {"role": "user", "content": "..."},
                 {"role": "assistant", "content": "..."}
@@ -93,8 +94,17 @@ def rag_query_endpoint():
             status=400,
         )
 
+    collection = body.get("collection", "dc_knowledge")
+    if collection not in ("dc_knowledge", "dc_papers"):
+        return envelope(
+            error={"code": 400, "message": "collection 仅支持 dc_knowledge / dc_papers"},
+            status=400,
+        )
+
     try:
-        result = rag_query(question, top_k=top_k, history=history)
+        result = rag_query(
+            question, top_k=top_k, history=history, collection_name=collection,
+        )
         result["timestamp"] = datetime.now(timezone.utc).isoformat()
         return envelope(data=result)
     except Exception as exc:
@@ -112,6 +122,9 @@ def rag_rebuild_endpoint():
 
     Response (envelope data):
         {"status": "started" | "already_running", "message": "...", "started_at": "..."}
+
+    Request JSON (可选):
+        {"collection": "dc_papers"}  # 指定重建的集合，默认 dc_knowledge
     """
     global _rebuild_status
 
@@ -122,6 +135,14 @@ def rag_rebuild_endpoint():
             "started_at": _rebuild_status["started_at"],
         })
 
+    body = request.get_json(silent=True) or {}
+    collection = body.get("collection", "dc_knowledge")
+    if collection not in ("dc_knowledge", "dc_papers"):
+        return envelope(
+            error={"code": 400, "message": "collection 仅支持 dc_knowledge / dc_papers"},
+            status=400,
+        )
+
     def _rebuild():
         global _rebuild_status
         with _rebuild_lock:
@@ -130,7 +151,13 @@ def rag_rebuild_endpoint():
             _rebuild_status["result"] = None
 
         try:
-            result = build_index()
+            if collection == "dc_papers":
+                result = build_index(
+                    docs_dir=str(rag_config.DOCS_PAPERS_DIR),
+                    collection_name="dc_papers",
+                )
+            else:
+                result = build_index(collection_name="dc_knowledge")
             _rebuild_status["result"] = result
             logger.info("索引重建完成: %s", result)
         except Exception as exc:

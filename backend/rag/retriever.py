@@ -23,6 +23,7 @@ def retrieve(
     similarity_threshold: float | None = None,
     use_hybrid: bool = True,
     use_rerank: bool = True,
+    collection_name: str | None = None,
 ) -> list[dict]:
     """检索与问题最相关的文档块。
 
@@ -50,12 +51,22 @@ def retrieve(
     # 1. 混合检索（取 top_k * 4 候选给 reranker）
     fetch_k = top_k * 4
     if use_hybrid:
-        results = hybrid_retrieve(question, top_k=fetch_k, similarity_threshold=threshold)
+        results = hybrid_retrieve(
+            question,
+            top_k=fetch_k,
+            similarity_threshold=threshold,
+            collection_name=collection_name,
+        )
     else:
         from .embedder import embed_query
         from .vector_store import query as vs_query
         query_vec = embed_query(question)
-        results = vs_query(query_vec, top_k=fetch_k, similarity_threshold=threshold)
+        results = vs_query(
+            query_vec,
+            top_k=fetch_k,
+            similarity_threshold=threshold,
+            collection_name=collection_name,
+        )
 
     if not results:
         return []

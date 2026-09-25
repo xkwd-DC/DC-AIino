@@ -12,7 +12,7 @@ from pathlib import Path
 
 from . import config
 from .chunker import chunk_documents
-from .document_loader import Document, load_all_documents, load_markdown, load_pdf
+from .document_loader import Document, load_all_documents, load_markdown, load_pdf, load_txt
 from .embedder import embed_documents
 from .generator import generate
 from .hybrid_search import build_bm25_index, save_bm25_index
@@ -27,6 +27,7 @@ def build_index(
     chunk_size: int | None = None,
     chunk_overlap: int | None = None,
     batch_size: int = 32,
+    collection_name: str | None = None,
 ) -> dict:
     """全量重建知识库索引。
 
@@ -41,6 +42,7 @@ def build_index(
     Returns:
         {"status": "ok", "documents": N, "chunks": M, "collection_count": K}
     """
+    collection_name = collection_name or config.COLLECTION_NAME
     docs_dir_path = Path(docs_dir) if docs_dir else config.DOCS_DIR
 
     # 1. 加载文档
@@ -59,7 +61,7 @@ def build_index(
         }
 
     # 3. 嵌入 + 写入（分批，避免 OOM）
-    clear_collection()
+    clear_collection(collection_name)
     texts = [c.text for c in chunks]
     total = len(texts)
 
@@ -67,21 +69,22 @@ def build_index(
         batch_texts = texts[i:i + batch_size]
         batch_chunks = chunks[i:i + batch_size]
         embeddings = embed_documents(batch_texts)
-        add_chunks(batch_chunks, embeddings)
+        add_chunks(batch_chunks, embeddings, collection_name)
         logger.info("索引进度: %d/%d chunks", min(i + batch_size, total), total)
 
     # 4. 构建 BM25 关键词索引（混合搜索用）
     logger.info("构建 BM25 索引...")
     chunk_ids = [f"{c.source}:{c.chunk_index}:{c.page}" for c in chunks]
-    build_bm25_index(texts, chunk_ids)
-    save_bm25_index()
+    build_bm25_index(texts, chunk_ids, collection_name)
+    save_bm25_index(collection_name=collection_name)
 
-    stats = collection_stats()
+    stats = collection_stats(collection_name)
     return {
         "status": "ok",
         "documents": len(documents),
         "chunks": total,
         "collection_count": stats["count"],
+        "collection_name": collection_name,
     }
 
 
@@ -90,6 +93,7 @@ def query(
     top_k: int | None = None,
     similarity_threshold: float | None = None,
     history: list[dict[str, str]] | None = None,
+    collection_name: str | None = None,
 ) -> dict:
     """RAG 问答：检索 + 生成。
 
@@ -104,7 +108,10 @@ def query(
     """
     # 1. 检索
     results = retrieve(
-        question, top_k=top_k, similarity_threshold=similarity_threshold,
+        question,
+        top_k=top_k,
+        similarity_threshold=similarity_threshold,
+        collection_name=collection_name,
     )
 
     # 2. 组装上下文
@@ -137,6 +144,7 @@ def index_file(
     filepath: str | Path,
     chunk_size: int | None = None,
     chunk_overlap: int | None = None,
+    collection_name: str | None = None,
 ) -> dict:
     """增量索引单个文件：删旧 chunks → 加载 → 分块 → 嵌入 → 写入。
 
@@ -156,7 +164,7 @@ def index_file(
         return {"status": "error", "chunks": 0, "source": str(filepath), "message": "文件不存在"}
 
     suffix = filepath.suffix.lower()
-    if suffix not in (".md", ".pdf"):
+    if suffix not in (".md", ".txt", ".pdf"):
         return {"status": "skipped", "chunks": 0, "source": str(filepath), "message": f"不支持的文件类型: {suffix}"}
 
     # 相对路径作为 source 标识
@@ -166,7 +174,7 @@ def index_file(
         rel_path = str(filepath)
 
     # 1. 删旧
-    deleted = delete_by_source(rel_path)
+    deleted = delete_by_source(rel_path, collection_name)
     if deleted > 0:
         logger.info("增量索引: 已清理 %s 的 %d 条旧记录", rel_path, deleted)
 
@@ -174,6 +182,10 @@ def index_file(
     documents: list[Document] = []
     if suffix == ".md":
         doc = load_markdown(filepath)
+        if doc.content.strip():
+            documents.append(doc)
+    elif suffix == ".txt":
+        doc = load_txt(filepath)
         if doc.content.strip():
             documents.append(doc)
     elif suffix == ".pdf":
@@ -190,7 +202,7 @@ def index_file(
     # 4. 嵌入 + 写入
     texts = [c.text for c in chunks]
     embeddings = embed_documents(texts)
-    add_chunks(chunks, embeddings)
+    add_chunks(chunks, embeddings, collection_name)
 
     logger.info("增量索引完成: %s → %d chunks", rel_path, len(chunks))
     return {
@@ -201,7 +213,7 @@ def index_file(
     }
 
 
-def remove_file(filepath: str | Path) -> dict:
+def remove_file(filepath: str | Path, collection_name: str | None = None) -> dict:
     """从索引中移除指定文件的所有 chunks。
 
     Args:
@@ -216,7 +228,7 @@ def remove_file(filepath: str | Path) -> dict:
     except ValueError:
         rel_path = str(filepath)
 
-    deleted = delete_by_source(rel_path)
+    deleted = delete_by_source(rel_path, collection_name)
     if deleted > 0:
         logger.info("已从索引移除: %s (%d 条)", rel_path, deleted)
     return {"status": "ok", "deleted": deleted, "source": rel_path}

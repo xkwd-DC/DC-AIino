@@ -21,9 +21,8 @@ from . import config
 
 logger = logging.getLogger(__name__)
 
-_bm25_index: BM25Okapi | None = None
-_bm25_texts: list[str] | None = None
-_bm25_ids: list[str] | None = None
+# 按集合名隔离的 BM25 索引（支持全库 / 论文独立收藏）
+_BM25_STORES: dict[str, dict] = {}
 
 
 def _tokenize(text: str) -> list[str]:
@@ -49,38 +48,52 @@ def _tokenize(text: str) -> list[str]:
     return tokens
 
 
-def build_bm25_index(texts: list[str], ids: list[str]) -> None:
-    """构建全局 BM25 关键词索引。
+def build_bm25_index(
+    texts: list[str],
+    ids: list[str],
+    collection_name: str | None = None,
+) -> None:
+    """构建指定集合的 BM25 关键词索引。
 
     Args:
         texts: 文档文本列表。
         ids: 对应的文档 ID 列表。
+        collection_name: 集合名（默认 dc_knowledge）。
     """
-    global _bm25_index, _bm25_texts, _bm25_ids
+    global _BM25_STORES
+    collection_name = collection_name or config.COLLECTION_NAME
 
     tokenized = [_tokenize(t) for t in texts]
-    _bm25_index = BM25Okapi(tokenized)
-    _bm25_texts = texts
-    _bm25_ids = ids
+    _BM25_STORES[collection_name] = {
+        "index": BM25Okapi(tokenized),
+        "texts": texts,
+        "ids": ids,
+    }
     logger.info("BM25 索引就绪: %d 文档", len(texts))
 
 
-def _bm25_search(query: str, top_k: int = 10) -> list[tuple[str, float, str]]:
+def _bm25_search(
+    query: str,
+    top_k: int = 10,
+    collection_name: str | None = None,
+) -> list[tuple[str, float, str]]:
     """BM25 关键词检索。返回 [(doc_id, score, text), ...]。"""
-    global _bm25_index, _bm25_texts, _bm25_ids
+    global _BM25_STORES
+    collection_name = collection_name or config.COLLECTION_NAME
+    store = _BM25_STORES.get(collection_name)
 
-    if _bm25_index is None:
+    if store is None:
         return []
 
     tokenized_query = _tokenize(query)
-    scores = _bm25_index.get_scores(tokenized_query)
+    scores = store["index"].get_scores(tokenized_query)
 
     indexed = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
 
     results: list[tuple[str, float, str]] = []
     for idx, score in indexed[:top_k]:
         if score > 0:
-            results.append((_bm25_ids[idx], float(score), _bm25_texts[idx]))
+            results.append((store["ids"][idx], float(score), store["texts"][idx]))
     return results
 
 
@@ -132,6 +145,7 @@ def hybrid_retrieve(
     question: str,
     top_k: int | None = None,
     similarity_threshold: float | None = None,
+    collection_name: str | None = None,
 ) -> list[dict]:
     """混合检索：BM25 关键词 + 向量语义 + RRF 融合。
 
@@ -147,9 +161,14 @@ def hybrid_retrieve(
         return []
 
     query_vec = embed_query(question)
-    vector_results = vs_query(query_vec, top_k=top_k * 2, similarity_threshold=threshold)
+    vector_results = vs_query(
+        query_vec,
+        top_k=top_k * 2,
+        similarity_threshold=threshold,
+        collection_name=collection_name,
+    )
 
-    bm25_results = _bm25_search(question, top_k=top_k * 2)
+    bm25_results = _bm25_search(question, top_k=top_k * 2, collection_name=collection_name)
 
     if bm25_results:
         fused = _rrf_fusion(vector_results, bm25_results, k=config.RRF_K)
@@ -163,35 +182,44 @@ def hybrid_retrieve(
     return vector_results[:top_k]
 
 
-def save_bm25_index(filepath: Path | None = None) -> None:
-    """持久化 BM25 索引到 pickle。"""
-    global _bm25_index, _bm25_texts, _bm25_ids
+def save_bm25_index(filepath: Path | None = None, collection_name: str | None = None) -> None:
+    """持久化 BM25 索引到 pickle（按集合名分文件）。"""
+    global _BM25_STORES
+    collection_name = collection_name or config.COLLECTION_NAME
+    store = _BM25_STORES.get(collection_name)
 
-    filepath = Path(filepath) if filepath else config.CHROMA_DB_DIR / "bm25_index.pkl"
-    if _bm25_index is None:
+    filepath = (
+        Path(filepath)
+        if filepath
+        else config.CHROMA_DB_DIR / f"bm25_{collection_name}.pkl"
+    )
+    if store is None:
         return
 
-    data = {"index": _bm25_index, "texts": _bm25_texts, "ids": _bm25_ids}
+    data = store
     with open(filepath, "wb") as f:
         pickle.dump(data, f)
     logger.info("BM25 索引已保存: %s", filepath)
 
 
-def load_bm25_index(filepath: Path | None = None) -> bool:
-    """从 pickle 加载 BM25 索引。"""
-    global _bm25_index, _bm25_texts, _bm25_ids
+def load_bm25_index(filepath: Path | None = None, collection_name: str | None = None) -> bool:
+    """从 pickle 加载 BM25 索引（按集合名分文件）。"""
+    global _BM25_STORES
+    collection_name = collection_name or config.COLLECTION_NAME
 
-    filepath = Path(filepath) if filepath else config.CHROMA_DB_DIR / "bm25_index.pkl"
+    filepath = (
+        Path(filepath)
+        if filepath
+        else config.CHROMA_DB_DIR / f"bm25_{collection_name}.pkl"
+    )
     if not filepath.exists():
         return False
 
     try:
         with open(filepath, "rb") as f:
             data = pickle.load(f)
-        _bm25_index = data["index"]
-        _bm25_texts = data["texts"]
-        _bm25_ids = data["ids"]
-        logger.info("BM25 索引已加载: %d 文档", len(_bm25_texts) if _bm25_texts else 0)
+        _BM25_STORES[collection_name] = data
+        logger.info("BM25 索引已加载: %d 文档", len(data.get("texts") or []))
         return True
     except Exception as exc:
         logger.warning("BM25 索引加载失败: %s", exc)

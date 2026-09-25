@@ -14,6 +14,10 @@ _PROJECT_DIR = _BACKEND_DIR.parent                      # DC-AIino/
 
 # ─── 文档路径 ────────────────────────────────────────────────────────────
 DOCS_DIR = _PROJECT_DIR / "docs"
+DOCS_PAPERS_DIR = DOCS_DIR / "papers"
+
+# 支持的文件类型（.md / .txt / .pdf）
+FILE_TYPES = (".md", ".txt", ".pdf")
 CHROMA_DB_DIR = _BACKEND_DIR / "chroma_db"
 
 # ─── 分块参数 ────────────────────────────────────────────────────────────
@@ -48,6 +52,7 @@ DEEPSEEK_TEMPERATURE = float(os.getenv("RAG_TEMPERATURE", "0.3"))
 
 # ─── ChromaDB 集合名 ─────────────────────────────────────────────────────
 COLLECTION_NAME = "dc_knowledge"
+PAPERS_COLLECTION_NAME = "dc_papers"
 
 # ─── 启动验证 ────────────────────────────────────────────────────────────
 def validate() -> list[str]:

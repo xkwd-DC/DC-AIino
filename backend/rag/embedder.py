@@ -11,11 +11,16 @@ Lazy load: 首次调用时下载/加载模型 (~2.2GB)，进程内缓存。
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from . import config
 
 logger = logging.getLogger(__name__)
+
+# Windows 上 transformers 探测 tensorflow 会因 Keras3 兼容问题 import 失败。
+# 在导入 sentence_transformers 之前禁用 TF 分支（wiki 已记录该坑）。
+os.environ.setdefault("USE_TF", "0")
 
 if TYPE_CHECKING:
     import numpy as np

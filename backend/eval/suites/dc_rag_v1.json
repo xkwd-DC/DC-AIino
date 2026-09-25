@@ -1,0 +1,655 @@
+{
+  "name": "dc_rag_v1",
+  "items": [
+    {
+      "id": "q001",
+      "question": "国家级大创结题时，论文这条硬指标的具体要求是什么？",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/national/19_结题验收要求.md"
+      ],
+      "verified": true,
+      "note": "原文第 13 行：「项目负责人在国家广电总局认定的第一批、第二批学术期刊名单，以第一作者发表 1 篇学术论文」"
+    },
+    {
+      "id": "q002",
+      "question": "申请软件著作权需要提交哪些材料？",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/23_软著申请材料指南_2026-05-27.md"
+      ],
+      "verified": true,
+      "note": "该文件第 75 行起的材料清单表（登记申请表 / 源程序 / 说明书等），文内命中「申请表|源程序|说明书」20 行"
+    },
+    {
+      "id": "q003",
+      "question": "稷韧云图的韧性路径推荐模块是怎么设计的？",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/17_韧性规则引擎说明.md"
+      ],
+      "verified": true,
+      "note": "该文件标题即「韧性规则引擎说明(v1)」，全文围绕规则合成 SHAP 与 Attention 双视角展开"
+    },
+    {
+      "id": "q004",
+      "question": "XGBoost-SHAP 在稷韧云图项目里承担什么角色？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/01_论文_融合优化版.md",
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": true,
+      "note": "01 论文副标题即「基于 XGBoost-SHAP 与深度学习的双重验证」；09 文献综述讨论 SHAP 双模型一致性"
+    },
+    {
+      "id": "q005",
+      "question": "SPEI 与县级粮食产量风险之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/papers/v6_论文_初稿_县级.md",
+        "doc:docs/11_数据集说明_v2.md"
+      ],
+      "verified": true,
+      "note": "v6 初稿含 SPEI 县级面板与 leave-county-out 结果；11 数据集说明记录 SPEI 来源与字段口径"
+    },
+    {
+      "id": "q006",
+      "question": "多模态融合与注意力机制在本项目里是怎么结合的？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/01_论文_融合优化版.md"
+      ],
+      "verified": true,
+      "note": "09 综述第 27 行的研究缺口问题即「多模态融合 + 注意力机制 + SHAP 双模型一致性」同时做"
+    },
+    {
+      "id": "q007",
+      "question": "关于极端气候对粮食生产的影响机制，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/01_论文_融合优化版.md",
+        "doc:docs/02_论文_总第五版.md",
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": true,
+      "note": "三篇都在讲影响机制与归因结论，口径互补"
+    },
+    {
+      "id": "q008",
+      "question": "省际空间外推失败的原因是什么？项目用哪些交叉验证方法论证过？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/papers/v1_draft.md",
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/_craic/robustness_summary_2026-05-22.md"
+      ],
+      "verified": true,
+      "note": "v1_draft 命中「leave-province-out/空间外推/交叉验证」29 行且含 R² 修复前后数值；robustness_summary 记录稳健性实验"
+    },
+    {
+      "id": "q009",
+      "question": "稷韧云图系统的功能模块是如何划分的，各自解决什么问题？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/12_系统开发执行计划.md",
+        "doc:docs/01_论文_融合优化版.md"
+      ],
+      "verified": true,
+      "note": "12 执行计划含 M01/M04 等模块分期与职责；01 论文描述系统交付形态"
+    },
+    {
+      "id": "q010",
+      "question": "0-1邻接矩阵 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/我国粮食生产韧性测度及影响因素研究_王萍萍.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「0-1邻接矩阵」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q011",
+      "question": "1.7 billion examples 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/2939672.2939785.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「1.7 billion examples」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q012",
+      "question": "10-fold CV 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「10-fold CV」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q013",
+      "question": "10折交叉验证 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/Wadoux_2021_spatial_CV_not_right.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「10折交叉验证」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q014",
+      "question": "11 维输入特征 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/papers/v1_draft.md"
+      ],
+      "verified": false,
+      "note": "由实体「11 维输入特征」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q015",
+      "question": "12条显式规则引擎 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/papers/v1_draft.md"
+      ],
+      "verified": false,
+      "note": "由实体「12条显式规则引擎」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q016",
+      "question": "18亿亩耕地红线 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/我国粮食生产韧性测度及影响因素研究_王萍萍.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「18亿亩耕地红线」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q017",
+      "question": "1960—2024年 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/极端气候驱动下洪泽湖蓝藻水华的加剧与归因_张娜.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「1960—2024年」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q018",
+      "question": "1961-2014年 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/东北三省作物种植区极端温度和降水事件的时空变化特征_李浩天.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「1961-2014年」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q019",
+      "question": "1989 Bangladesh Fertility Survey 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/lMMwR_2018-03-05.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「1989 Bangladesh Fertility Survey」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q020",
+      "question": "1990年 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/_craic/05_立项依据_补全_2026-05-30.md"
+      ],
+      "verified": false,
+      "note": "由实体「1990年」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q021",
+      "question": "2022年中国长江流域日极端高温 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/极端气候驱动下洪泽湖蓝藻水华的加剧与归因_张娜.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「2022年中国长江流域日极端高温」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q022",
+      "question": "2022年长江流域 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/极端气候驱动下洪泽湖蓝藻水华的加剧与归因_张娜.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「2022年长江流域」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q023",
+      "question": "2031-2060年 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/东北三省作物种植区极端温度和降水事件的时空变化特征_李浩天.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「2031-2060年」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q024",
+      "question": "21世纪森林覆盖变化高分辨率全球地图 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/Wadoux_2021_spatial_CV_not_right.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「21世纪森林覆盖变化高分辨率全球地图」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q025",
+      "question": "250米分辨率 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/paper/1-s2.0-S1569843223001887-main.pdf"
+      ],
+      "verified": false,
+      "note": "由实体「250米分辨率」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q026",
+      "question": "31省差异化韧性路径报告 是什么？请根据知识库给出定义或说明。",
+      "query_type": "fact",
+      "gold": [
+        "doc:docs/00_项目执行计划.md"
+      ],
+      "verified": false,
+      "note": "由实体「31省差异化韧性路径报告」机械生成，gold 为其唯一来源文档，待人工复核问法"
+    },
+    {
+      "id": "q027",
+      "question": "三模型互补 与 决策系统 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/_craic/03_研究报告_nature_v2.md",
+        "doc:docs/00_项目执行计划.md",
+        "doc:docs/_craic/03_研究报告.md"
+      ],
+      "verified": false,
+      "note": "由关系「三模型互补 → 决策系统」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q028",
+      "question": "多模态数据驱动 与 核心因子识别 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/03_大创项目_申报书.md",
+        "doc:docs/national/18_申报书_国家级批准版_2026-05-27.md",
+        "doc:docs/craic/2026-05-30/23山西农业大学_潘妙齐.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「多模态数据驱动 → 核心因子识别」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q029",
+      "question": "可解释AI双重验证 与 核心因子识别 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/03_大创项目_申报书.md",
+        "doc:docs/paper/Clinical Translational Sci - 2024 - Ponce‐Bobadilla - Practical guide to SHAP analysis  Explaining supervised machine.pdf",
+        "doc:docs/papers/v1_draft.md",
+        "doc:docs/national/18_申报书_国家级批准版_2026-05-27.md",
+        "doc:docs/craic/2026-05-30/23山西农业大学_潘妙齐.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「可解释AI双重验证 → 核心因子识别」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q030",
+      "question": "黄鑫茜(2025) 与 黄淮地区 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/04_大创项目_支撑材料.md",
+        "doc:docs/_craic/03_研究报告.md",
+        "doc:docs/paper/极端气候对粮食生产的影响及其作用机制——兼论农地流转的调节与门槛效应_郭珊.pdf",
+        "doc:docs/_craic/05_立项依据_补全_2026-05-30.md"
+      ],
+      "verified": false,
+      "note": "由关系「黄鑫茜(2025) → 黄淮地区」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q031",
+      "question": "田潭鹏(2025) 与 黄河流域 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/04_大创项目_支撑材料.md",
+        "doc:docs/_craic/03_研究报告.md",
+        "doc:docs/paper/我国粮食生产韧性测度及影响因素研究_王萍萍.pdf",
+        "doc:docs/_craic/03_研究报告_nature_v2.md",
+        "doc:docs/_craic/05_立项依据_补全_2026-05-30.md"
+      ],
+      "verified": false,
+      "note": "由关系「田潭鹏(2025) → 黄河流域」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q032",
+      "question": "PostgreSQL 与 可视化系统 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/04_大创项目_支撑材料.md",
+        "doc:docs/03_大创项目_申报书.md",
+        "doc:docs/national/18_申报书_国家级批准版_2026-05-27.md",
+        "doc:docs/23_软著申请材料指南_2026-05-27.md",
+        "doc:docs/craic/2026-05-30/23山西农业大学_潘妙齐.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「PostgreSQL → 可视化系统」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q033",
+      "question": "耕地掩膜 与 省域聚合 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/08_数据采集任务_石灵子.md"
+      ],
+      "verified": false,
+      "note": "由关系「耕地掩膜 → 省域聚合」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q034",
+      "question": "RESDC CNLUCC 与 论文 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/08_数据采集任务_石灵子.md",
+        "doc:docs/22_国家级要求总结_2026-05-27.md",
+        "doc:docs/13_国家级升级执行规划_2026-05-26.md"
+      ],
+      "verified": false,
+      "note": "由关系「RESDC CNLUCC → 论文」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q035",
+      "question": "Zhang et al. 与 GLC_FCS30D 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/paper/plants-11-01923.pdf",
+        "doc:docs/08_数据采集任务_石灵子.md"
+      ],
+      "verified": false,
+      "note": "由关系「Zhang et al. → GLC_FCS30D」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q036",
+      "question": "CNN+Gaussian Process 与 soybean 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/fpls-10-01750.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「CNN+Gaussian Process → soybean」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q037",
+      "question": "CNN+Gaussian Process 与 MAPE 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/plants-11-01923.pdf",
+        "doc:docs/paper/journal.pone.0322496.pdf",
+        "doc:docs/paper/journal.pone.0283452.pdf",
+        "doc:docs/paper/1-s2.0-S1569843223001887-main.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「CNN+Gaussian Process → MAPE」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q038",
+      "question": "USDA 与 MAPE 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/plants-11-01923.pdf",
+        "doc:docs/paper/journal.pone.0322496.pdf",
+        "doc:docs/paper/journal.pone.0283452.pdf",
+        "doc:docs/paper/1-s2.0-S1569843223001887-main.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「USDA → MAPE」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q039",
+      "question": "YieldNet 与 corn 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/paper/lMMwR_2018-03-05.pdf",
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/fpls-10-01750.pdf",
+        "doc:docs/paper/journal.pone.0322496.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「YieldNet → corn」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q040",
+      "question": "YieldNet 与 soybean 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/paper/lMMwR_2018-03-05.pdf",
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/fpls-10-01750.pdf"
+      ],
+      "verified": false,
+      "note": "由关系「YieldNet → soybean」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q041",
+      "question": "RicEns-Net 与 Sentinel-1/2/3 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": false,
+      "note": "由关系「RicEns-Net → Sentinel-1/2/3」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q042",
+      "question": "Pix2Pix 与 Landsat-8 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": false,
+      "note": "由关系「Pix2Pix → Landsat-8」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q043",
+      "question": "CNN-LSTM-Attention 与 干旱胁迫 之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": false,
+      "note": "由关系「CNN-LSTM-Attention → 干旱胁迫」机械生成，gold 为两端实体来源文档并集"
+    },
+    {
+      "id": "q044",
+      "question": "围绕 解释方法分歧问题、LIME、Integrated Gradients 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/paper/Clinical Translational Sci - 2024 - Ponce‐Bobadilla - Practical guide to SHAP analysis  Explaining supervised machine.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #4 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q045",
+      "question": "围绕 规则项、业务触发规则、默认动作 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/17_韧性规则引擎说明.md"
+      ],
+      "verified": false,
+      "note": "由社区 #8 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q046",
+      "question": "围绕 obesity prevalence、random forest (RF) model、Geo-attribute-based spatial CV 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Sun_2023_GeoAI_SpatialCV.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #14 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q047",
+      "question": "围绕 Cross-validation for Geospatial Data、Oregon State University、Rebecca A. Hutchinson 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #22 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q048",
+      "question": "围绕 Tasseled Cap transformation、brightness、wetness 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #27 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q049",
+      "question": "围绕 Golden-crowned Sparrow、KATM、土地覆盖类别 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #29 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q050",
+      "question": "围绕 WETA1800 SI + CS、TCG、HEWA1000 SI + CS 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #32 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q051",
+      "question": "围绕 linear mixed models、Type I error、Gauss-Newton method 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/brown-2021-an-introduction-to-linear-mixed-effects-modeling-in-r.pdf",
+        "doc:docs/paper/lMMwR_2018-03-05.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #41 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q052",
+      "question": "围绕 R、modality、response times 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/brown-2021-an-introduction-to-linear-mixed-effects-modeling-in-r.pdf",
+        "doc:docs/paper/lMMwR_2018-03-05.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #44 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q053",
+      "question": "围绕 Ecological data、predictive error、structured data 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Ecography - 2016 - Roberts - Cross‐validation strategies for data with temporal  spatial  hierarchical  or phylogenetic.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #46 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q054",
+      "question": "围绕 SKCV、Pomokaira、SLOO 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Pohjankukka_2017_SKCV.pdf",
+        "doc:docs/paper/Ecography - 2016 - Roberts - Cross‐validation strategies for data with temporal  spatial  hierarchical  or phylogenetic.pdf",
+        "doc:docs/paper/1149_Cross_validation_for_Geos.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #47 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q055",
+      "question": "围绕 Phylogenetic tree、Model residuals、Blocked folds 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Ecography - 2016 - Roberts - Cross‐validation strategies for data with temporal  spatial  hierarchical  or phylogenetic.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #49 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q056",
+      "question": "围绕 相异性度量、多变量距离、单变量范围比较 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Ecography - 2016 - Roberts - Cross‐validation strategies for data with temporal  spatial  hierarchical  or phylogenetic.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #50 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q057",
+      "question": "围绕 SC、DRR、MSB 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/Ecography - 2016 - Roberts - Cross‐validation strategies for data with temporal  spatial  hierarchical  or phylogenetic.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #53 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q058",
+      "question": "围绕 Frontiers in Plant Science、CNN-RNN Framework、Khaki et al. 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/fpls-10-01750.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #55 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q059",
+      "question": "围绕 CNN-LSTM、Boruta-XGBoost、influenza activity 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/journal.pone.0322496.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #62 机械生成，gold 为核心实体来源文档并集"
+    },
+    {
+      "id": "q060",
+      "question": "围绕 Tossapol Phoophiwfa、Tianwen Zhao、Sujitta Suraphee 等主题，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/paper/journal.pone.0322496.pdf"
+      ],
+      "verified": false,
+      "note": "由社区 #65 机械生成，gold 为核心实体来源文档并集"
+    }
+  ]
+}

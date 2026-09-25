@@ -38,13 +38,40 @@ def _extract_title(filepath: Path) -> str:
     return stem.replace("_", " ")
 
 
+def _read_text(filepath: Path) -> str:
+    """读取文本文件，UTF-8 优先，GBK 兜底（Windows 中文编码兼容）。"""
+    try:
+        return filepath.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return filepath.read_text(encoding="gbk", errors="replace")
+
+
+def _rel_source(filepath: Path) -> str:
+    """计算文档 source：相对项目根；不在项目内时退回绝对路径。"""
+    try:
+        return str(filepath.relative_to(config.DOCS_DIR.parent))
+    except ValueError:
+        return str(filepath)
+
+
 def load_markdown(filepath: Path) -> Document:
     """加载单个 .md 文件。"""
-    text = filepath.read_text(encoding="utf-8")
+    text = _read_text(filepath)
     return Document(
         content=text,
-        source=str(filepath.relative_to(config.DOCS_DIR.parent)),
+        source=_rel_source(filepath),
         file_type="md",
+        title=_extract_title(filepath),
+    )
+
+
+def load_txt(filepath: Path) -> Document:
+    """加载单个 .txt 文件（论文全文、导出文本等）。"""
+    text = _read_text(filepath)
+    return Document(
+        content=text,
+        source=_rel_source(filepath),
+        file_type="txt",
         title=_extract_title(filepath),
     )
 
@@ -70,7 +97,7 @@ def load_pdf(filepath: Path) -> list[Document]:
                     continue
                 docs.append(Document(
                     content=text.strip(),
-                    source=f"{filepath.relative_to(config.DOCS_DIR.parent)}#p{page_num}",
+                    source=f"{_rel_source(filepath)}#p{page_num}",
                     file_type="pdf",
                     title=title,
                     page=page_num,
@@ -84,13 +111,13 @@ def load_pdf(filepath: Path) -> list[Document]:
 
 def load_all_documents(
     docs_dir: Path | None = None,
-    file_types: tuple[str, ...] = (".md", ".pdf"),
+    file_types: tuple[str, ...] = config.FILE_TYPES,
 ) -> list[Document]:
     """递归加载 docs_dir 下所有支持的文件。
 
     Args:
         docs_dir: 文档根目录，默认 config.DOCS_DIR。
-        file_types: 要加载的扩展名。
+        file_types: 要加载的扩展名（默认 .md/.txt/.pdf）。
 
     Returns:
         Document 列表（已去空内容）。
@@ -101,7 +128,7 @@ def load_all_documents(
         return []
 
     documents: list[Document] = []
-    md_count, pdf_count = 0, 0
+    counts: dict[str, int] = {}
 
     for filepath in sorted(docs_dir.rglob("*")):
         if filepath.is_dir():
@@ -114,14 +141,20 @@ def load_all_documents(
             doc = load_markdown(filepath)
             if doc.content.strip():
                 documents.append(doc)
-                md_count += 1
+                counts[".md"] = counts.get(".md", 0) + 1
+        elif suffix == ".txt":
+            doc = load_txt(filepath)
+            if doc.content.strip():
+                documents.append(doc)
+                counts[".txt"] = counts.get(".txt", 0) + 1
         elif suffix == ".pdf":
             pdf_docs = load_pdf(filepath)
             documents.extend(pdf_docs)
-            pdf_count += len(pdf_docs)
+            counts[".pdf"] = counts.get(".pdf", 0) + len(pdf_docs)
 
     logger.info(
-        "文档加载完成: %d 篇 md + %d 页 pdf = %d 个文档单元",
-        md_count, pdf_count, len(documents),
+        "文档加载完成: %s = %d 个文档单元",
+        ", ".join(f"{k}×{v}" for k, v in counts.items()) or "空",
+        len(documents),
     )
     return documents

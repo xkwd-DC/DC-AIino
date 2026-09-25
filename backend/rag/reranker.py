@@ -11,10 +11,14 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from . import config
 
 logger = logging.getLogger(__name__)
+
+# 复用 embedder 的 TF 禁用策略，避免 FlagEmbedding/transformers 探测 tensorflow 报错。
+os.environ.setdefault("USE_TF", "0")
 
 _RERANKER: "FlagReranker | None" = None  # type: ignore[name-defined]
 

@@ -1,0 +1,98 @@
+{
+  "name": "seeds_verified",
+  "_comment": "人工核对过的种子题。gold 逐条在源文件里定位过（见每条 note 的行号），verified 由 build_suite.load_seeds 强制置为 true。",
+  "items": [
+    {
+      "id": "seed-fact-1",
+      "question": "国家级大创结题时，论文这条硬指标的具体要求是什么？",
+      "query_type": "fact",
+      "gold": ["doc:docs/national/19_结题验收要求.md"],
+      "verified": true,
+      "note": "原文第 13 行：「项目负责人在国家广电总局认定的第一批、第二批学术期刊名单，以第一作者发表 1 篇学术论文」"
+    },
+    {
+      "id": "seed-fact-2",
+      "question": "申请软件著作权需要提交哪些材料？",
+      "query_type": "fact",
+      "gold": ["doc:docs/23_软著申请材料指南_2026-05-27.md"],
+      "verified": true,
+      "note": "该文件第 75 行起的材料清单表（登记申请表 / 源程序 / 说明书等），文内命中「申请表|源程序|说明书」20 行"
+    },
+    {
+      "id": "seed-fact-3",
+      "question": "稷韧云图的韧性路径推荐模块是怎么设计的？",
+      "query_type": "fact",
+      "gold": ["doc:docs/17_韧性规则引擎说明.md"],
+      "verified": true,
+      "note": "该文件标题即「韧性规则引擎说明(v1)」，全文围绕规则合成 SHAP 与 Attention 双视角展开"
+    },
+    {
+      "id": "seed-relation-1",
+      "question": "XGBoost-SHAP 在稷韧云图项目里承担什么角色？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/01_论文_融合优化版.md",
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": true,
+      "note": "01 论文副标题即「基于 XGBoost-SHAP 与深度学习的双重验证」；09 文献综述讨论 SHAP 双模型一致性"
+    },
+    {
+      "id": "seed-relation-2",
+      "question": "SPEI 与县级粮食产量风险之间是什么关系？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/papers/v6_论文_初稿_县级.md",
+        "doc:docs/11_数据集说明_v2.md"
+      ],
+      "verified": true,
+      "note": "v6 初稿含 SPEI 县级面板与 leave-county-out 结果；11 数据集说明记录 SPEI 来源与字段口径"
+    },
+    {
+      "id": "seed-relation-3",
+      "question": "多模态融合与注意力机制在本项目里是怎么结合的？",
+      "query_type": "relation",
+      "gold": [
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/01_论文_融合优化版.md"
+      ],
+      "verified": true,
+      "note": "09 综述第 27 行的研究缺口问题即「多模态融合 + 注意力机制 + SHAP 双模型一致性」同时做"
+    },
+    {
+      "id": "seed-multihop-1",
+      "question": "关于极端气候对粮食生产的影响机制，知识库中有哪些主要结论？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/01_论文_融合优化版.md",
+        "doc:docs/02_论文_总第五版.md",
+        "doc:docs/09_文献综述_潘妙齐.md"
+      ],
+      "verified": true,
+      "note": "三篇都在讲影响机制与归因结论，口径互补"
+    },
+    {
+      "id": "seed-multihop-2",
+      "question": "省际空间外推失败的原因是什么？项目用哪些交叉验证方法论证过？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/papers/v1_draft.md",
+        "doc:docs/09_文献综述_潘妙齐.md",
+        "doc:docs/_craic/robustness_summary_2026-05-22.md"
+      ],
+      "verified": true,
+      "note": "v1_draft 命中「leave-province-out/空间外推/交叉验证」29 行且含 R² 修复前后数值；robustness_summary 记录稳健性实验"
+    },
+    {
+      "id": "seed-multihop-3",
+      "question": "稷韧云图系统的功能模块是如何划分的，各自解决什么问题？",
+      "query_type": "multi_hop",
+      "gold": [
+        "doc:docs/12_系统开发执行计划.md",
+        "doc:docs/01_论文_融合优化版.md"
+      ],
+      "verified": true,
+      "note": "12 执行计划含 M01/M04 等模块分期与职责；01 论文描述系统交付形态"
+    }
+  ]
+}

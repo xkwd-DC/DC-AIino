@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     import chromadb
 
 _CLIENT: "chromadb.PersistentClient | None" = None
-_COLLECTION: "chromadb.Collection | None" = None
+_COLLECTIONS: dict[str, "chromadb.Collection"] = {}
 
 
 def _get_client() -> "chromadb.PersistentClient":
@@ -34,15 +34,16 @@ def _get_client() -> "chromadb.PersistentClient":
     return _CLIENT
 
 
-def _get_collection() -> "chromadb.Collection":
-    """获取或创建集合。"""
-    global _COLLECTION
-    if _COLLECTION is None:
+def _get_collection(collection_name: str | None = None) -> "chromadb.Collection":
+    """获取或创建集合（按名称隔离，支持全库与论文独立收藏）。"""
+    global _COLLECTIONS
+    collection_name = collection_name or config.COLLECTION_NAME
+    if collection_name not in _COLLECTIONS:
         client = _get_client()
         from .embedder import embed_dim  # noqa: import-not-at-top
         dim = embed_dim()
-        _COLLECTION = client.get_or_create_collection(
-            name=config.COLLECTION_NAME,
+        _COLLECTIONS[collection_name] = client.get_or_create_collection(
+            name=collection_name,
             metadata={
                 "description": "DC 项目知识库 — 极端气候粮食生产风险",
                 "embedding_model": config.EMBEDDING_MODEL_NAME,
@@ -51,12 +52,16 @@ def _get_collection() -> "chromadb.Collection":
         )
         logger.info(
             "ChromaDB 集合 '%s' 就绪，当前 %d 条",
-            config.COLLECTION_NAME, _COLLECTION.count(),
+            collection_name, _COLLECTIONS[collection_name].count(),
         )
-    return _COLLECTION
+    return _COLLECTIONS[collection_name]
 
 
-def add_chunks(chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+def add_chunks(
+    chunks: list[Chunk],
+    embeddings: list[list[float]],
+    collection_name: str | None = None,
+) -> None:
     """批量添加 chunk 及其嵌入向量到向量库。
 
     Args:
@@ -66,7 +71,7 @@ def add_chunks(chunks: list[Chunk], embeddings: list[list[float]]) -> None:
     if not chunks:
         return
 
-    collection = _get_collection()
+    collection = _get_collection(collection_name)
 
     ids = [f"{c.source}:{c.chunk_index}:{c.page}" for c in chunks]
     metadatas = [
@@ -94,6 +99,7 @@ def query(
     query_embedding: list[float],
     top_k: int | None = None,
     similarity_threshold: float | None = None,
+    collection_name: str | None = None,
 ) -> list[dict]:
     """语义检索 top-k 相关文档块。
 
@@ -108,7 +114,7 @@ def query(
     top_k = top_k or config.TOP_K
     threshold = similarity_threshold or config.SIMILARITY_THRESHOLD
 
-    collection = _get_collection()
+    collection = _get_collection(collection_name)
     if collection.count() == 0:
         logger.warning("向量库为空，检索无结果")
         return []
@@ -142,18 +148,18 @@ def query(
     return items
 
 
-def collection_stats() -> dict:
+def collection_stats(collection_name: str | None = None) -> dict:
     """返回向量库统计信息。"""
-    collection = _get_collection()
+    collection = _get_collection(collection_name)
     return {
-        "name": config.COLLECTION_NAME,
+        "name": collection_name or config.COLLECTION_NAME,
         "count": collection.count(),
         "embedding_model": config.EMBEDDING_MODEL_NAME,
         "storage_path": str(config.CHROMA_DB_DIR),
     }
 
 
-def delete_by_source(source_prefix: str) -> int:
+def delete_by_source(source_prefix: str, collection_name: str | None = None) -> int:
     """删除指定 source 前缀的所有 chunk。
 
     用于增量索引：更新某文件前先删旧 chunks，再写入新 chunks。
@@ -165,7 +171,7 @@ def delete_by_source(source_prefix: str) -> int:
     Returns:
         删除的 chunk 数量。
     """
-    collection = _get_collection()
+    collection = _get_collection(collection_name)
     if collection.count() == 0:
         return 0
 
@@ -197,15 +203,16 @@ def delete_by_source(source_prefix: str) -> int:
     return len(ids_to_delete)
 
 
-def clear_collection() -> None:
+def clear_collection(collection_name: str | None = None) -> None:
     """清空集合并重建。用于 re-index。"""
-    global _COLLECTION
+    global _COLLECTIONS
+    collection_name = collection_name or config.COLLECTION_NAME
     client = _get_client()
     try:
-        client.delete_collection(config.COLLECTION_NAME)
-        logger.info("已删除集合 '%s'", config.COLLECTION_NAME)
+        client.delete_collection(collection_name)
+        logger.info("已删除集合 '%s'", collection_name)
     except Exception:
         pass
-    _COLLECTION = None
-    _get_collection()
-    logger.info("集合 '%s' 已重建（空）", config.COLLECTION_NAME)
+    _COLLECTIONS.pop(collection_name, None)
+    _get_collection(collection_name)
+    logger.info("集合 '%s' 已重建（空）", collection_name)
