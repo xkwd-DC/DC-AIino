@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>禾衡·农业智能体决策服务平台 答辩材料</title>
+<style>
+  @page { size: 338.67mm 190.5mm; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; color: #1A1A1A; }
+  .slide {
+    position: relative; width: 1280px; height: 720px; overflow: hidden;
+    background: #FFFFFF; break-after: page; padding: 56px 72px 48px 72px;
+  }
+  .slide:last-child { break-after: auto; }
+  @media screen {
+    html { background: #E9ECEF; }
+    .slide { margin: 0 auto 16px auto; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  }
+  .stitle { font-size: 38px; font-weight: 700; color: #12352A; line-height: 1.25; }
+  .rule { width: 88px; height: 5px; background: #1E4D3B; margin: 16px 0 26px 0; }
+  .lead { font-size: 21px; color: #3C4A44; line-height: 1.6; }
+  .pageno { position: absolute; right: 72px; bottom: 26px; font-size: 15px; color: #93A29B; }
+
+  /* 封面 */
+  .cover { background: #12352A; color: #FFFFFF; padding: 96px 96px 0 96px; }
+  .cover .kick { font-size: 20px; letter-spacing: 3px; color: #A8C4B6; }
+  .cover h1 { font-size: 62px; font-weight: 700; line-height: 1.28; margin-top: 26px; }
+  .cover .line { width: 120px; height: 6px; background: #7FB069; margin: 34px 0 30px 0; }
+  .cover .desc { font-size: 24px; line-height: 1.7; color: #DCE7E1; max-width: 880px; }
+  .cover .when { position: absolute; left: 96px; bottom: 76px; font-size: 19px; color: #A8C4B6; }
+
+  /* 三栏 */
+  .cols { display: flex; gap: 26px; }
+  .col { flex: 1; background: #F4F7F5; border: 1px solid #DCE4DF; padding: 30px 28px; }
+  .col.tall { padding: 40px 32px 44px 32px; }
+  .col.tall p { font-size: 19px; line-height: 1.75; }
+  .col .n { font-size: 17px; color: #7A8B83; letter-spacing: 2px; }
+  .col h3 { font-size: 25px; margin: 12px 0 14px 0; color: #12352A; }
+  .col p { font-size: 18px; line-height: 1.65; color: #3C4A44; }
+  .takeaway { margin-top: 34px; font-size: 25px; font-weight: 700; color: #12352A; }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid #D9D9D9; padding: 11px 14px; font-size: 17px; line-height: 1.5; vertical-align: middle; }
+  thead th { background: #1E4D3B; color: #FFFFFF; font-weight: 600; text-align: center; }
+  tbody tr:nth-child(even) td { background: #F5F7FA; }
+  td.k { font-weight: 600; color: #12352A; }
+  td.c { text-align: center; }
+  table.roomy th, table.roomy td { padding: 17px 16px; font-size: 18px; }
+
+  /* 架构层 */
+  .layer { border: 1px solid #D9D9D9; background: #F4F7F5; padding: 13px 20px; margin-bottom: 9px; font-size: 18px; line-height: 1.5; }
+  .layer b { color: #12352A; font-size: 19px; }
+  .layer span { color: #4A5A53; }
+
+  /* 流程格 */
+  .steps { display: flex; flex-wrap: wrap; gap: 14px; }
+  .step { width: calc(25% - 11px); border: 1px solid #DCE4DF; background: #F4F7F5; padding: 16px 16px 18px 16px; }
+  .step .idx { font-size: 15px; color: #7A8B83; font-weight: 700; }
+  .step .nm { font-size: 19px; font-weight: 700; color: #12352A; margin: 8px 0 8px 0; }
+  .step .ds { font-size: 15px; line-height: 1.55; color: #4A5A53; }
+
+  /* 对话轨迹 */
+  .trace { margin-top: 26px; border-left: 5px solid #7FB069; background: #F4F7F5; padding: 20px 24px; }
+  .trace .t1 { font-size: 18px; color: #4A5A53; }
+  .trace .t2 { font-size: 20px; color: #12352A; font-weight: 600; margin: 10px 0; }
+  .trace .t3 { font-size: 18px; color: #3C4A44; }
+
+  /* 两栏 */
+  .two { display: flex; gap: 34px; }
+  .two .l { flex: 1.05; }
+  .two .r { flex: 1; }
+  .block { border: 1px solid #DCE4DF; background: #F4F7F5; padding: 20px 22px; margin-bottom: 14px; }
+  .block h4 { font-size: 20px; color: #12352A; margin-bottom: 10px; }
+  .block p, .block li { font-size: 16.5px; line-height: 1.62; color: #3C4A44; }
+  .block ol, .block ul { padding-left: 22px; }
+  .block li { margin-bottom: 4px; }
+
+  figure { margin: 0; }
+  figure img { width: 100%; display: block; border: 1px solid #DCE4DF; }
+  figcaption { font-size: 15px; color: #6B7A73; margin-top: 10px; text-align: center; }
+  .crop { position: relative; overflow: hidden; width: 100%; border: 1px solid #DCE4DF; }
+  .crop img { position: absolute; width: 114.29%; left: -14.29%; top: -7.32%; border: 0; }
+  .figure-fit { width: 770px; margin: 0 auto; }
+
+  .close { position: absolute; left: 72px; bottom: 56px; font-size: 27px; font-weight: 700; color: #12352A; }
+</style>
+</head>
+<body>
+
+<!-- 1 封面 -->
+<section class="slide cover">
+  <div class="kick">第八届全球校园人工智能算法精英大赛　赛题五</div>
+  <h1>禾衡·农业智能体<br>决策服务平台</h1>
+  <div class="line"></div>
+  <div class="desc">以大语言模型为决策中枢，融合知识图谱与检索增强生成，为农业生产、管理与服务提供可执行的方案。</div>
+  <div class="when">答辩材料　2026 年 10 月</div>
+</section>
+
+<!-- 2 问题 -->
+<section class="slide">
+  <div class="stitle">基层农业从业者的三个困境</div>
+  <div class="rule"></div>
+  <div class="cols">
+    <div class="col tall">
+      <div class="n">01</div>
+      <h3>知识分散</h3>
+      <p>农技规程、病虫情报与地方技术意见分散在不同机构与渠道，基层获取完整信息的成本很高。</p>
+    </div>
+    <div class="col tall">
+      <div class="n">02</div>
+      <h3>建议与本地条件脱节</h3>
+      <p>权威条文很少结合本地气象、土壤状况和当季生产进度，通用建议难以直接采用。</p>
+    </div>
+    <div class="col tall">
+      <div class="n">03</div>
+      <h3>答案无法执行</h3>
+      <p>现有农业问答多停留在概念解释，给不出明确的时间节点、用量与操作步骤。</p>
+    </div>
+  </div>
+  <div class="takeaway" style="margin-top:52px">结果是一个常见矛盾：知识查得到，但用不上。</div>
+  <div class="pageno">2</div>
+</section>
+
+<!-- 3 需求到设计 -->
+<section class="slide">
+  <div class="stitle">赛题考核项与我们的设计</div>
+  <div class="rule"></div>
+  <table class="roomy">
+    <thead>
+      <tr><th style="width:20%">赛题考核项</th><th style="width:34%">我们的设计目标</th><th>实现方式</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">回答专业性</td><td>每条建议都有可核查的依据</td><td>农技知识库检索增强生成，逐条标注依据类型与出处</td></tr>
+      <tr><td class="k">方案可操作性</td><td>落到时间、对象、用量与注意事项</td><td>结构化方案模板，结合生育期日历与投入品登记信息</td></tr>
+      <tr><td class="k">交互自然流畅度</td><td>支持口语化多轮问答，缺失信息主动追问</td><td>槽位补全策略，流式输出，结构化卡片</td></tr>
+      <tr><td class="k">知识检索准确性</td><td>检索结果可评测、可追溯、可随知识更新</td><td>稠密与关键词混合检索，交叉编码重排，元数据与时效过滤</td></tr>
+    </tbody>
+  </table>
+  <div class="takeaway" style="font-size:22px; margin-top:44px">四项考核对应四条设计原则：依据可查、步骤可执行、问答可追问、结论可追溯。</div>
+  <div class="pageno">3</div>
+</section>
+
+<!-- 4 架构 -->
+<section class="slide">
+  <div class="stitle">系统总体架构</div>
+  <div class="rule"></div>
+  <div class="layer"><b>交互层　</b><span>自然语言问答　农情数据上传　方案卡片　文档导出　可视化联动</span></div>
+  <div class="layer"><b>智能体层　</b><span>意图识别与任务规划　工具调用编排　多轮槽位补全　会话记忆　证据校验</span></div>
+  <div class="layer"><b>工具层　</b><span>区域风险查询　因子归因解释　情景模拟　韧性路径推荐　水肥处方计算　病虫害诊断　气象与物候查询　知识检索</span></div>
+  <div class="layer"><b>知识层　</b><span>农技知识库　向量与关键词混合检索　重排　农业知识图谱　引用溯源与时效加权</span></div>
+  <div class="layer"><b>数据层　</b><span>省级多模态面板（31 省 × 13 年）　县级生产面板（2 725 县 × 23 年）　遥感气象与空间数据　模型训练产物</span></div>
+  <div class="takeaway" style="font-size:22px; margin-top:44px">各层通过统一接口解耦，模型与知识可以独立迭代，不影响交互体验。</div>
+  <div class="pageno">4</div>
+</section>
+
+<!-- 5 智能体循环 -->
+<section class="slide">
+  <div class="stitle">智能体如何处理一个提问</div>
+  <div class="rule"></div>
+  <div class="steps">
+    <div class="step"><div class="idx">01</div><div class="nm">意图识别</div><div class="ds">判断属于风险查询、措施咨询、诊断或规划</div></div>
+    <div class="step"><div class="idx">02</div><div class="nm">槽位检查</div><div class="ds">核对作物、区域、生育期与地块条件</div></div>
+    <div class="step"><div class="idx">03</div><div class="nm">主动追问</div><div class="ds">缺少关键信息时先问清楚，不猜测作答</div></div>
+    <div class="step"><div class="idx">04</div><div class="nm">任务规划</div><div class="ds">把问题拆成可并行执行的子任务</div></div>
+    <div class="step"><div class="idx">05</div><div class="nm">工具调用</div><div class="ds">调用模型、规则、知识检索与气象工具</div></div>
+    <div class="step"><div class="idx">06</div><div class="nm">证据校验</div><div class="ds">汇总结果，识别冲突与缺失并降级处理</div></div>
+    <div class="step"><div class="idx">07</div><div class="nm">方案生成</div><div class="ds">按模板生成结构化建议并标注依据</div></div>
+    <div class="step"><div class="idx">08</div><div class="nm">溯源输出</div><div class="ds">给出引用来源，支持导出与继续追问</div></div>
+  </div>
+  <div class="trace">
+    <div class="t1">一次实际问答的轨迹</div>
+    <div class="t2">用户提问：河南周口冬小麦返青期偏旱，今年要不要追肥</div>
+    <div class="t3">槽位齐全，调用区域风险查询、水肥处方计算与知识检索；输出分次用量、施用时间与注意事项，并标注每条建议的依据来源。</div>
+  </div>
+  <div class="pageno">5</div>
+</section>
+
+<!-- 6 工具 -->
+<section class="slide">
+  <div class="stitle">智能体可调用的九项工具</div>
+  <div class="rule"></div>
+  <table>
+    <thead>
+      <tr><th style="width:26%">工具</th><th>作用</th><th style="width:18%">状态</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">区域风险查询</td><td>按省份与年份返回风险等级与区域排序</td><td class="c">已实装</td></tr>
+      <tr><td class="k">因子归因解释</td><td>返回各因子对风险的贡献度与作用方向</td><td class="c">已实装</td></tr>
+      <tr><td class="k">参数情景模拟</td><td>调整灌溉、化肥与降水参数后的反事实推演</td><td class="c">已实装</td></tr>
+      <tr><td class="k">韧性路径推荐</td><td>按短板因子输出分阶段措施与优先级</td><td class="c">已实装</td></tr>
+      <tr><td class="k">知识检索</td><td>从农技知识库召回条文并给出出处</td><td class="c">已实装</td></tr>
+      <tr><td class="k">图谱关系检索</td><td>按实体展开多跳关系与社区摘要</td><td class="c">已实装</td></tr>
+      <tr><td class="k">水肥处方计算</td><td>按作物与生育期给出分次用量与施用方式</td><td class="c">本期建设</td></tr>
+      <tr><td class="k">病虫害诊断</td><td>由症状或照片给出疑似对象与防治适期</td><td class="c">本期建设</td></tr>
+      <tr><td class="k">气象与物候查询</td><td>返回预报要素、积温与生育期推断</td><td class="c">本期建设</td></tr>
+    </tbody>
+  </table>
+  <div class="pageno">6</div>
+</section>
+
+<!-- 7 知识底座 -->
+<section class="slide">
+  <div class="stitle">知识底座：检索与关系推理</div>
+  <div class="rule"></div>
+  <div class="two">
+    <div class="l">
+      <div class="block">
+        <h4>检索链路</h4>
+        <ol>
+          <li>稠密向量检索，捕捉语义相近的表达</li>
+          <li>关键词检索，保证术语精确匹配</li>
+          <li>倒数排名融合，合并两路召回结果</li>
+          <li>交叉编码重排，只保留高分片段进入生成</li>
+          <li>引用溯源，逐句标注出处与发布日期</li>
+        </ol>
+      </div>
+      <div class="block">
+        <h4>检索质量保障</h4>
+        <p>知识条目带作物、区域、生育期、来源机构与发布日期五类元数据，先过滤后排序；超过有效期的技术意见自动降权；检索内容不足时明确说明未收录，不生成结论。</p>
+      </div>
+    </div>
+    <div class="r">
+      <div class="block">
+        <h4>知识图谱本体</h4>
+        <p>节点覆盖作物、生育期、气候胁迫、病虫害、农事措施、投入品、区域与标准规程八类。</p>
+        <ul>
+          <li>作物处于某一生育期</li>
+          <li>生育期易发特定胁迫或病虫害</li>
+          <li>胁迫与病虫害推荐对应农事措施</li>
+          <li>措施使用投入品并依据标准规程</li>
+          <li>区域约束措施的适用性与农时</li>
+        </ul>
+      </div>
+    <div class="block">
+        <h4>查询路由</h4>
+        <p>综述型提问走社区摘要，具体实体提问沿关系路径多跳推理，条文查找直接返回相关片段。</p>
+      </div>
+    </div>
+  </div>
+  <div class="takeaway" style="font-size:22px; margin-top:26px">两条通道各司其职：检索保证条文可溯源，图谱保证关系可推理。</div>
+  <div class="pageno">7</div>
+</section>
+
+<!-- 8 决策引擎 -->
+<section class="slide">
+  <div class="stitle">建议为什么可信：决策引擎提供双视角证据</div>
+  <div class="rule"></div>
+  <div class="two">
+    <div class="l">
+      <figure>
+        <img src="img/shap_importance.png" alt="风险因子重要性排序">
+        <figcaption>风险因子重要性排序，作为智能体引用模型证据的来源</figcaption>
+      </figure>
+    </div>
+    <div class="r">
+      <table style="margin-top:0">
+        <thead><tr><th style="width:52%">验证协议</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td class="k">随机划分 8:2</td><td class="c">R² = 0.907 ± 0.038</td></tr>
+          <tr><td class="k">留一年验证</td><td class="c">R² = 0.894</td></tr>
+          <tr><td class="k">留一省验证</td><td class="c">中位 R² = −16.83</td></tr>
+          <tr><td class="k">县域留一县验证</td><td class="c">R² = 0.660</td></tr>
+        </tbody>
+      </table>
+      <div class="block" style="margin-top:18px">
+        <h4>能力边界</h4>
+        <p>省级截面样本不支持跨省外推，平台据此只提供区域内相对风险与情景推演，不承诺产量绝对值的预测。</p>
+      </div>
+      <div class="block">
+        <h4>双视角互补</h4>
+        <p>横截面归因与时序注意力两条路线的因子排序并不完全重合，平台将其作为互补证据交叉印证方向性结论。</p>
+      </div>
+    </div>
+  </div>
+  <div class="pageno">8</div>
+</section>
+
+<!-- 9 四类产出 -->
+<section class="slide">
+  <div class="stitle">四类产出物</div>
+  <div class="rule"></div>
+  <table class="roomy">
+    <thead>
+      <tr><th style="width:19%">产出类型</th><th style="width:22%">必要输入</th><th style="width:32%">结构</th><th>依据来源</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">农事管理方案</td><td>作物、区域、生育期、地块条件</td><td>生育期任务清单、时间节点、操作要点、风险提示</td><td>技术规程，区域风险归因</td></tr>
+      <tr><td class="k">病虫害防治建议</td><td>作物、症状或照片、发生时期</td><td>疑似对象、诊断依据、防治适期、农业与化学防治措施</td><td>病虫情报，图谱关系，登记信息</td></tr>
+      <tr><td class="k">水肥调控处方</td><td>作物、生育期、土壤条件、已施用量</td><td>分次用量、施用时间、施用方式、注意事项</td><td>测土配方资料，技术规程</td></tr>
+      <tr><td class="k">生产规划报告</td><td>区域、规模、品种与目标</td><td>风险画像、品种与农时建议、投入安排、应对措施</td><td>区域风险归因，情景模拟，韧性路径</td></tr>
+    </tbody>
+  </table>
+  <div class="takeaway" style="font-size:22px; margin-top:30px">每类产出都有固定骨架，生成后逐条回填依据，可核查、可导出。</div>
+  <div class="pageno">9</div>
+</section>
+
+<!-- 10 数据 -->
+<section class="slide">
+  <div class="stitle">数据资产</div>
+  <div class="rule"></div>
+  <table class="roomy">
+    <thead>
+      <tr><th style="width:24%">数据集</th><th style="width:34%">规模</th><th>主要内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">省级多模态面板</td><td>31 省 × 13 年，403 条样本 × 11 维特征</td><td>气象、致灾统计、遥感植被与地表温度、灌溉化肥机械</td></tr>
+      <tr><td class="k">城市级生产面板</td><td>10 个主产省 × 148 个地级市 × 13 年</td><td>市级产量、气象、耕地比例与生产条件</td></tr>
+      <tr><td class="k">县级建模面板</td><td>1 041 县 × 11 年，10 407 条记录 × 14 特征</td><td>县域气象、遥感与生产投入，用于留一县验证</td></tr>
+      <tr><td class="k">县级社会经济面板</td><td>2 725 县 × 23 年，62 676 条记录 × 82 字段</td><td>播种面积、耕地面积、粮食产量、机械动力、县级经纬度</td></tr>
+      <tr><td class="k">空间与遥感数据</td><td>全国省、市、县行政边界，省级月度植被与地表温度</td><td>栅格聚合与空间匹配的基础数据</td></tr>
+    </tbody>
+  </table>
+  <div class="takeaway" style="font-size:22px; margin-top:30px">县级社会经济面板由团队从公开统计资料中整理提取，为县域尺度服务提供样本支撑。</div>
+  <div class="pageno">10</div>
+</section>
+
+<!-- 11 界面 -->
+<section class="slide">
+  <div class="stitle">系统界面：从归因结论到具体措施</div>
+  <div class="rule"></div>
+  <figure>
+    <div class="figure-fit">
+      <div class="crop" style="padding-top: 66.94%">
+        <img src="img/pathway_ui.png" alt="韧性路径推荐界面">
+      </div>
+    </div>
+    <figcaption>每条措施同时给出短板因子、贡献方向、参考投入与预期改善幅度，并关联对应政策文件</figcaption>
+  </figure>
+  <div class="pageno">11</div>
+</section>
+
+<!-- 12 评测 -->
+<section class="slide">
+  <div class="stitle">评测方案：50 题四类问题，六项指标</div>
+  <div class="rule"></div>
+  <table class="roomy">
+    <thead>
+      <tr><th style="width:26%">指标</th><th style="width:44%">定义</th><th>验收标准</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="k">检索命中率</td><td>标准依据出现在召回片段中的题目占比</td><td class="c">不低于 85%</td></tr>
+      <tr><td class="k">引用正确率</td><td>答案标注出处与实际使用片段一致的题目占比</td><td class="c">不低于 95%</td></tr>
+      <tr><td class="k">方案可操作性</td><td>农学背景评审按五分制打分，考察时间、用量与操作要点</td><td class="c">平均不低于 4.0</td></tr>
+      <tr><td class="k">无依据输出率</td><td>出现无法回溯到检索内容或模型输出的结论的题目占比</td><td class="c">不高于 2%</td></tr>
+      <tr><td class="k">边界拒答正确率</td><td>超出知识范围或模型边界时正确说明的题目占比</td><td class="c">不低于 90%</td></tr>
+      <tr><td class="k">响应时延</td><td>从提交问题到返回完整方案的时间</td><td class="c">秒级完成</td></tr>
+    </tbody>
+  </table>
+  <div class="takeaway" style="font-size:22px; margin-top:26px">评测集按事实检索、归因解释、方案生成与边界拒答四类各 12 至 13 题，逐题标注标准答案要点与依据来源。</div>
+  <div class="pageno">12</div>
+</section>
+
+<!-- 13 边界合规 -->
+<section class="slide">
+  <div class="stitle">能力边界与合规要求</div>
+  <div class="rule"></div>
+  <div class="cols" style="margin-bottom:22px">
+    <div class="col tall">
+      <div class="n">模型边界</div>
+      <h3 style="font-size:22px">不做跨省产量外推</h3>
+      <p>省级样本的留一省验证中位 R² 为 −16.83，平台只输出区域内相对风险与情景推演。</p>
+    </div>
+    <div class="col tall">
+      <div class="n">农艺合规</div>
+      <h3 style="font-size:22px">用药建议严格受限</h3>
+      <p>剂量只引用登记信息，同时给出安全间隔期与防护要求，并提示以当地植保机构意见为准。</p>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="col tall">
+      <div class="n">知识时效</div>
+      <h3 style="font-size:22px">标注发布与失效</h3>
+      <p>每条知识登记发布日期，超期内容在排序中降权，答案中显示依据的发布时间。</p>
+    </div>
+    <div class="col tall">
+      <div class="n">数据合规</div>
+      <h3 style="font-size:22px">来源与授权可追溯</h3>
+      <p>所有数据与知识条目登记来源与授权信息，内部研发文档不进入对外知识库。</p>
+    </div>
+  </div>
+  <div class="pageno">13</div>
+</section>
+
+<!-- 14 价值 -->
+<section class="slide">
+  <div class="stitle">应用价值与推广路径</div>
+  <div class="rule"></div>
+  <div class="cols">
+    <div class="col">
+      <div class="n">直接生产者</div>
+      <h3 style="font-size:22px">按生育期排列的农事清单</h3>
+      <p>口语提问即可获得措施、时间与用量，降低获取与理解成本。</p>
+    </div>
+    <div class="col">
+      <div class="n">推广机构与合作社</div>
+      <h3 style="font-size:22px">批量风险画像与措施建议</h3>
+      <p>据此安排培训与现场指导的重点，把人力投向风险集中的环节。</p>
+    </div>
+    <div class="col">
+      <div class="n">区域管理者</div>
+      <h3 style="font-size:22px">可核查的量化决策依据</h3>
+      <p>风险空间分布与情景模拟结果支撑防灾资源投放次序的讨论。</p>
+    </div>
+  </div>
+  <div class="steps" style="margin-top:30px">
+    <div class="step" style="width: calc(33.333% - 10px)"><div class="idx">第一步</div><div class="nm">小范围试点</div><div class="ds">在合作农技推广机构与合作社检验方案在真实生产条件下的可用性</div></div>
+    <div class="step" style="width: calc(33.333% - 10px)"><div class="idx">第二步</div><div class="nm">多用户开放</div><div class="ds">以软件即服务形式开放使用，配套角色权限与使用统计</div></div>
+    <div class="step" style="width: calc(33.333% - 10px)"><div class="idx">第三步</div><div class="nm">接口开放</div><div class="ds">开放数据与模型接口，供科研与教学场景复用</div></div>
+  </div>
+  <div class="pageno">14</div>
+</section>
+
+</body>
+</html>

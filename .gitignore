@@ -42,6 +42,8 @@ data/processed/
 !data/raw/gis_cropland/
 !data/raw/paper_panel/
 !data/raw/paper_panel/**/*.xlsx
+# 县域统计年鉴提取产物（由 scripts/data/09_extract_yearbook_county_panel.py 生成，~35MB）
+data/raw/statistical_yearbook_extracted/
 !data/interim/
 !data/processed/
 !data/interim/paper_panel_raw.parquet
