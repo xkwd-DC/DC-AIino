@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>粮食产量模型可视化演示</title>
+<style>
+  :root {
+    --ink: #14231C; --muted: #5F6F67; --line: #DCE4DF; --bg: #F5F7F5;
+    --card: #FFFFFF; --green: #2E7D5B; --navy: #1F3864; --orange: #D08C34;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.6;
+         font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
+  header { background: #12352A; color: #fff; padding: 26px 32px 20px; }
+  header h1 { margin: 0 0 6px; font-size: 23px; }
+  header p { margin: 0; color: #B9CFC3; font-size: 13.5px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 20px 50px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
+  .card .k { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 23px; font-weight: 700; color: var(--green); }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  nav button { border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer;
+               padding: 8px 16px; border-radius: 999px; font-size: 14px; }
+  nav button.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+  section { display: none; }
+  section.active { display: block; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+           padding: 18px 20px; margin-bottom: 16px; }
+  .panel h2 { margin: 0 0 4px; font-size: 17px; }
+  .panel h3 { margin: 0 0 6px; font-size: 14.5px; font-weight: 600; }
+  .desc { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 880px) { .grid2 { grid-template-columns: 1fr; } }
+  svg { max-width: 100%; height: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: center; }
+  th { background: var(--navy); color: #fff; font-weight: 600; }
+  tbody tr:nth-child(even) td { background: #F7F9F8; }
+  .slider { display: grid; grid-template-columns: 170px 1fr 92px; gap: 10px; align-items: center; margin-bottom: 9px; }
+  .slider label { font-size: 13px; color: var(--muted); }
+  input[type=range] { width: 100%; }
+  .val { font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+  .result { display: flex; gap: 22px; align-items: baseline; flex-wrap: wrap; }
+  .result .big { font-size: 32px; font-weight: 700; color: var(--green); }
+  .result .sub { color: var(--muted); font-size: 12.5px; }
+  .note { font-size: 12.5px; color: var(--muted); background: #F2F6F3; border-left: 3px solid var(--green);
+          padding: 10px 12px; border-radius: 6px; margin-top: 12px; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>粮食产量模型可视化演示</h1>
+  <p>XGBoost 归因 · SHAP 解释 · LSTM 时序预测 ｜ 数据：粮食主产区地级市面板</p>
+</header>
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+  <nav id="tabs">
+    <button data-target="overview" class="active">项目概览</button>
+    <button data-target="xgb">XGBoost</button>
+    <button data-target="shap">SHAP 解释</button>
+    <button data-target="lstm">LSTM</button>
+    <button data-target="play">交互预测</button>
+  </nav>
+__SECTIONS__
+  <footer>数据来源：中国区域经济统计年鉴 / EPS 地级市统计年鉴 / NASA POWER ｜ 页面可离线打开</footer>
+</div>
+<script id="payload" type="application/json">__DATA__</script>
+<script id="trees" type="application/json">__TREES__</script>
+<script>
+const data = JSON.parse(document.getElementById('payload').textContent);
+const model = JSON.parse(document.getElementById('trees').textContent);
+const features = data.meta.features;
+const m = data.meta;
+
+function median(arr) {
+  const a = [...arr].sort((x, y) => x - y);
+  const mid = Math.floor(a.length / 2);
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+document.getElementById('cards').innerHTML = [
+  ['样本数', m.rows], ['省份', m.provinces], ['地级市', m.cities],
+  ['年份跨度', m.year_min + '–' + m.year_max],
+  ['随机 8:2 R²', data.xgboost.random_r2.toFixed(3)],
+  ['留一省中位 R²', median(data.xgboost.prov_folds.map(f => f.r2)).toFixed(3)]
+].map(([k, v]) => '<div class="card"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('');
+
+const tabs = [...document.querySelectorAll('nav button')];
+tabs.forEach(btn => btn.addEventListener('click', () => {
+  tabs.forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('active', s.id === btn.dataset.target));
+}));
+
+/* 浏览器内树推理：阈值与取值都按 float32 比较，与 XGBoost 原生实现一致 */
+function predictLogYield(row) {
+  let sum = model.base;
+  for (const tree of model.trees) {
+    let i = 0;
+    while (true) {
+      const node = tree[i];
+      if (node.v !== undefined) { sum += node.v; break; }
+      const value = Math.fround(row[node.f]);
+      const threshold = Math.fround(node.t);
+      if (Number.isNaN(value)) i = node.m;
+      else if (value < threshold) i = node.l;
+      else i = node.r;
+    }
+  }
+  return sum;
+}
+
+const ranges = __RANGES__;
+const sample = data.shap.sample;
+const sliders = document.getElementById('sliders');
+ranges.forEach((r, idx) => {
+  const row = document.createElement('div');
+  row.className = 'slider';
+  row.innerHTML = '<label>' + r.label + '</label>' +
+    '<input type="range" min="' + r.min + '" max="' + r.max + '" step="' + r.step + '" value="' + r.value + '" data-i="' + idx + '">' +
+    '<span class="val" id="v' + idx + '"></span>';
+  sliders.appendChild(row);
+});
+const inputs = [...sliders.querySelectorAll('input')];
+function fmt(v) { return Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2); }
+function render() {
+  const row = features.map(() => 0);
+  inputs.forEach((input, idx) => {
+    document.getElementById('v' + idx).textContent = fmt(Number(input.value));
+    row[ranges[idx].index] = Number(input.value);
+  });
+  rowsToSown(row);
+  const pred = predictLogYield(row);
+  const yieldWan = Math.exp(pred);
+  document.getElementById('predLog').textContent = pred.toFixed(3);
+  document.getElementById('predYield').textContent = yieldWan.toFixed(1) + ' 万吨';
+  const delta = (yieldWan - sample.actual) / sample.actual * 100;
+  document.getElementById('predDelta').textContent =
+    '与案例实际值 ' + sample.actual.toFixed(1) + ' 万吨相比 ' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + '%';
+}
+function rowsToSown(row) {
+  const idx = features.findIndex(f => f.key === 'log_sown');
+  if (idx >= 0 && ranges[0].index === idx) row[idx] = Math.log1p(row[idx]);
+}
+inputs.forEach(i => i.addEventListener('input', render));
+render();
+document.getElementById('resetBtn').addEventListener('click', () => {
+  inputs.forEach((input, idx) => { input.value = ranges[idx].value; });
+  render();
+});
+</script>
+</body>
+</html>

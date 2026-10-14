@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>禾衡·粮食生产气候风险归因决策系统 佐证材料</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; color: #000; font-family: "SimSun", "宋体", serif; font-size: 10.5pt; line-height: 1.75; }
+  h1, h2, h3, .yh { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; color: #000; }
+  h2 { font-size: 15pt; margin: 0 0 6pt 0; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 5pt 0; }
+  p { margin: 0 0 7pt 0; text-align: justify; text-justify: inter-ideograph; }
+  ul { margin: 0 0 7pt 0; padding-left: 1.5em; }
+  li { margin-bottom: 3pt; }
+  .section { break-before: page; }
+  .cover { height: 246mm; position: relative; }
+  .cover .kicker { font-family: "Microsoft YaHei", sans-serif; font-size: 11pt; letter-spacing: 2px; text-align: center; margin-top: 46mm; }
+  .cover h1 { font-size: 26pt; text-align: center; margin: 12mm 0 5mm 0; }
+  .cover .sub { text-align: center; font-size: 13pt; font-family: "Microsoft YaHei", sans-serif; margin-bottom: 28mm; }
+  .cover .meta { width: 128mm; margin: 0 auto; font-size: 11pt; }
+  .cover .meta div { display: flex; gap: 6mm; padding: 2.8mm 0; border-bottom: 1px solid #D9D9D9; }
+  .cover .meta span:first-child { width: 34mm; }
+  .cover .foot { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt 0; font-size: 9.5pt; }
+  caption { caption-side: top; text-align: center; font-size: 9.5pt; font-family: "Microsoft YaHei", sans-serif; padding-bottom: 4pt; }
+  th, td { border: 1px solid #D9D9D9; padding: 4.5pt 6pt; vertical-align: middle; line-height: 1.5; }
+  thead th { background: #1F3864; color: #fff; font-family: "Microsoft YaHei", sans-serif; font-weight: 600; text-align: center; }
+  tbody tr:nth-child(even) td { background: #F5F7FA; }
+  td.c { text-align: center; }
+  td.k { font-family: "Microsoft YaHei", sans-serif; }
+  tr, figure { break-inside: avoid; }
+  thead { display: table-header-group; }
+  figure { margin: 0 0 14pt 0; }
+  figure img { width: 100%; display: block; border: 1px solid #D9D9D9; }
+  figcaption { font-size: 9.5pt; text-align: center; margin-top: 4pt; font-family: "Microsoft YaHei", sans-serif; }
+  .note { font-size: 9.5pt; color: #333; }
+  @media screen { html { background: #eceff3; } body { width: 178mm; margin: 18mm auto 16mm auto; background: #fff; } }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">第八届全球校园人工智能算法精英大赛　赛题二</div>
+  <h1>禾衡·粮食生产气候风险归因决策系统</h1>
+  <div class="sub">佐证材料</div>
+  <div class="meta">
+    <div><span>作品名称</span><span class="yh">禾衡·粮食生产气候风险归因决策系统</span></div>
+    <div><span>材料类别</span><span class="yh">数据、模型、系统、质量与知识产权佐证</span></div>
+    <div><span>适用范围</span><span class="yh">作品佐证与赛务核验</span></div>
+    <div><span>编制日期</span><span class="yh">2026 年 10 月</span></div>
+  </div>
+  <div class="foot">本材料中的所有数据、模型结果与系统截图均来自团队自建系统与公开数据源</div>
+</div>
+
+<!-- 材料清单 -->
+<div class="section">
+<h2>材料清单与编制说明</h2>
+<p>本材料按"数据可追溯、模型可复核、系统可运行、质量可检验"四条线索组织，共收录五类佐证。所引数据与结论均与作品技术方案及系统内部记录一致，可逐项核对。</p>
+<table>
+  <caption>表 1　佐证材料清单</caption>
+  <thead>
+    <tr><th style="width:8%">编号</th><th style="width:22%">材料名称</th><th style="width:38%">内容</th><th>佐证对象</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="c">一</td><td class="k">数据资产佐证</td><td>四级面板数据规格、字段覆盖面与数据来源台账</td><td>数据基础是否可靠、来源是否合规</td></tr>
+    <tr><td class="c">二</td><td class="k">模型验证佐证</td><td>多协议交叉验证结果、消融实验与空间尺度递进实验</td><td>模型结论是否可信、边界是否如实披露</td></tr>
+    <tr><td class="c">三</td><td class="k">系统实现佐证</td><td>七个功能模块、九个服务接口、六张系统界面截图</td><td>平台是否真实可运行</td></tr>
+    <tr><td class="c">四</td><td class="k">软件质量佐证</td><td>自动化测试用例清单与安全、稳定性措施</td><td>工程质量与运行可靠性</td></tr>
+    <tr><td class="c">五</td><td class="k">知识产权与竞赛佐证</td><td>软件著作权申请材料清单与既往竞赛获奖情况</td><td>成果归属与既往评价</td></tr>
+  </tbody>
+</table>
+<p class="note">编制说明：本材料正文不含团队所在单位、指导教师与成员姓名信息。软件著作权登记与竞赛获奖的官方证书原件载有单位与成员信息，按赛事匿名要求单独留存，未编入本册；如赛务方需要核验，可按指定方式提交。</p>
+</div>
+
+<!-- 一 数据资产 1 -->
+<div class="section">
+<h2>一、数据资产佐证</h2>
+<p>平台的数据底座由四个空间尺度的面板数据与一套空间基础数据构成，全部来自公开发布的国家统计、卫星遥感与气象再分析资料。四级面板的规格如下，样本量与字段数以本地数据文件实际统计为准。</p>
+<table>
+  <caption>表 2　面板数据集规格</caption>
+  <thead>
+    <tr><th style="width:22%">数据集</th><th style="width:30%">规模</th><th style="width:22%">时间范围</th><th>监测与投入字段</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">省级多模态面板</td><td>31 个省 × 13 年，403 条样本 × 11 维特征</td><td>2011 至 2023</td><td>气温、降水、日照、干旱指数、洪涝占比、旱涝受灾面积、灌溉率、化肥、农机、植被指数、地表温度</td></tr>
+    <tr><td class="k">城市级生产面板</td><td>10 个主产省 × 148 个地级市 × 13 年，1 924 条记录 × 28 字段</td><td>2011 至 2023</td><td>市级粮食产量、气象要素、耕地比例与生产条件</td></tr>
+    <tr><td class="k">县级建模面板</td><td>1 041 个县 × 11 年，10 407 条记录 × 14 特征</td><td>2013 至 2023</td><td>县域气象、遥感植被与地表温度、灌溉、化肥、耕地比例</td></tr>
+    <tr><td class="k">县级社会经济面板</td><td>2 725 个县 × 23 年，62 676 条记录 × 82 字段</td><td>2000 至 2022</td><td>播种面积、常用耕地面积、粮食总产量、棉花油料肉类产量、机械动力、人口、财政与用电等</td></tr>
+  </tbody>
+</table>
+<p>县级社会经济面板由团队从公开出版的县域统计资料中整理提取。原始资料以分卷压缩包形式提供，中文文件名编码存在错误标记，团队按文件结构定位并重建了县级年度面板，提取过程已形成可复现脚本，可随时重新生成。该数据集为县域尺度的风险查询与规划建议提供了样本支撑，其县级单位数约为原建模面板的 2.6 倍，时间跨度由 11 年扩展至 23 年。</p>
+</div>
+
+<!-- 一 数据资产 2 -->
+<div class="section">
+<h2>一、数据资产佐证（续）</h2>
+<h3>1.1 字段覆盖情况</h3>
+<p>县级社会经济面板的部分指标在早期年份存在缺失，团队对原始值与插值填补值分别留存，便于在建模时按口径选择。主要字段的非空率如下。</p>
+<table>
+  <caption>表 3　县级社会经济面板主要字段非空率（插值版，n = 62 676）</caption>
+  <thead>
+    <tr><th style="width:44%">字段</th><th style="width:20%">非空率</th><th>说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">经度、纬度</td><td class="c">99.8%</td><td>支撑空间匹配与地图展示</td></tr>
+    <tr><td class="k">粮食总产量（吨）</td><td class="c">79.0%</td><td>生产结果指标</td></tr>
+    <tr><td class="k">农村居民人均可支配收入</td><td class="c">66.5%</td><td>区域发展水平控制变量</td></tr>
+    <tr><td class="k">农林牧渔业总产值</td><td class="c">58.9%</td><td>农业经济规模</td></tr>
+    <tr><td class="k">农作物总播种面积（千公顷）</td><td class="c">47.3%</td><td>生产规模指标</td></tr>
+    <tr><td class="k">常用耕地面积（公顷）</td><td class="c">46.3%</td><td>耕地资源指标</td></tr>
+    <tr><td class="k">机收面积（公顷）</td><td class="c">15.9%</td><td>机械化水平参考</td></tr>
+  </tbody>
+</table>
+<h3>1.2 数据来源与授权台账</h3>
+<table>
+  <caption>表 4　主要数据来源</caption>
+  <thead>
+    <tr><th style="width:30%">数据类别</th><th style="width:34%">来源</th><th>用途与合规说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">农业生产统计</td><td>国家统计局及各省统计公报、中国农村统计年鉴</td><td>产量、播种面积、化肥、灌溉、农机等指标，公开统计数据</td></tr>
+    <tr><td class="k">县级社会经济指标</td><td>中国县域统计年鉴（2000 至 2024）</td><td>县级产量与生产条件，公开出版物</td></tr>
+    <tr><td class="k">气象要素</td><td>NASA POWER 再分析数据、气象站点观测</td><td>气温、降水、日照，公开数据平台</td></tr>
+    <tr><td class="k">干旱指数</td><td>SPEIbase 标准化降水蒸散指数</td><td>干旱强度与生长季水分亏缺，公开数据集</td></tr>
+    <tr><td class="k">遥感植被与地表温度</td><td>MODIS 植被指数与地表温度产品</td><td>生长状况与地表热环境，公开卫星产品</td></tr>
+    <tr><td class="k">耕地分布</td><td>CLCD 30 米耕地覆盖数据</td><td>耕地像元加权与耕地比例计算，公开数据集</td></tr>
+    <tr><td class="k">行政边界</td><td>天地图标准地图服务</td><td>空间聚合与地图绘制，含审图号</td></tr>
+    <tr><td class="k">水旱灾害统计</td><td>中国水旱灾害公报</td><td>受灾与成灾面积，公开统计资料</td></tr>
+  </tbody>
+</table>
+<p class="note">以上数据均为公开发布资料，仅在授权范围内使用并标注来源，不涉及未公开数据与个人隐私信息。</p>
+</div>
+
+<!-- 二 模型验证 1 -->
+<div class="section">
+<h2>二、模型验证佐证</h2>
+<p>模型层的全部结论均通过多协议交叉验证得出。团队刻意同时报告随机划分、时序外推与空间外推三套结果，用于界定模型的适用范围，避免以单一协议的高分掩盖外推能力的不足。</p>
+<table>
+  <caption>表 5　多协议验证结果</caption>
+  <thead>
+    <tr><th style="width:26%">验证协议</th><th style="width:24%">结果</th><th>含义与用途</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">随机划分 8:2，10 组种子</td><td class="c">R² = 0.907 ± 0.038</td><td>省内因子相对重要性识别的主报告口径，用于模型层归因</td></tr>
+    <tr><td class="k">留一年验证</td><td class="c">R² = 0.894 ± 0.104</td><td>检验时序泛化能力，模拟用历史数据推断未来年份</td></tr>
+    <tr><td class="k">留一省验证</td><td class="c">中位 R² = −16.83</td><td>31 个省中仅 1 个省为正，说明省级截面样本不支持跨省外推</td></tr>
+    <tr><td class="k">县域留一县验证</td><td class="c">R² = 0.660</td><td>空间单元下沉到县后外推能力转正，支撑县域尺度服务</td></tr>
+  </tbody>
+</table>
+<h3>2.1 特征贡献的稳健性检验</h3>
+<ul>
+  <li>植被指数消融：从 11 维特征中移除植被指数后，R² 仅下降 0.003，说明该特征在本数据集中的边际贡献有限，团队据此未将其列为核心驱动因子。</li>
+  <li>混合效应模型：省级层面的组内相关系数为 0.971，说明随机划分协议下 R² 的较大部分由省份固定效应贡献，这正是团队坚持披露留一省结果的原因。</li>
+  <li>双视角归因：横截面归因与时序注意力模型的因子排序并不重合，仅有平均气温一项因子进入两者前三，两者秩相关系数为 −0.055。团队将其作为互补证据呈现，不主张一致性验证。</li>
+</ul>
+</div>
+
+<!-- 二 模型验证 2 -->
+<div class="section">
+<h2>二、模型验证佐证（续）</h2>
+<h3>2.2 空间尺度递进实验</h3>
+<p>为进一步检验空间外推能力的成因，团队在三个空间尺度上做了同构实验。结果显示，随着空间单元细分，空间外推能力由负转正，表明省级外推受限主要来自空间单元过粗，而非方法本身失效。</p>
+<table>
+  <caption>表 6　空间尺度递进实验结果</caption>
+  <thead>
+    <tr><th style="width:18%">空间单元</th><th style="width:26%">样本规模</th><th style="width:22%">空间外推结果</th><th>组内相关系数</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">省级</td><td>31 省 × 13 年，403 条</td><td class="c">中位 R² = −16.83</td><td class="c">0.971</td></tr>
+    <tr><td class="k">城市级</td><td>70 个城市，910 条</td><td class="c">合并 R² = 0.213，正向 3 折</td><td class="c">0.106</td></tr>
+    <tr><td class="k">县级</td><td>1 041 个县，10 407 条</td><td class="c">合并 R² = 0.660</td><td class="c">—</td></tr>
+  </tbody>
+</table>
+<p class="note">城市级实验为留一省交叉验证，县级实验为留一县交叉验证，两者目标变量口径不同，数值不作直接比较，仅用于说明空间单元粒度对泛化能力的影响方向。</p>
+<h3>2.3 模型文档留存情况</h3>
+<p>团队为每个模型保留模型卡，记录训练配置、样本口径、评估结果与已知局限，可供复核。已归档的模型文档包括：</p>
+<table>
+  <caption>表 7　已归档模型文档</caption>
+  <thead><tr><th style="width:42%">文档</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td class="k">主模型卡</td><td>XGBoost 归因模型的特征口径与评估结果</td></tr>
+    <tr><td class="k">时序模型卡</td><td>长短期记忆网络基线与注意力增强版本</td></tr>
+    <tr><td class="k">严格交叉验证卡</td><td>三协议验证的完整结果与结论表述</td></tr>
+    <tr><td class="k">消融与排序卡</td><td>植被指数消融实验、双视角秩相关分析</td></tr>
+    <tr><td class="k">混合效应模型卡</td><td>方差分解与组内相关系数结果</td></tr>
+    <tr><td class="k">县级与城市级验证报告</td><td>留一县、留一省交叉验证的分折结果</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 三 系统实现 1 -->
+<div class="section">
+<h2>三、系统实现佐证</h2>
+<p>平台后端以统一响应结构对外提供服务，前端为单页应用，共七个功能模块、九个对外服务接口。接口均带参数校验、频率限制与安全响应头，健康检查接口用于部署探活。</p>
+<table>
+  <caption>表 8　功能模块</caption>
+  <thead><tr><th style="width:12%">编号</th><th style="width:26%">模块</th><th>功能</th></tr></thead>
+  <tbody>
+    <tr><td class="c">M00</td><td class="k">系统总览</td><td>关键指标、数据覆盖情况与模块快速入口</td></tr>
+    <tr><td class="c">M01</td><td class="k">风险时空地图</td><td>分省年度风险等级与历史演化</td></tr>
+    <tr><td class="c">M02</td><td class="k">归因看板</td><td>全局与单样本因子贡献度分解</td></tr>
+    <tr><td class="c">M03</td><td class="k">参数情景模拟</td><td>调整投入与气象参数后的反事实推演</td></tr>
+    <tr><td class="c">M04</td><td class="k">韧性路径推荐</td><td>分阶段措施、优先级与参考投入</td></tr>
+    <tr><td class="c">M05</td><td class="k">推演监控</td><td>模型推理链路与调用过程记录</td></tr>
+    <tr><td class="c">M06</td><td class="k">知识助手</td><td>智能问答入口，检索增强与图谱双通道</td></tr>
+  </tbody>
+</table>
+<table>
+  <caption>表 9　对外服务接口</caption>
+  <thead><tr><th style="width:34%">接口</th><th style="width:14%">方法</th><th>功能</th></tr></thead>
+  <tbody>
+    <tr><td class="k">/api/predict</td><td class="c">POST</td><td>风险推理，返回风险值、因子贡献度与措施建议</td></tr>
+    <tr><td class="k">/api/provinces</td><td class="c">GET</td><td>按年份返回各省风险面板数据</td></tr>
+    <tr><td class="k">/api/provinces/&lt;省&gt;/history</td><td class="c">GET</td><td>返回指定省份的风险时间序列</td></tr>
+    <tr><td class="k">/api/shap/subset</td><td class="c">GET</td><td>返回指定样本集合的因子贡献度</td></tr>
+    <tr><td class="k">/api/rag/query</td><td class="c">POST</td><td>知识库混合检索问答，返回答案与引用来源</td></tr>
+    <tr><td class="k">/api/rag/status</td><td class="c">GET</td><td>返回向量库统计与索引状态</td></tr>
+    <tr><td class="k">/api/graph/query</td><td class="c">POST</td><td>图谱增强问答，按问题类型路由检索模式</td></tr>
+    <tr><td class="k">/api/graph/status</td><td class="c">GET</td><td>返回图谱规模与构建状态</td></tr>
+    <tr><td class="k">/api/health</td><td class="c">GET</td><td>服务健康检查</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 截图 1 -->
+<div class="section">
+<h2>三、系统实现佐证（界面截图一）</h2>
+<figure>
+  <img src="img/M00.png" alt="系统总览">
+  <figcaption>图 1　M00 系统总览：覆盖省份、样本规模、三协议模型结果与数据源融合就绪度</figcaption>
+</figure>
+<figure>
+  <img src="img/M01.png" alt="风险时空地图">
+  <figcaption>图 2　M01 风险时空地图：分省年度风险等级与历史演化</figcaption>
+</figure>
+</div>
+
+<!-- 截图 2 -->
+<div class="section">
+<h2>三、系统实现佐证（界面截图二）</h2>
+<figure>
+  <img src="img/M02.png" alt="归因看板">
+  <figcaption>图 3　M02 归因看板：因子贡献度分解与单样本归因</figcaption>
+</figure>
+<figure>
+  <img src="img/M03.png" alt="参数情景模拟">
+  <figcaption>图 4　M03 参数情景模拟：调整投入与气象参数后的风险变化</figcaption>
+</figure>
+</div>
+
+<!-- 截图 3 -->
+<div class="section">
+<h2>三、系统实现佐证（界面截图三）</h2>
+<figure>
+  <img src="img/M04.png" alt="韧性路径推荐">
+  <figcaption>图 5　M04 韧性路径推荐：分阶段措施、优先级与参考投入</figcaption>
+</figure>
+<figure>
+  <img src="img/M05.png" alt="推演监控">
+  <figcaption>图 6　M05 推演监控：模型推理链路与调用过程记录</figcaption>
+</figure>
+</div>
+
+<!-- 四 质量 -->
+<div class="section">
+<h2>四、软件质量佐证</h2>
+<h3>4.1 自动化测试</h3>
+<p>后端包含三个测试模块共 27 个自动化用例，覆盖接口契约、面板数据端点与真实模型推理三类场景，其中真实推理用例在模型文件缺失时会直接失败，用于防止静默降级为模拟数据。</p>
+<table>
+  <caption>表 10　自动化测试用例分布</caption>
+  <thead><tr><th style="width:38%">测试模块</th><th style="width:16%">用例数</th><th>覆盖内容</th></tr></thead>
+  <tbody>
+    <tr><td class="k">接口契约测试</td><td class="c">16</td><td>响应结构、参数校验、错误码与限流行为</td></tr>
+    <tr><td class="k">面板数据端点测试</td><td class="c">6</td><td>年份查询、省份历史序列与越界处理</td></tr>
+    <tr><td class="k">真实推理测试</td><td class="c">5</td><td>模型加载、推理结果范围与启动自检</td></tr>
+  </tbody>
+</table>
+<h3>4.2 安全与稳定性措施</h3>
+<ul>
+  <li>服务端启用请求频率限制，模型推理类接口与静态数据类接口分级限流，健康检查接口不参与限流。</li>
+  <li>统一注入安全响应头，包括内容安全策略、禁止内嵌框架、禁止内容类型嗅探与来源引用策略。</li>
+  <li>跨域来源默认收窄到本地开发端口，生产环境需显式配置允许来源，避免默认放开。</li>
+  <li>服务启动时执行模型自检，自检不通过则拒绝启动，避免在模型异常时对外提供错误结果。</li>
+  <li>全栈不依赖图形处理器，可在普通云主机与本地服务器上部署，降低基层落地门槛。</li>
+</ul>
+</div>
+
+<!-- 五 知识产权 -->
+<div class="section">
+<h2>五、知识产权与竞赛佐证</h2>
+<h3>5.1 软件著作权申请材料</h3>
+<p>团队已按软件著作权登记要求形成完整申请材料，包含申请表信息、操作手册、软件设计说明书、源代码前后各 30 页共 60 页，以及合作开发协议。申请材料记载的开发完成日期为 2026 年 7 月，源程序量约 9 600 行，涵盖前端界面、后端服务、模型推理与数据处理模块。</p>
+<table>
+  <caption>表 11　软件著作权申请材料清单</caption>
+  <thead><tr><th style="width:44%">材料</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td class="k">申请表信息</td><td>软件全称、版本号、开发完成日期、开发方式与权利范围</td></tr>
+    <tr><td class="k">软件设计说明书</td><td>系统架构、模块划分、数据结构与接口设计</td></tr>
+    <tr><td class="k">操作手册</td><td>各功能模块的操作步骤与使用说明</td></tr>
+    <tr><td class="k">源代码文档（前后各 30 页）</td><td>核心业务代码与模型推理代码</td></tr>
+    <tr><td class="k">合作开发协议</td><td>团队成员之间的权利归属约定</td></tr>
+  </tbody>
+</table>
+<h3>5.2 竞赛获奖情况</h3>
+<p>本作品的前序版本曾在机器人及人工智能类竞赛中获得省级奖项，相关证书原件可提供核验。证书载有团队与单位信息，按赛事匿名要求未编入本册。</p>
+<h3>5.3 说明</h3>
+<p>本材料所列数据、模型结果与系统截图均为团队自主研发与运行所得。系统内部记录、测试输出与模型文档保存在团队代码仓库中，可按赛务方要求提供补充核验材料。</p>
+</div>
+
+</body>
+</html>
