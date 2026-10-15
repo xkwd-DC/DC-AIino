@@ -86,6 +86,8 @@ backend/data/*.db-shm
 # 县级地图资产（由 scripts/data/v9_01_build_county_site_db.py 从
 # data/raw/gis_province/counties_10provinces_GS2024.geojson 派生，可重建）
 frontend/public/maps/counties_10provinces.json
+# 本地部署运行态（deploy/serve_local.ps1 写的 PID 与日志）
+deploy/run/
 
 # 操作系统
 .DS_Store

@@ -70,7 +70,9 @@
 | `GET /api/history` | 历史趋势 | ✅ |
 | `POST /api/resilience` | 适应性路径推荐（11条规则引擎） | ✅ |
 | 单元测试 | 16 个端点测试 | ✅ |
-| GCP 部署 | `grainrisk.app` 已注册，**实例未开机** | ⏳ |
+| 本地部署 | `deploy/serve_local.ps1`（Windows 单端口，waitress）— **当前可用方式** | ✅ |
+| 公网部署 | `grainrisk.app` **未注册**、GCP 实例未开机 → 计划未执行 | ❌ |
+| 县级层 M07 | `/api/counties*` + 1,199 县县级面板，见 `docs/25_县级站点层_M07_2026-10-15.md` | ✅ |
 
 ### 前端
 

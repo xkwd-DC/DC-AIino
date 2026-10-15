@@ -7,6 +7,10 @@ flask~=3.0.3
 flask-cors~=5.0.0
 gunicorn~=23.0.0
 
+# --- Windows 本地部署（gunicorn 在 Windows 上不可用）---
+# deploy/serve_local.ps1 优先用 waitress 起本地单端口服务；缺它就退回 Flask 内置服务器。
+waitress~=3.0.2
+
 # --- 配置 ---
 python-dotenv~=1.0.1
 

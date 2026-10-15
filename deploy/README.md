@@ -1,4 +1,46 @@
-# deploy/ — GCP Phase 5 部署配置 (6/16-25)
+# deploy/ — 部署配置
+
+## 0. 本地部署（Windows，当前可用的方式）
+
+> ⚠️ **状态更正（2026-10-15）**：`grainrisk.app` **并未注册**，GCP 实例也没开过机。
+> 本文 §「部署顺序」以下的 nginx / certbot / Cloudflare 内容属于**未执行的计划**，
+> 不要当成"系统已上线"。要跑系统、要录演示视频、要给评委看，一律走本节。
+
+```powershell
+# 后台启动（默认 http://127.0.0.1:8000）
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1
+
+# 前台启动（排查用，Ctrl+C 停）
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Foreground
+
+# 局域网访问：同一 WiFi 下的手机/平板可打开（会打印局域网地址）
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Lan
+
+# 换端口 / 查看状态 / 停止
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Port 8081
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Status
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop
+```
+
+脚本行为：
+
+1. **预检运行产物，缺什么补什么**（这是本地部署最容易忘的一步）：
+   `backend/data/grain.db`（省级 403 行）→ `_build_grain_db.py`；
+   `backend/data/county.db` + `frontend/public/maps/counties_10provinces.json`（县级）→ `scripts/data/v9_01_*` + `v9_02_*`；
+   `frontend/dist` → `npm ci` + `npm run build`。全都存在则跳过（`-SkipBuild` 则严格校验、不补）。
+2. **启动 WSGI 服务**：优先 `waitress`（多线程，Windows 可用；gunicorn 在 Windows 跑不起来），
+   没有则退回 Flask 内置服务器。前端 `dist` 与 `/api/*` 由同一个进程提供 —— 前端 axios 用相对路径 `/api`，
+   所以**不能只起 vite dev 就想连真数据**。
+3. **探活并打印地址**：`/api/health` + 省级/县级两个面板接口各取一次。
+
+运行态文件（PID、日志）写在 `deploy/run/`，已加 `.gitignore`。
+
+> Windows 细节：`serve_local.ps1` 是 **UTF-8 with BOM**。Windows PowerShell 5.1 对无 BOM 的 `.ps1`
+> 按系统 ANSI 代码页（本机 GBK）解析，中文会变乱码并报一堆语法错误 —— 以后改这个脚本别把 BOM 弄丢了。
+
+---
+
+## 1. 计划中的公网部署（GCP，未执行）
 
 > 本目录承载 v0.1 上线 GCP `e2-medium asia-east1` 的所有部署资产。
 > 上游依赖: `docs/12 §Phase 5`(部署执行计划)+ `docs/10` v2 GCP 路线决策。

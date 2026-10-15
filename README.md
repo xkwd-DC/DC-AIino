@@ -69,9 +69,20 @@ NDVI ablation:11→10 维 R² 损失仅 +0.003(NDVI 边际贡献 ≈ 0%)。所�
 
 ## 部署
 
-- **公网域名**:[`grainrisk.app`](https://grainrisk.app)(即将上线,目标 6/25)
-- **基础设施**:GCP e2-medium + nginx + gunicorn + certbot TLS
-- **部署素材**:`deploy/nginx.conf` · `deploy/setup_letsencrypt.sh` · `backend/requirements.txt`
+**当前方式：本地部署（Windows 单端口）。**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1          # 后台起，http://127.0.0.1:8000
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Lan     # 局域网可访问
+powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop    # 停止
+```
+
+脚本会预检并补齐运行产物（`grain.db` / `county.db` / `frontend/dist` / 县级地图资产），
+用 waitress 起服务，前端与 `/api/*` 同源同端口。详见 `deploy/README.md §0`。
+
+> ⚠️ **`grainrisk.app` 没有注册**，GCP 实例也没开过机。`deploy/nginx.conf`、
+> `deploy/setup_letsencrypt.sh` 与本文此前写的"公网域名/即将上线"都是**未执行的计划**，
+> 不要对外声称系统已上线公网。若之后要做公网演示，再按 `deploy/README.md §1` 走。
 
 ---
 

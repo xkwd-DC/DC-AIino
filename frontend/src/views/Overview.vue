@@ -198,6 +198,22 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
     icon: '⟳',
     accent: true,
   },
+  {
+    code: 'M06',
+    title: '知识助手',
+    desc: '方法论文档检索问答',
+    to: '/chat',
+    icon: '✦',
+    accent: false,
+  },
+  {
+    code: 'M07',
+    title: '县级风险地图',
+    desc: '1,199 县气候归因明细',
+    to: '/county-risk',
+    icon: '▦',
+    accent: false,
+  },
 ]
 </script>
 
@@ -383,8 +399,8 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
     >
       <div class="section-head">
         <div class="num">04 · QUICK ACCESS · 快速入口</div>
-        <h3 id="section-quick">五大业务模块 · 一键直达</h3>
-        <div class="section-sub">从风险地图到推演监控,完整业务闭环</div>
+        <h3 id="section-quick">七大业务模块 · 一键直达</h3>
+        <div class="section-sub">省级归因 → 县级归因 → 情景推演 → 知识问答,完整业务闭环</div>
       </div>
 
       <div class="quick-grid">
