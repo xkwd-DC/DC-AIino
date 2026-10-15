@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { title: '风险时空地图', code: 'M01' },
     },
     {
+      path: '/county-risk',
+      name: 'county-risk',
+      component: () => import('@/views/CountyRiskMap.vue'),
+      meta: { title: '县级风险地图', code: 'M07' },
+    },
+    {
       path: '/shap',
       name: 'shap',
       component: () => import('@/views/ShapDashboard.vue'),

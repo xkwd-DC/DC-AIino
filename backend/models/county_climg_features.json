@@ -1,0 +1,27 @@
+{
+  "features": [
+    "temp",
+    "prec",
+    "sun",
+    "spei_annual_mean",
+    "spei_growing_season_mean",
+    "gs_tmax_mean",
+    "gs_tmin_mean",
+    "gs_ppt",
+    "gs_srad",
+    "gs_pet",
+    "gdd10",
+    "gs_aridity",
+    "prec_cv",
+    "gs_prec_share",
+    "winter_temp",
+    "seasonal_temp_range"
+  ],
+  "target": "log_yield",
+  "seed": 42,
+  "model_id": "county_climg_xgb",
+  "excluded": [
+    "log_sown",
+    "province_year_shared"
+  ]
+}

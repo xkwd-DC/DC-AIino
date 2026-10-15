@@ -72,6 +72,11 @@ app.register_blueprint(rag_bp)
 from api.graph_api import graph_bp
 app.register_blueprint(graph_bp)
 
+# 县级面板模块 — M07 县级风险地图（county.db，由 scripts/data/v9_01/v9_02 生成）
+# 与省级 grain.db 路径完全独立：county.db 缺失时该组端点返 503，省级模块不受影响。
+from api.county_api import county_bp
+app.register_blueprint(county_bp)
+
 # RAG 文件监控 — 自动增量索引 (Issue #44)
 # 启动时执行完整性检查 + 开启 watchdog 监听 docs/ 变更
 try:

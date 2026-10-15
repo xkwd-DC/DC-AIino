@@ -13,6 +13,7 @@ const OUT = 'D:/DC/DC-AIino/_shots'
 const PAGES = [
   { path: '/overview', alias: 'M00_系统总览' },
   { path: '/risk-map', alias: 'M01_风险时空地图' },
+  { path: '/county-risk', alias: 'M07_县级风险地图' },
   { path: '/shap', alias: 'M02_SHAP归因看板' },
   { path: '/scenario', alias: 'M03_参数情景模拟' },
   { path: '/pathway', alias: 'M04_韧性路径推荐' },
