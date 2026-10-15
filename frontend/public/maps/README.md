@@ -8,7 +8,26 @@
 | 文件 | 来源 | 用途 | 大小 |
 |---|---|---|---|
 | `china.json` | [Apache ECharts 4.6 map JSON](https://cdn.jsdelivr.net/gh/apache/echarts@4.6.0/map/json/china.json) | M01 风险地图 `echarts.registerMap('china', ...)` | 61 KB |
+| `counties_10provinces.json` | 天地图 GS(2024)0650（`data/raw/gis_province/counties_10provinces_GS2024.geojson`） | M07 县级风险地图 `registerMap('counties-10-provinces', ...)` | ~3 MB |
 | `README.md` | 本文件 | — | — |
+
+## counties_10provinces.json — 10 主产省县级边界
+
+**不在 git 里，属于可重建产物**（`.gitignore` 已排除）。由
+`python scripts/data/v9_01_build_county_site_db.py` 从
+`data/raw/gis_province/counties_10provinces_GS2024.geojson`（已入仓）派生，做三件事：
+
+1. 坐标降到 4 位小数（约 11 m，县级面图足够）；
+2. 只保留 `properties.name / adcode / county / province / has_panel`；
+3. 把重名县名加省份前缀，**与后端 `county_meta.map_key` 由同一个 `map_key_of()` 生成**。
+
+第 3 点不能省：天地图原始县名有重名（桥西区 / 新华区 / 郊区 / 鼓楼区 / 市中区），
+而 ECharts 的 map series 只能按 `name` 匹配，重名会让一个值同时染两个县。
+
+规模：1,248 个县级面，其中 1,169 个能命中面板数据（面板另含 30 个"市辖区"合计行，无独立边界）。
+部署时若跳过 ETL，M07 会拿不到地图（console 报边界加载失败，页面其余部分与省级模块不受影响）。
+
+> 边界政治性同 `china.json` 一节的结论：用天地图 GS(2024)0650 官方界线，勿换 Natural Earth / GADM。
 
 ## china.json — 中国行政区划 GeoJSON
 
