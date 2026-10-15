@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>禾衡·粮食生产气候风险归因决策系统 技术方案</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; color: #000;
+    font-family: "SimSun", "宋体", "Songti SC", serif;
+    font-size: 10.5pt; line-height: 1.75;
+  }
+  h1, h2, h3, h4, .yh { font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif; color: #000; }
+  h2 { font-size: 14pt; margin: 0 0 8pt 0; padding: 0; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 5pt 0; }
+  h4 { font-size: 10.5pt; margin: 10pt 0 4pt 0; }
+  p { margin: 0 0 7pt 0; text-align: justify; text-justify: inter-ideograph; }
+  ul, ol { margin: 0 0 7pt 0; padding-left: 1.5em; }
+  li { margin-bottom: 3pt; text-align: justify; }
+  strong { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; font-weight: 700; }
+  .section { break-before: page; }
+  .nobreak { break-inside: avoid; }
+  /* ---------- 封面 ---------- */
+  .cover { height: 246mm; position: relative; }
+  .cover .kicker { font-family: "Microsoft YaHei", sans-serif; font-size: 11pt; letter-spacing: 2px; text-align: center; margin-top: 42mm; }
+  .cover h1 { font-size: 24pt; text-align: center; margin: 10mm 0 4mm 0; letter-spacing: 1px; }
+  .cover .sub { text-align: center; font-size: 13pt; font-family: "Microsoft YaHei", sans-serif; margin-bottom: 26mm; }
+  .cover .meta { width: 118mm; margin: 0 auto; font-size: 11pt; }
+  .cover .meta div { display: flex; gap: 6mm; padding: 2.6mm 0; border-bottom: 1px solid #D9D9D9; }
+  .cover .meta span:first-child { width: 28mm; color: #000; font-family: "Microsoft YaHei", sans-serif; }
+  .cover .foot { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 10pt; }
+  /* ---------- 图表 ---------- */
+  figure { margin: 10pt 0 12pt 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; }
+  figcaption { font-size: 9.5pt; text-align: center; margin-top: 4pt; font-family: "Microsoft YaHei", sans-serif; }
+  .crop { position: relative; overflow: hidden; width: 100%; }
+  .crop img { position: absolute; width: 114.29%; left: -14.29%; top: -7.32%; }
+  /* ---------- 表格 ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt 0; font-size: 9.5pt; break-inside: auto; }
+  caption { caption-side: top; text-align: center; font-size: 9.5pt; font-family: "Microsoft YaHei", sans-serif; padding-bottom: 4pt; }
+  th, td { border: 1px solid #D9D9D9; padding: 4pt 5pt; vertical-align: middle; line-height: 1.5; }
+  thead th { background: #1F3864; color: #fff; font-family: "Microsoft YaHei", sans-serif; font-weight: 600; text-align: center; }
+  tbody tr:nth-child(even) td { background: #F5F7FA; }
+  td.c { text-align: center; }
+  td.k { font-family: "Microsoft YaHei", sans-serif; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .refs { font-size: 9.5pt; }
+  .refs div { margin-bottom: 4pt; }
+  /* 屏幕预览时模拟 A4 正文宽度，便于与打印效果比对 */
+  @media screen {
+    body { width: 178mm; margin: 18mm auto 16mm auto; background: #fff; }
+    html { background: #eceff3; }
+  }
+
+  p.formula {
+    font-family: "Cambria Math", "Times New Roman", serif;
+    text-align: center; margin: 8pt 0 10pt 0; font-size: 11pt;
+  }
+  p.note { border: none; }
+</style>
+</head>
+<body>
+
+<!-- ============ 封面 ============ -->
+<div class="cover">
+  <div class="kicker">第八届全球校园人工智能算法精英大赛　算法创新赛</div>
+  <h1>禾衡·粮食生产气候风险归因决策系统</h1>
+  <div class="sub">技术方案</div>
+  <div class="meta">
+    <div><span>作品名称</span><span class="yh">禾衡·粮食生产气候风险归因决策系统</span></div>
+    <div><span>参赛赛题</span><span class="yh">赛题5　AI+学科交叉</span></div>
+    <div><span>作品类别</span><span class="yh">AI 赋能农学理论研究的跨学科科研分析系统</span></div>
+    <div><span>提交日期</span><span class="yh">2026 年 10 月</span></div>
+  </div>
+  <div class="foot">本方案所涉算法模型、数据集与系统模块均由团队独立研发，拥有完整知识产权</div>
+</div>
+
+<div class="section">
+<h2>一、项目概述</h2>
+<h3>1. 背景与意义</h3>
+<p><b>学科背景。</b> 极端气候已成为粮食安全的核心扰动源。2023 年全国平均气温创 1961 年以来新高，京津冀"23·7"极端暴雨致河北平原约 24 万公顷农田受灾，长江中下游高温干旱与西南"旱涝急转"叠加发生。在农学与农业气象学的学科视野中，这类事件提出的核心科学问题不是"某年减产多少"，而是<b>在省级尺度上，哪些因子对粮食生产风险的边际贡献更大、方向如何、区域间是否分化</b>——这是区域农业风险评估、种植结构调整与防灾减灾政策制定的共同前提。</p>
+<p><b>学科建设意义。</b> 长期以来，该问题的研究路径存在明显的学科割裂：农学与农业气象学擅长机理阐释但受限于统计手段，计算机科学擅长建模但常脱离农学语境。本作品以<b>农业气象学的问题定义 + 机器学习的方法工具 + 决策科学的输出形式</b>构建跨学科链条，为"人工智能赋能农学理论研究与科研探索"提供一条可复用的路径：把卫星观测、地面气象与统计年鉴三类异构数据在省级面板上对齐，用可解释模型输出农学可解读的因子排序，最终交付到科研与管理部门可直接使用的工具。</p>
+<h3>2. 核心目标</h3>
+<table>
+  <thead>
+    <tr><th style="width:12%">目标层级</th><th style="width:42%">具体目标</th><th style="width:46%">达成指标</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">数据层</td><td>构建统计 + 气象 + 遥感 + 致灾/空间四模态的省级面板数据集</td><td>31 省 × 13 年（2011—2023）= 403 样本，11 维入模特征，无缺失</td></tr>
+    <tr><td class="k">方法层</td><td>建立跨算法归因互补的分析框架，并公开报告多协议验证结果</td><td>三模型互补归因；random 8:2 / leave-year-out / leave-province-out 三协议并行披露</td></tr>
+    <tr><td class="k">学科层</td><td>输出农学可解读的因子相对重要性排序与区域分化证据</td><td>SHAP 边际贡献 Top-3、Attention gating Top-3 双视角对照；省级差异化归因</td></tr>
+    <tr><td class="k">应用层</td><td>交付面向科研人员与管理部门的可视化决策支持系统</td><td>7 模块 Web 系统，单次推理 &lt; 2 秒，全栈无 GPU 依赖</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="section">
+<h2>二、需求分析</h2>
+<h3>1. 学科专业界定</h3>
+<p>本作品服务的学科领域为<b>农学门类下的作物学与农业资源与环境（区域粮食安全风险评估方向）</b>，并交叉农业气象学与计算机科学与技术。所聚焦的核心学科环节为：</p>
+<ol>
+  <li><b>理论研究</b>：极端气候因子的相对重要性排序及其区域分化规律；</li>
+  <li><b>科研探索</b>：多源异构数据的融合建模与可解释性归因；</li>
+  <li><b>科研数据处理与可视化</b>：从原始遥感/气象/统计资料到可复现分析结论的工程化流程。</li>
+</ol>
+<p>切入环节之所以选"科研数据处理与可视化"，是因为它的痛点<b>跨学科共性最强</b>：既制约农学研究的可复现性，也制约计算机方法在农学中的落地效率。</p>
+<h3>2. 核心痛点梳理</h3>
+<table>
+  <thead>
+    <tr><th style="width:12%">环节</th><th style="width:44%">现状痛点</th><th style="width:44%">后果</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">数据准备</td><td>四类数据源格式、时空粒度、坐标系各不相同（栅格 / 站点 / 年鉴 / 矢量），对齐工作重复且不可复用</td><td>单次研究的数据准备耗时占全流程主要比例；不同研究口径不一致，结论难以横向比较</td></tr>
+    <tr><td class="k">建模归因</td><td>多依赖单一模型与全局重要性排序，缺乏跨原理模型的归因对照，也缺乏对模型适用边界的主动披露</td><td>归因结论的稳健性无法被同行检验；易出现"把拟合能力误读为因果结论"</td></tr>
+    <tr><td class="k">成果转化</td><td>研究多止步于论文与离线脚本，缺少面向非技术用户的交互工具</td><td>归因结论难以触达农技推广与政策制定环节</td></tr>
+  </tbody>
+</table>
+<h3>3. AI 赋能需求</h3>
+<table>
+  <thead>
+    <tr><th style="width:32%">需求</th><th style="width:68%">AI 技术的对应角色</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">异构数据时空对齐与标准化</td><td>缺失值插值、Z-score 标准化、栅格按省域行政边界的加权聚合（遥感含耕地像元权重）</td></tr>
+    <tr><td class="k">非线性、多因子耦合的风险归因</td><td>梯度提升树（捕捉非线性与交互）+ SHAP 归因框架</td></tr>
+    <tr><td class="k">时序维度的独立对照视角</td><td>LSTM 与特征级注意力门控（feature-level attention gating）</td></tr>
+    <tr><td class="k">归因结论的可检验性</td><td>多协议交叉验证框架 + 消融实验（ablation）</td></tr>
+    <tr><td class="k">结论触达非技术用户</td><td>Web 决策支持系统 + 检索增强问答（把方法论文档作为知识库）</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="section">
+<h2>三、解决方案设计</h2>
+<h3>1. 系统架构设计</h3>
+<p>系统采用"数据层 — 算法层 — 应用层"三层架构：</p>
+<table>
+  <thead>
+    <tr><th style="width:13%">层次</th><th style="width:49%">组成</th><th style="width:38%">输出</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">数据层</td><td>统计（产量与投入）、气象（气温/降水/日照/SPEI）、遥感（MODIS NDVI 与地表温度，按耕地像元加权）、致灾与空间（旱灾/水灾面积、省域矢量）</td><td>缺失值插值 → 时空对齐 → Z-score → 403 × 27 面板</td></tr>
+    <tr><td class="k">算法层</td><td>XGBoost-SHAP（横截面边际贡献）、LSTM（时序拟合参照）、Attention-LSTM（11 维 gating 权重）、三协议交叉验证、消融实验</td><td>模型文件 + 归因结果 + 鲁棒性报告</td></tr>
+    <tr><td class="k">应用层</td><td>REST API（推理与归因）+ Web 前端 7 模块</td><td>可视化决策支持系统</td></tr>
+  </tbody>
+</table>
+<figure>
+  <img src="img/arch.png" alt="系统整体架构图">
+  <figcaption>图 1　系统整体架构图</figcaption>
+</figure>
+<p>上图为本作品的三层架构：数据层负责把四模态原始资料统一到"省份 × 年度"口径，算法层同时承载预测、归因与校核三类任务，应用层把结论交付到交互界面。图中不含任何单位标识，为提交用重绘版本。</p>
+<h3>2. 技术选型依据</h3>
+<table>
+  <thead>
+    <tr><th style="width:12%">层次</th><th style="width:43%">选型</th><th style="width:45%">与学科需求的适配理由</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">前端</td><td>Vue 3 + ECharts</td><td>科研人员需要"可交互探索"，而非静态图表；ECharts 地图组件适配省域展示</td></tr>
+    <tr><td class="k">后端</td><td>Flask 3 + gunicorn</td><td>轻量、易部署到教学/科研服务器；无需 GPU</td></tr>
+    <tr><td class="k">预测模型</td><td>XGBoost</td><td>小样本（N = 403）、中维（11 维）、非线性与交互显著，树模型是最适配的选择</td></tr>
+    <tr><td class="k">归因</td><td>SHAP</td><td>提供样本级可加性分解，满足"农学可解读"要求（作用方向 + 单省归因 + 交互依赖）</td></tr>
+    <tr><td class="k">时序对照</td><td>LSTM + 特征级注意力门控</td><td>省级年度面板 TIMESTEPS = 1，传统时间步注意力退化，故适配为<b>特征级</b>软选择门控</td></tr>
+    <tr><td class="k">统计校核</td><td>线性混合效应模型</td><td>用方差分解定量回答"R² 究竟来自哪里"，避免过度解读</td></tr>
+    <tr><td class="k">知识助手</td><td>BGE-M3 嵌入 + BM25 混合检索 + 交叉编码器重排 + 大模型生成</td><td>让方法论文档可直接被自然语言检索，降低科研新人上手成本</td></tr>
+  </tbody>
+</table>
+<p class="note"><b>为什么强调"选型依据"而不是"越前沿越好"</b>：N = 403 的省级面板数据规模决定了深度模型的收益上限；本项目选择用<b>多个原理不同的轻量模型做归因对照</b>，而非堆叠一个大模型，这与数据规模相匹配。</p>
+<h3>3. 核心技术模块</h3>
+<h4>模块一：多模态时空对齐与面板数据集构建</h4>
+<ul>
+  <li>四类数据源统一到"省份 × 年度"口径；栅格遥感按省域边界聚合，且使用<b>耕地像元权重</b>，避免非耕地像元混入；</li>
+  <li>气象站点数据按省域多站点加权平均；</li>
+  <li>缺失值线性插值，全列 Z-score 标准化；</li>
+  <li>产出：403 × 27 字段面板，其中 11 维入模特征 + 1 维目标（粮食单产 kg/ha）。</li>
+</ul>
+<h4>模块二：XGBoost-SHAP 横截面边际贡献归因</h4>
+<p>目标函数同时考虑训练损失与树结构正则项：</p>
+<p class="formula">Obj = Σ L(y_i, ŷ_i) + Σ Ω(f_k)，  ŷ_i = Σ f_k(x_i)</p>
+<p>SHAP 将单样本预测分解为各特征贡献之和：</p>
+<p class="formula">ŷ_i = φ_0 + Σ φ_ij</p>
+<p>输出三个层次的归因：全局重要性（mean |SHAP|）、单样本瀑布分解、特征交互依赖。</p>
+<h4>模块三：Attention-LSTM 时序归因（特征级门控）</h4>
+<p>针对 TIMESTEPS = 1 的省级年度面板特性，将时间步注意力改造为<b>特征级注意力门控</b>：</p>
+<p class="formula">e_j = vᵀ tanh(W_h x_j + b_h)</p>
+<p class="formula">α_j = exp(e_j) / Σ_k exp(e_k)</p>
+<p class="formula">x'_j = α_j · x_j</p>
+<p>α 满足 Σα = 1，因此可与 SHAP 排名直接做等级相关对照——这是"互补归因"可比性的技术前提。</p>
+<h4>模块四：三协议鲁棒性披露与消融实验</h4>
+<table>
+  <thead>
+    <tr><th style="width:19%">协议</th><th style="width:38%">检验目标</th><th style="width:43%">实测（XGBoost，10 种子 / 31 折 / 13 折）</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">random 8:2</td><td>已见省份相邻样本的拟合与省内归因能力</td><td>R² = 0.907 ± 0.038，RMSE 312.5 kg/ha</td></tr>
+    <tr><td class="k">leave-year-out</td><td>时间外推（已见省份的未来年份）</td><td>R² = 0.894 ± 0.10</td></tr>
+    <tr><td class="k">leave-province-out</td><td>空间外推（未见省份）</td><td>中位 R² = −16.83，31 省仅 1 省 &gt; 0</td></tr>
+  </tbody>
+</table>
+<p>配套消融：移除 NDVI 后 R² 由 0.907 → 0.904（<b>损失 0.003</b>），据此拒绝"NDVI 是整体精度核心驱动"的表述；目标变量对照实验（去趋势残差目标 R² = −0.10 ± 0.28）作为方法学诚信记录一并保留。</p>
+<h4>模块五：线性混合效应校核（回答"R² 从哪来"）</h4>
+<p>用 y_it = α_i + β X_it + ε_it 做方差分解：<b>ICC = 0.9710（95% CI [0.9496, 0.9805]）</b>，即约 97% 的总方差由省份基线差异贡献；LRT 对比混合效应与混合 OLS：LR = 741.59，p ≈ 1.35×10⁻¹⁶³。11 维固定效应中 4 项显著（机械化率、化肥投入、旱灾面积、水灾面积），NDVI 的 β 不显著（p = 0.570）。</p>
+<p class="note"><b>本模块的学科价值</b>：它把"机器学习给了一个高分"翻译成农学与统计学都能接受的结论——<b>R² = 0.907 测的是省内因子相对重要性识别能力，不是跨省气候-产量映射能力</b>。这一自我校核是本作品与常见"刷榜式"AI 应用最本质的区别。</p>
+<h4>模块六：可视化决策支持系统（7 模块）</h4>
+<table>
+  <thead>
+    <tr><th style="width:16%">模块</th><th style="width:58%">功能</th><th style="width:26%">面向的学科环节</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">M00 系统总览</td><td>全局指标、数据覆盖、模型卡片入口</td><td>科研入门</td></tr>
+    <tr><td class="k">M01 风险时空地图</td><td>31 省 × 13 年风险等级地图 + 时间轴 + 省级历史曲线</td><td>区域分化规律探索</td></tr>
+    <tr><td class="k">M02 SHAP 归因看板</td><td>全局重要性 + 单省瀑布分解 + 蜂群图 + 交互依赖</td><td>因子归因分析</td></tr>
+    <tr><td class="k">M03 参数情景模拟</td><td>调节灌溉率/化肥/降水等因子做反事实推演</td><td>"如果…会怎样"的科研假设检验</td></tr>
+    <tr><td class="k">M04 韧性路径推荐</td><td>12 条白箱规则引擎 × 三阶段（0-1 / 1-3 / 3-5 年）输出省级差异化路径</td><td>结论向对策转化</td></tr>
+    <tr><td class="k">M05 推演监控</td><td>推理链路与响应状态可视化</td><td>可复现性与审计</td></tr>
+    <tr><td class="k">M06 知识助手</td><td>面向方法论文档的检索增强问答</td><td>科研新人上手</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="section">
+<h2>四、方案可行性</h2>
+<h3>1. 技术可行性</h3>
+<ul>
+  <li><b>端到端已跑通</b>：数据管线、三模型训练、API 化、前端 7 模块均已实装，非原型演示；</li>
+  <li><b>工程指标</b>：单次推理响应 &lt; 2 秒；后端含请求限流与 6 项安全响应头；前端满足 WCAG 2.2 AA 无障碍规范；</li>
+  <li><b>可复现性</b>：训练超参与随机种子全部落盘，配套一键重训脚本与固定环境说明；</li>
+  <li><b>无稀缺资源依赖</b>：CPU 版深度学习框架 + 梯度提升库，普通云主机即可运行，不依赖 GPU。</li>
+</ul>
+<h3>2. 经济可行性</h3>
+<table>
+  <thead>
+    <tr><th style="width:21%">项</th><th style="width:79%">说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">服务器</td><td>单台通用云主机（中等配置）即可承载，无 GPU 成本</td></tr>
+    <tr><td class="k">数据</td><td>全部采用公开权威数据源（统计年鉴、气象数据网、MODIS、水旱灾害公报等），无采购成本</td></tr>
+    <tr><td class="k">运维</td><td>单体服务 + 静态前端，无微服务集群与专用中间件</td></tr>
+    <tr><td class="k">推广边际成本</td><td>新增一个省份或一个作物品种，只需补数据重新训练，系统无需改动</td></tr>
+  </tbody>
+</table>
+<h3>3. 推广价值</h3>
+<ol>
+  <li><b>方法论可迁移</b>：三模型互补归因 + 三协议披露的框架与具体作物无关，可迁移到其他作物、其他区域、其他"气候—生产"研究议题；</li>
+  <li><b>数据流程可复用</b>：多源异构数据的时空对齐与标准化流程可复用于同类面板研究；</li>
+  <li><b>教学可嵌入</b>：系统可作为农学、农业气象、数据科学相关课程与科研训练的实训平台（M02/M03 的交互式归因特别适合课堂演示）；</li>
+  <li><b>同类院校可复制</b>：全部组件为开源技术栈，部署门槛低，具备向同类院校与研究单位复制的条件。</li>
+</ol>
+</div>
+<div class="section">
+<h2>五、项目实施</h2>
+<h3>1. 实施计划</h3>
+<table>
+  <thead>
+    <tr><th style="width:18%">阶段</th><th style="width:46%">主要任务</th><th style="width:36%">产物</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">阶段一 · 数据底座</td><td>多源数据采集、耕地像元加权聚合、时空对齐、质量审计</td><td>403 × 27 面板数据集 + 数据说明文档</td></tr>
+    <tr><td class="k">阶段二 · 建模与归因</td><td>三模型训练、SHAP 归因、注意力门控、混合效应校核</td><td>模型文件 + 模型卡片（含完整超参与评价）</td></tr>
+    <tr><td class="k">阶段三 · 鲁棒性验证</td><td>三协议交叉验证、NDVI 消融、目标变量对照</td><td>鲁棒性报告（含负结果公开披露）</td></tr>
+    <tr><td class="k">阶段四 · 系统开发</td><td>API 化、前端 7 模块、安全与无障碍加固</td><td>Web 决策支持系统 + 部署脚本</td></tr>
+    <tr><td class="k">阶段五 · 验证与固化</td><td>真值单点校验、性能实测、文档齐备化</td><td>测试报告 + 操作手册 + 演示视频</td></tr>
+  </tbody>
+</table>
+<h3>2. 资源保障</h3>
+<ul>
+  <li><b>数据资源</b>：全部为公开权威数据源，已在数据说明文档中逐项标注来源与处理口径；</li>
+  <li><b>计算资源</b>：CPU 环境可完成全部训练与推理；</li>
+  <li><b>文档资源</b>：已形成数据说明、模型卡片、规则引擎说明等成套文档，直接支撑可复现性要求。</li>
+</ul>
+<h3>3. 团队协作</h3>
+<p>团队 3 人，按"算法—系统—材料"三条线分工，交叉复核：</p>
+<table>
+  <thead>
+    <tr><th style="width:28%">角色</th><th style="width:50%">职责</th><th style="width:22%">与学科环节的对应</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">队长（算法与统筹）</td><td>建模、归因分析、鲁棒性验证、整体统筹</td><td>对接农学问题定义</td></tr>
+    <tr><td class="k">队员 A（系统与部署）</td><td>数据管线、后端 API、前端集成、部署运维</td><td>对接科研数据流程</td></tr>
+    <tr><td class="k">队员 B（文档与可视化）</td><td>数据说明、模型卡片、可视化设计、参赛材料</td><td>对接成果转化与科普</td></tr>
+  </tbody>
+</table>
+<p><b>跨专业协作机制</b>：每项建模结论在写入文档前，必须由非建模成员用"农学语言"复述一遍；复述不通则回到定义环节重新讨论。该机制有效避免了"技术结论无法被学科用户理解"的常见问题。</p>
+</div>
+<div class="section">
+<h2>六、应用效果</h2>
+<h3>1. 应用效果预期</h3>
+<table>
+  <thead>
+    <tr><th style="width:12%">维度</th><th style="width:44%">预期效果</th><th style="width:44%">验证方式</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">科研效率</td><td>多源数据准备与归因分析从"逐次手工对齐"转为"一次建模、交互查询"</td><td>以流程固化程度衡量：四模态对齐脚本与逐字段口径台账已入库，同类研究可复用；未做逐次计时对比</td></tr>
+    <tr><td class="k">分析深度</td><td>从单一全局重要性排序，扩展为"边际贡献 × gating 偏好 × 区域分化"三层结构</td><td>与文献常用单模型 SHAP 结果对照（见 §六·2 两套排名对照）</td></tr>
+    <tr><td class="k">结论可信度</td><td>主动披露空间外推上限，避免结论被误用</td><td>三协议 R² 并列图表（图 7）</td></tr>
+    <tr><td class="k">教学价值</td><td>交互式归因看板可直接用于课堂演示与科研训练</td><td>以组内科研训练与跨专业成员的实际使用记录为依据；尚未开展规模化问卷与外部试用</td></tr>
+  </tbody>
+</table>
+<h3>2. 成果展示</h3>
+<p><b>（1）数据成果。</b> 31 省 × 13 年 × 11 维特征的多模态面板数据集（N = 403），配套完整的数据来源、字段口径与质量审计说明。</p>
+<p><b>（2）方法成果。</b> 三模型互补归因架构的实证结果：</p>
+<table>
+  <thead>
+    <tr><th style="width:21%">视图</th><th style="width:53%">方法</th><th style="width:26%">排名 Top-3</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">横截面边际贡献</td><td>XGBoost-SHAP（mean 绝对值 SHAP）</td><td>NDVI &gt; Prec &gt; Temp</td></tr>
+    <tr><td class="k">时序内部偏好</td><td>Attention-LSTM（平均 softmax attention）</td><td>Drou_A &gt; SPEI &gt; Temp</td></tr>
+  </tbody>
+</table>
+<p>两套排名的 Spearman ρ = <b>−0.055（p = 0.873）</b>，Top-3 仅"平均气温"一项重合（1/3）。<b>这不是"验证失败"，而是两类方法回答不同科学问题的实证证据</b>：SHAP 回答"去掉该特征预测误差变化多少"，Attention 回答"模型主动把权重放在哪里"。该差异本身构成方法论产出，并直接支撑"单一归因方法不足以支撑政策结论"的主张。</p>
+<figure>
+  <img src="img/fig_consistency.png" alt="两模型归因排名对照：XGBoost-SHAP（左）与 Attention-LSTM（右）">
+  <figcaption>图 2　两模型归因排名对照：XGBoost-SHAP（左）与 Attention-LSTM（右）</figcaption>
+</figure>
+<p>左图为横截面边际贡献排序（植被指数 &gt; 降水量 &gt; 平均气温），右图为时序模型的内部权重偏好（旱灾面积 &gt; 干旱指数 &gt; 平均气温）。两图并列即前述"互补而非一致性验证"的直观证据。</p>
+<p><b>（3）系统成果。</b> 7 模块 Web 决策支持系统，含风险时空地图、SHAP 归因看板、参数情景模拟、韧性路径推荐（12 条白箱规则 × 三阶段）、推演监控与知识助手。</p>
+<figure>
+  <img src="img/M01.png" alt="省级风险时空地图：分省年度风险等级与历史演化">
+  <figcaption>图 3　省级风险时空地图：分省年度风险等级与历史演化</figcaption>
+</figure>
+<figure>
+  <img src="img/M02.png" alt="SHAP 归因看板：全局因子重要性与单省贡献分解">
+  <figcaption>图 4　SHAP 归因看板：全局因子重要性与单省贡献分解</figcaption>
+</figure>
+<figure>
+  <img src="img/M03.png" alt="参数情景模拟：调整灌溉率、化肥投入与降水后的风险变化">
+  <figcaption>图 5　参数情景模拟：调整灌溉率、化肥投入与降水后的风险变化</figcaption>
+</figure>
+<figure>
+  <img src="img/M04.png" alt="韧性路径推荐：分阶段措施、优先级与参数">
+  <figcaption>图 6　韧性路径推荐：分阶段措施、优先级与参数</figcaption>
+</figure>
+<p><b>（4）可复现成果。</b> 模型卡片、超参与随机种子、一键重训脚本、无障碍与安全加固记录。</p>
+<p><b>（5）效率与稳定性实测。</b></p>
+<table>
+  <thead>
+    <tr><th style="width:45%">指标</th><th style="width:55%">数值</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">单次推理响应</td><td>&lt; 2 秒</td></tr>
+    <tr><td class="k">单点真值校验（某主产省某年，实际单产 4615 kg/ha）</td><td>XGBoost 4387.5（−227.5）；LSTM 4173.5（−441.6）；Attention-LSTM 4657.6（+42.6）</td></tr>
+    <tr><td class="k">无障碍</td><td>WCAG 2.2 AA 达标</td></tr>
+    <tr><td class="k">安全响应头</td><td>6 项（含内容安全策略 / 强制 HTTPS / 防嵌套等）+ 请求限流</td></tr>
+  </tbody>
+</table>
+<p class="note">单点真值校验属于"已见省份相邻样本"的拟合能力验证，<b>不作为空间外推证据</b>。</p>
+<figure>
+  <img src="img/fig_protocols.png" alt="三套验证协议下的 XGBoost 表现：随机 8:2、留一年外推与留一省外推">
+  <figcaption>图 7　三套验证协议下的 XGBoost 表现：随机 8:2、留一年外推与留一省外推</figcaption>
+</figure>
+<p>左、中两根柱体对应"已见省份"的拟合与时间外推能力，右侧柱体为严格留一省外推的中位表现。把这三种协议放在同一张图上，是为了让"模型能用在哪"先于"精度有多高"被读出来。</p>
+</div>
+<div class="section">
+<h2>七、总结与展望</h2>
+<h3>1. 方案总结</h3>
+<p>本方案的学科贡献可归纳为三点：</p>
+<ol>
+  <li><b>把"数据对齐"这一隐性科研成本显性化、可复用化</b>：四模态省级面板的构建流程完整记录，可被后续研究直接复用；</li>
+  <li><b>把"归因分歧"从缺陷转为产出</b>：以 SHAP 与 Attention 的近零等级相关（ρ = −0.055）实证跨算法归因的方法论独立性，而非强行拼接一致性结论；</li>
+  <li><b>把"模型边界"写进结论</b>：以 leave-province-out 中位 R² = −16.83 与混合效应 ICC = 0.9710 定量说明 R² = 0.907 的真实含义，使学科用户不会把拟合分数误读为跨区域预测能力。</li>
+</ol>
+<p><b>存在的不足（如实说明）：</b></p>
+<ul>
+  <li>空间粒度限于省级、N = 403，空间外推能力已确认受限，尚不能支撑"未见省份"的风险预测；</li>
+  <li>时间覆盖至 2023 年，尚未纳入最新年份数据；</li>
+  <li>混合效应模型中的主要投入类因子边际方向存在反向因果嫌疑（投入可能是对差年景的事后补救），纯回归框架无法识别，需后续用准实验设计处理；</li>
+  <li>交互式归因看板的部分子视图（单样本瀑布、蜂群子集）依赖样本级归因接口的进一步完备。</li>
+</ul>
+<h3>2. 未来展望</h3>
+<table>
+  <thead>
+    <tr><th style="width:14%">方向</th><th style="width:39%">具体路径</th><th style="width:47%">学科意义</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">空间粒度下移</td><td>省级 → 县域面板</td><td>提高省内变异占比，使气候—产量映射具备可辨识性</td></tr>
+    <tr><td class="k">时间覆盖延伸</td><td>持续纳入新年份，形成滚动更新机制</td><td>支撑滚动风险评估</td></tr>
+    <tr><td class="k">模型结构升级</td><td>在混合效应框架中引入随机斜率，检验区域异质性</td><td>让"同一因子在不同区域方向相反"这类农学假设可被统计检验</td></tr>
+    <tr><td class="k">因果识别</td><td>引入工具变量或准实验设计处理投入的反向因果</td><td>从"相关归因"走向"因果归因"</td></tr>
+    <tr><td class="k">教学转化</td><td>将交互式归因看板与情景模拟开发为教学模块</td><td>服务 AI+农学的跨学科人才培养</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="section">
+<h2>八、附录</h2>
+<h3>1. 代码与模型</h3>
+<ul>
+  <li><b>核心代码</b>：数据管线、三模型训练与评估、SHAP 归因、API 服务、前端 7 模块（完整代码包通过作品其他材料链接提交）；</li>
+  <li><b>模型文件</b>：XGBoost、LSTM、Attention-LSTM 三套模型及配套标准化器；</li>
+  <li><b>模型卡片</b>：逐模型记录数据版本、超参、随机种子、评价指标与已知局限。</li>
+</ul>
+<h3>2. 参考文献</h3>
+<ol>
+  <li>Schlenker W, Roberts M J. Nonlinear temperature effects indicate severe damages to U.S. crop yields under climate change. Proceedings of the National Academy of Sciences, 2009, 106(37): 15594-15598.</li>
+  <li>Lobell D B, Roberts M J, Schlenker W, et al. Greater sensitivity to drought accompanies maize yield increase in the U.S. Midwest. Science, 2014, 344(6183): 516-519.</li>
+  <li>Chen T, Guestrin C. XGBoost: a scalable tree boosting system. Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 2016: 785-794.</li>
+  <li>Lundberg S M, Lee S I. A unified approach to interpreting model predictions. Advances in Neural Information Processing Systems, 2017, 30: 4765-4774.</li>
+  <li>Hochreiter S, Schmidhuber J. Long short-term memory. Neural Computation, 1997, 9(8): 1735-1780.</li>
+  <li>Vaswani A, Shazeer N, Parmar N, et al. Attention is all you need. Advances in Neural Information Processing Systems, 2017, 30: 5998-6008.</li>
+  <li>Krishna S, Han T, Gu A, et al. The disagreement problem in explainable machine learning: a practitioner's perspective. arXiv preprint, 2022, arXiv:2202.01602.</li>
+  <li>Kumar I E, Venkatasubramanian S, Scheidegger C, et al. Problems with Shapley-value-based explanations as feature importance measures. Proceedings of the 37th International Conference on Machine Learning, 2020, PMLR 119: 5491-5500.</li>
+  <li>Brown J D. An introduction to linear mixed-effects modeling in R. Advances in Methods and Practices in Psychological Science, 2021, 4(1): 1-19.</li>
+  <li>Roberts D R, Bahn V, Ciuti S, et al. Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. Ecography, 2017, 40(8): 913-929.</li>
+</ol>
+<h3>3. 其他材料</h3>
+<ul>
+  <li>数据来源说明与字段口径表；</li>
+  <li>测试报告与性能实测截图（不含任何单位信息）；</li>
+  <li>系统操作手册；</li>
+  <li>演示视频（3-5 分钟，MP4）。</li>
+</ul>
+<p class="note"><b>提交前检查</b>：全文检索学校名称、校名简称、英文缩写、院系名称与指导教师姓名，命中数必须为 0。</p>
+</div>
+</body>
+</html>

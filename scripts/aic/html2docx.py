@@ -31,6 +31,9 @@ class Node:
         self.attrs = attrs or {}
         self.children: list[Node] = []
         self.text = ""
+        # (\"text\", str) | (\"node\", Node) entries in document order, so inline
+        # markup keeps its position relative to the surrounding text.
+        self.parts: list[tuple[str, object]] = []
 
     def cls(self) -> str:
         return self.attrs.get("class", "")
@@ -44,10 +47,12 @@ class Node:
         return out
 
     def plain(self) -> str:
-        parts = [self.text]
-        for child in self.children:
-            parts.append(child.plain())
-        return "".join(parts)
+        if not self.parts:
+            return self.text
+        out = []
+        for kind, item in self.parts:
+            out.append(item if kind == "text" else item.plain())
+        return "".join(out)
 
 
 class TreeParser(HTMLParser):
@@ -65,6 +70,7 @@ class TreeParser(HTMLParser):
             return
         node = Node(tag, {k: (v or "") for k, v in attrs})
         self.stack[-1].children.append(node)
+        self.stack[-1].parts.append(("node", node))
         if tag not in VOID:
             self.stack.append(node)
 
@@ -84,6 +90,7 @@ class TreeParser(HTMLParser):
             return
         if data.strip():
             self.stack[-1].text += data
+            self.stack[-1].parts.append(("text", data))
 
 
 def esc(text: str) -> str:
@@ -134,20 +141,21 @@ class DocBuilder:
     def inline_runs(self, node: Node, base_bold: bool = False) -> str:
         """Flatten a node's inline content into runs, honouring bold spans."""
         runs = []
-        if node.text.strip():
-            runs.append(self.text_run(node.text.strip(), bold=base_bold))
-        for child in node.children:
+        if not node.parts:
+            if node.text.strip():
+                runs.append(self.text_run(node.text.strip(), bold=base_bold))
+            return "".join(runs)
+        for kind, item in node.parts:
+            if kind == "text":
+                if item.strip():
+                    runs.append(self.text_run(item.strip(), bold=base_bold))
+                continue
+            child = item
             if child.tag == "br":
                 runs.append("<w:r><w:br/></w:r>")
                 continue
             bold = base_bold or child.tag in ("b", "strong")
-            if child.tag in ("b", "strong", "span", "code"):
-                if child.text.strip():
-                    runs.append(self.text_run(child.text.strip(), bold=bold))
-                for grand in child.children:
-                    runs.append(self.inline_runs(grand, base_bold=bold))
-            else:
-                runs.append(self.inline_runs(child, base_bold=bold))
+            runs.append(self.inline_runs(child, base_bold=bold))
         return "".join(runs)
 
     def image(self, node: Node) -> None:
