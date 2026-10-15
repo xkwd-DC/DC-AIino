@@ -338,12 +338,13 @@
   </thead>
   <tbody>
     <tr><td class="k">单次推理响应</td><td>&lt; 2 秒</td></tr>
+    <tr><td class="k">模型侧耗时实测（本机 CPU）</td><td>单次预测（标准化 + XGBoost 推理）1.87 ms（5 次均值，区间 1.59—2.18 ms）；含 11 次扰动归因的整轮模型侧计算 19.8 ms</td></tr>
     <tr><td class="k">单点真值校验（某主产省某年，实际单产 4615 kg/ha）</td><td>XGBoost 4387.5（−227.5）；LSTM 4173.5（−441.6）；Attention-LSTM 4657.6（+42.6）</td></tr>
     <tr><td class="k">无障碍</td><td>WCAG 2.2 AA 达标</td></tr>
     <tr><td class="k">安全响应头</td><td>6 项（含内容安全策略 / 强制 HTTPS / 防嵌套等）+ 请求限流</td></tr>
   </tbody>
 </table>
-<p class="note">单点真值校验属于"已见省份相邻样本"的拟合能力验证，<b>不作为空间外推证据</b>。</p>
+<p class="note">单点真值校验属于"已见省份相邻样本"的拟合能力验证，<b>不作为空间外推证据</b>。 模型侧耗时实测的计时口径：在本机 CPU 环境（Python 3.13、XGBoost 2.1）预热后连续计时 5 次取均值，复算对象是后端 <code>/api/predict</code> 的模型侧计算路径（参数映射 → 标准化 → 预测，外加 11 次逐特征扰动归因），<b>不含 HTTP 往返与前端渲染</b>；服务端为普通云主机部署，因此"单次推理 &lt; 2 秒"的表述留有充分余量。计时脚本见仓库 <code>scripts/aic/bench_inference.py</code>，可复跑。</p>
 <figure>
   <img src="img/fig_protocols.png" alt="三套验证协议下的 XGBoost 表现：随机 8:2、留一年外推与留一省外推">
   <figcaption>图 7　三套验证协议下的 XGBoost 表现：随机 8:2、留一年外推与留一省外推</figcaption>
