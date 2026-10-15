@@ -10,27 +10,21 @@ import http from './http'
 export type UnitType = 'farm' | 'urban' | 'unknown'
 export type UnitFilter = 'all' | 'farm'
 
+/** 县级快照行。一年约 1,200 行，故只含地图与清单所需字段；
+ *  单县的完整轨迹与 16 维归因由 fetchCountyHistory / fetchCountyAttribution 提供。 */
 export interface CountyRow {
   county_code: number
   county: string
-  city: string | null
   province: string
-  lon: number | null
-  lat: number | null
   /** 与 /maps/counties_10provinces.json 的 properties.name 同口径,地图按它着色 */
   map_key: string
   /** 该县是否有县级边界可渲染(v7 面板含县域年鉴的"市辖区"合计行,这类没有独立边界) */
   on_map: boolean
   risk_level: number
   risk_pct: number
-  clim_contrib: number
   clim_anomaly: number
-  contrib_pct: number
-  y_pred: number | null
-  y_true: number | null
   unit_type: UnitType
   grain_output_t: number | null
-  sown_kha: number | null
 }
 
 export interface CountyList {

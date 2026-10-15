@@ -6,7 +6,9 @@ const { chromium } = require(
   'C:/Users/darcy/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright',
 )
 
-const BASE = 'http://localhost:5173'
+// 默认打 vite dev(5173)；也可 `$env:SHOOT_BASE='http://127.0.0.1:8011'` 打 Flask 直服 dist，
+// 后者会连真后端 API 一起验证。
+const BASE = process.env.SHOOT_BASE ?? 'http://localhost:5173'
 const OUT = 'D:/DC/DC-AIino/_shots'
 
 // 页面路由 → (文件名, 等待的正文锚点)

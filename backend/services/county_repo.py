@@ -136,18 +136,18 @@ def get_counties(
 
     Returns:
         每行含 map_key（与前端 geojson 的 properties.name 同口径）/ 风险等级 /
-        气候边际贡献 / 主产单元标记 / 经纬度。
+        气候异常 / 当年总产量 / 主产单元标记。
+        一年约 1,200 行，故此处只返回地图与清单需要的字段；单县的完整轨迹与
+        16 维归因分别走 get_county_history / get_attribution。
     """
     _validate_year(year, db_path)
     if unit not in ("all", "farm"):
         raise ValueError(f"unit must be 'all' or 'farm', got {unit!r}")
 
     sql = """
-        SELECT m.county_code, m.county, m.city, m.province, m.lon, m.lat,
-               m.map_key, m.on_map,
-               o.risk_level, o.risk_pct, o.clim_contrib, o.clim_anomaly,
-               o.contrib_pct, o.y_pred, o.y_true, o.unit_type,
-               p.grain_output_t, p.sown_kha
+        SELECT m.county_code, m.county, m.province, m.map_key, m.on_map,
+               o.risk_level, o.risk_pct, o.clim_anomaly, o.unit_type,
+               p.grain_output_t
         FROM county_model_out o
         JOIN county_meta m ON m.county_code = o.county_code
         LEFT JOIN county_panel p
