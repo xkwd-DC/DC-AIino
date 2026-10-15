@@ -46,10 +46,15 @@ $Root = Split-Path -Parent $PSScriptRoot
 $Backend = Join-Path $Root 'backend'
 $Frontend = Join-Path $Root 'frontend'
 $RunDir = Join-Path $PSScriptRoot 'run'
-$PidFile = Join-Path $RunDir 'server.pid'
-$OutLog = Join-Path $RunDir 'server.out.log'
-$ErrLog = Join-Path $RunDir 'server.err.log'
-$NullIn = Join-Path $RunDir 'nul.in'
+# 运行态文件按端口区分：否则起第二个实例（换端口）会覆盖第一个的 PID 记录，
+# 之后 -Stop 就会杀错进程。
+$PidFile = Join-Path $RunDir "server-$Port.pid"
+$OutLog = Join-Path $RunDir "server-$Port.out.log"
+$ErrLog = Join-Path $RunDir "server-$Port.err.log"
+# stdin 用「每端口一个空文件」。绝不能叫 nul.in —— "NUL" 是 Windows 保留设备名，
+# 带扩展名也照样被当设备（nul.in 会被解析成 NUL 设备），Test-Path / New-Item 在它上面
+# 行为不可预期，两个实例还会互相锁住。
+$NullIn = Join-Path $RunDir "stdin-$Port.empty"
 $Py = Join-Path $Backend '.venv\Scripts\python.exe'
 $BindHost = if ($Lan) { '0.0.0.0' } else { '127.0.0.1' }
 $ProbeHost = '127.0.0.1'
@@ -80,20 +85,31 @@ function Test-Health([int]$TimeoutSec) {
 }
 
 function Get-LanAddresses {
+    # 只留真实网卡的地址：Hyper-V / VMware / VirtualBox 之类的虚拟网卡（vEthernet…）
+    # 打出来会让人以为手机连不上。带上网卡名，方便判断"连 WiFi 就用哪个"。
     Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-        Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and $_.PrefixOrigin -ne 'WellKnown' } |
-        Select-Object -ExpandProperty IPAddress -Unique
+        Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+        ForEach-Object {
+            $alias = (Get-NetAdapter -InterfaceIndex $_.InterfaceIndex -ErrorAction SilentlyContinue).Name
+            [pscustomobject]@{ IP = $_.IPAddress; Alias = $alias }
+        } |
+        Where-Object {
+            $_.Alias -and $_.Alias -notmatch 'vEthernet|VMware|VirtualBox|Hyper-V|Loopback|Bluetooth|Npcap|TAP|WSL'
+        } |
+        Select-Object -Property IP, Alias -Unique
 }
 
-function Stop-ProcessTree([int]$ProcId) {
+function Stop-ProcessTree([int]$ProcId, [int]$ListenPort) {
     # 这里的进程链是三层的（waitress-serve.exe → venv python 垫片 → 真解释器），
     # 只杀记录下来的那个 PID 会留下孤儿进程继续占端口，所以按进程树杀。
-    $known = [bool](Get-Process -Id $ProcId -ErrorAction SilentlyContinue)
-    if ($known) { & taskkill.exe /PID $ProcId /T /F 2>&1 | Out-Null }
-    # 兜底：树上还有残留（比如垫片先退出）时，按进程名 + 命令行匹配清一次
-    $left = Get-CimInstance Win32_Process -Filter "Name='python.exe' or Name='waitress-serve.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -and $_.CommandLine -match 'waitress-serve|app:app' }
-    foreach ($p in $left) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue }
+    if (Get-Process -Id $ProcId -ErrorAction SilentlyContinue) {
+        & taskkill.exe /PID $ProcId /T /F 2>&1 | Out-Null
+    }
+    # 兜底只认「谁在监听这个端口」——绝不能按进程名泛杀：
+    # 那样会把别的端口上正在跑的实例一起带走（本项目同时开两个端口时踩过）。
+    Start-Sleep -Milliseconds 300
+    $still = Get-NetTCPConnection -LocalPort $ListenPort -State Listen -ErrorAction SilentlyContinue
+    foreach ($c in $still) { Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue }
 }
 
 # ────────────────────────────────────────────────────────────────
@@ -103,7 +119,7 @@ if ($Stop) {
     $procId = Get-ServerPid
     if ($null -eq $procId) { Write-Warn2 '没有记录在案的实例（deploy/run/server.pid 不存在）'; exit 0 }
     Write-Step "停止 PID $procId（含子进程）"
-    Stop-ProcessTree $procId
+    Stop-ProcessTree $procId -ListenPort $Port
     Remove-Item -LiteralPath $PidFile -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 800
     $still = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
@@ -229,7 +245,7 @@ try {
 if ($Foreground) {
     Write-Step "前台启动（$BindHost`:$Port，Ctrl+C 停止）"
     Write-Host "    地址 http://${ProbeHost}:$Port"
-    if ($Lan) { Get-LanAddresses | ForEach-Object { Write-Host "    局域网 http://$_`:$Port" } }
+    if ($Lan) { Get-LanAddresses | ForEach-Object { Write-Host "    局域网 http://$($_.IP):$Port  （网卡 $($_.Alias)）" } }
     if ($hasWaitress) {
         $env:PORT = "$Port"
         Push-Location $Backend
@@ -257,7 +273,10 @@ if ($hasWaitress) {
 
 $env:FLASK_HOST = $BindHost
 $env:PORT = "$Port"
-if (-not (Test-Path -LiteralPath $NullIn)) { New-Item -ItemType File -Force -Path $NullIn | Out-Null }
+if (-not (Test-Path -LiteralPath $NullIn)) {
+    try { New-Item -ItemType File -Path $NullIn -ErrorAction Stop | Out-Null }
+    catch { $NullIn = 'NUL' }   # 兜底：NUL 设备永远可读且不会被锁
+}
 # 三个标准流全部改到文件/NUL：否则子进程会继承父 shell 的管道句柄，
 # 调用方（CI、脚本、agent）会一直等管道 EOF 而挂着不返回。
 $proc = Start-Process -FilePath $exe -ArgumentList $argList -WorkingDirectory $Backend `
@@ -294,7 +313,7 @@ Write-Host ''
 Write-Host '部署完成。浏览器打开：' -ForegroundColor Green
 Write-Host "    http://${ProbeHost}:$Port" -ForegroundColor Green
 if ($Lan) {
-    Get-LanAddresses | ForEach-Object { Write-Host "    http://$_`:$Port  （局域网）" -ForegroundColor Green }
+    Get-LanAddresses | ForEach-Object { Write-Host "    http://$($_.IP):$Port  （局域网 · 网卡 $($_.Alias)）" -ForegroundColor Green }
 }
 Write-Host ''
 Write-Host '    M00 系统总览 / M01 省级风险地图 / M07 县级风险地图（1,199 县）'
