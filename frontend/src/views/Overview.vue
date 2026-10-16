@@ -34,9 +34,9 @@ const KPIS: ReadonlyArray<KpiCard> = [
     eyebrow: 'COVERAGE',
     title: '覆盖省份',
     value: '31',
-    subtitle: '全国 100%(不含港澳台)',
+    subtitle: '大陆 31 个省级行政区,不含港澳台',
     tone: 'green',
-    aria: '覆盖省份 31 个,全国 100%,不含港澳台',
+    aria: '覆盖省份 31 个,即大陆 31 个省级行政区,不含港澳台',
   },
   {
     eyebrow: 'SAMPLES',
@@ -58,9 +58,9 @@ const KPIS: ReadonlyArray<KpiCard> = [
     eyebrow: 'ROBUSTNESS',
     title: 'leave-province-out 中位',
     value: '−16.83',
-    subtitle: '诚实披露空间外推上限(31 省仅 1 省 R²>0)',
+    subtitle: '严格留一省协议:31 省中仅 1 省 R² > 0',
     tone: 'risk',
-    aria: 'leave-province-out 协议中位 R² 为负 16.83,诚实披露空间外推上限,31 省中仅 1 省 R² 大于 0',
+    aria: 'leave-province-out 协议中位 R² 为负 16.83,31 省中仅 1 省 R² 大于 0',
   },
 ]
 
@@ -82,68 +82,50 @@ const ATT_TOP3: ReadonlyArray<FactorChip> = [
   { code: 'Temp', label: '平均气温' },
 ]
 
-// ── 数据源融合状态进度条 ─────────────────────────────────────────────────
+// ── 四源数据清单 ────────────────────────────────────────────────────────
+// 口径：每行只描述"这一路数据是什么、覆盖到什么程度"。
+// `refining` 是**同一路数据的细化项**（不是又一路数据），所以不再用「注:」小字补丁，
+// 直接做成行内 amber 标签 —— 状态的语义必须自洽，否则只能靠脚注救。
 interface DataSource {
   readonly name: string
-  readonly status: '已就绪' | '推进中'
-  readonly pct: number
-  readonly note?: string
+  readonly detail: string
+  readonly refining?: string
 }
 
 const DATA_SOURCES: ReadonlyArray<DataSource> = [
-  { name: '省级统计数据(年鉴 + 公报)', status: '已就绪', pct: 100 },
+  { name: '省级统计数据', detail: '统计年鉴 + 公报 · 31 省 × 13 年' },
   {
-    name: 'MODIS 卫星遥感(NDVI / LST)',
-    status: '已就绪',
-    pct: 100,
-    note: 'v4 耕地像元加权 推进中 60%',
+    name: 'MODIS 卫星遥感',
+    detail: 'NDVI / LST 月度合成 · 4,836 省月',
+    refining: '耕地像元加权 v4 · 60%',
   },
-  { name: '气象站点逐日观测(CMDC + SPEI)', status: '已就绪', pct: 100 },
+  { name: '气象与干旱指数', detail: 'CMDC 站点观测 + SPEI-3 · 省级年度聚合' },
   {
-    name: 'GIS 空间矢量(CLCD + 行政区划)',
-    status: '已就绪',
-    pct: 100,
-    note: 'v4 多年 CLCD 推进中 75%',
+    name: 'GIS 空间矢量',
+    detail: 'CLCD 耕地掩膜 + 行政区划边界',
+    refining: '多年 CLCD 序列 v4 · 75%',
   },
 ]
 
-// ── 鲁棒性透明披露 ──────────────────────────────────────────────────────
-interface RobustnessItem {
-  readonly label: string
-  readonly value: string
-  readonly desc: string
-  readonly tone: 'green' | 'amber' | 'risk' | 'blue'
-  readonly aria: string
-}
-
-const ROBUSTNESS: ReadonlyArray<RobustnessItem> = [
+// ── 口径与边界（集中披露）──────────────────────────────────────────────
+// 这些限定原本散落在各张卡片的括注与脚注里（每被误读一次就补一句），
+// 结果是首页第一屏里"限制条件"比"能力"还多。集中成一块，一条不删。
+const CAVEATS: ReadonlyArray<{ label: string; text: string }> = [
   {
-    label: 'Random 8:2 R²',
-    value: '0.907 ± 0.038',
-    desc: '论文协议(已见省份近邻样本)',
-    tone: 'green',
-    aria: 'Random 8:2 协议 R² 为 0.907 加减 0.038,代表论文协议在已见省份近邻样本上的拟合能力',
+    label: '精度口径',
+    text: 'random 8:2 的 R² = 0.907 测的是省内因子相对重要性；严格留一省协议中位 −16.83（31 省仅 1 省 > 0），跨省空间外推不成立。',
   },
   {
-    label: 'Leave-year-out R²',
-    value: '0.894',
-    desc: '时序泛化能力可用',
-    tone: 'green',
-    aria: 'leave-year-out 协议 R² 为 0.894,时序泛化能力可用',
+    label: '样本规模',
+    text: '省级面板 N = 403（31 省 × 13 年 × 11 维）。规模决定了深度模型的收益上限，故采用多个原理不同的轻量模型做归因对照，而非堆叠大模型。',
   },
   {
-    label: 'Leave-province-out 中位',
-    value: '−16.83',
-    desc: '空间外推上限,诚实披露',
-    tone: 'risk',
-    aria: 'leave-province-out 协议中位 R² 为负 16.83,空间外推上限,诚实披露',
+    label: '归因口径',
+    text: 'SHAP 与 Attention 是互补视角，不作一致性验证；NDVI 移除后 R² 仅变化 0.003，不表述为「核心驱动因子」。',
   },
   {
-    label: '混合效应 PoC ICC',
-    value: '0.97',
-    desc: '证 R²=0.907 中约 97% 由省份固定效应贡献',
-    tone: 'amber',
-    aria: '混合效应 PoC ICC 为 0.97,证明 R² 等于 0.907 中约 97% 由省份固定效应贡献',
+    label: '县级层口径',
+    text: 'M07 的县级层只吃纯气候 16 维（已剔除播种面积/规模与省-年共享常量），LCO R² = +0.4489、时间外推 +0.3644；与省级 0.907 属两套独立口径，不可比较或相加。',
   },
 ]
 
@@ -299,10 +281,10 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
           <div class="complement-footer">
             <span class="complement-icon" aria-hidden="true">⇌</span>
             <div class="complement-text">
-              仅 <b>Temp</b> 重合 1/3 ·
-              Spearman <span class="mono">ρ = −0.055</span>(p=0.873)
+              两套排名 Spearman <span class="mono">ρ = −0.055</span>(p=0.873),
+              Top-3 仅 <b>Temp</b> 一项重合
               <span class="complement-sep">→</span>
-              <b class="claim">方法论独立性是优势,非失败</b>
+              <b class="claim">互补视角,不作一致性验证</b>
             </div>
           </div>
         </div>
@@ -315,90 +297,34 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
         aria-labelledby="section-fusion"
       >
         <div class="section-head">
-          <div class="num">02 · DATA FUSION · 数据源融合状态</div>
-          <h3 id="section-fusion">四源多模态融合就绪度</h3>
-          <div class="section-sub">四类多模态异构数据已完成时空对齐</div>
+          <div class="num">02 · DATA FUSION · 数据源</div>
+          <h3 id="section-fusion">四源多模态数据</h3>
+          <div class="section-sub">四类异构数据已统一到「省份 × 年度」口径</div>
         </div>
 
         <ul class="source-list">
-          <li
-            v-for="s in DATA_SOURCES"
-            :key="s.name"
-            class="source-item"
-          >
+          <li v-for="s in DATA_SOURCES" :key="s.name" class="source-item">
             <div class="source-head-row">
               <span class="source-name">{{ s.name }}</span>
-              <span class="source-status" :class="s.status === '已就绪' ? 'st-ok' : 'st-wip'">
-                {{ s.status }} {{ s.pct }}%
-              </span>
+              <span class="source-status st-ok">已就绪</span>
             </div>
-            <div
-              class="source-bar"
-              role="progressbar"
-              :aria-label="`${s.name} 就绪度`"
-              :aria-valuemin="0"
-              :aria-valuemax="100"
-              :aria-valuenow="s.pct"
-            >
-              <span
-                class="source-fill"
-                :class="s.status === '已就绪' ? 'fill-ok' : 'fill-wip'"
-                :style="{ width: s.pct + '%' }"
-              ></span>
+            <div class="source-detail">{{ s.detail }}</div>
+            <div v-if="s.refining" class="source-refining">
+              <span class="refining-tag">细化中</span>{{ s.refining }}
             </div>
-            <div v-if="s.note" class="source-note">注:{{ s.note }}</div>
           </li>
         </ul>
       </article>
     </div>
 
-    <!-- ── 03 · ROBUSTNESS TRANSPARENCY · 鲁棒性透明披露(v6 关键创新区) ── -->
-    <!-- 2026-05-29 暂时隐藏整块:如需恢复,删除下方 v-if="false" 一行即可 -->
-    <article
-      v-if="false"
-      class="card robust-card"
-      role="region"
-      aria-labelledby="section-robust"
-    >
-      <div class="section-head">
-        <div class="num">03 · ROBUSTNESS TRANSPARENCY · 鲁棒性透明披露</div>
-        <h3 id="section-robust">三协议并行 + 混合效应分解 · 学术诚实路线</h3>
-        <div class="section-sub">
-          在 random 8:2 协议下报告论文级 R²,同步披露 leave-year / leave-province-out 严格协议结果。
-          混合效应 PoC 提供 R²=0.907 来源的定量分解证据。
-        </div>
-      </div>
-
-      <div class="robust-grid">
-        <div
-          v-for="r in ROBUSTNESS"
-          :key="r.label"
-          class="robust-item"
-          :class="`tone-${r.tone}`"
-          :aria-label="r.aria"
-          role="text"
-        >
-          <div class="robust-label">{{ r.label }}</div>
-          <div class="robust-value">{{ r.value }}</div>
-          <div class="robust-desc">{{ r.desc }}</div>
-        </div>
-      </div>
-
-      <div class="robust-footer">
-        <span class="dot-amber" aria-hidden="true"></span>
-        上限诚实披露 + 决策系统兜底 = v6 学术诚实路线。模型不依赖空间外推,
-        <b>决策支持系统</b>对已见 31 省提供可解释 + 可情景模拟 + 可输出差异化路径的政策工具。
-      </div>
-    </article>
-
-    <!-- ── 04 · QUICK ACCESS · 快速入口 ────────────────────────────── -->
+    <!-- ── 03 · QUICK ACCESS · 快速入口 ────────────────────────────── -->
     <article
       class="card quick-card"
       role="region"
       aria-labelledby="section-quick"
     >
       <div class="section-head">
-        <div class="num">04 · QUICK ACCESS · 快速入口</div>
+        <div class="num">03 · QUICK ACCESS · 快速入口</div>
         <h3 id="section-quick">七大业务模块 · 一键直达</h3>
         <div class="section-sub">省级归因 → 县级归因 → 情景推演 → 知识问答,完整业务闭环</div>
       </div>
@@ -421,6 +347,25 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
           <div class="quick-arrow" aria-hidden="true">→</div>
         </RouterLink>
       </div>
+    </article>
+
+    <!-- ── 04 · SCOPE & LIMITS · 口径与边界 ───────────────────────── -->
+    <article
+      class="card caveat-card"
+      role="region"
+      aria-labelledby="section-caveat"
+    >
+      <div class="section-head">
+        <div class="num">04 · SCOPE &amp; LIMITS · 口径与边界</div>
+        <h3 id="section-caveat">四条必须一起读的限定</h3>
+        <div class="section-sub">数字脱离口径就没有意义,所以集中列在这里,而不是散在每张卡片下面</div>
+      </div>
+      <dl class="caveat-list">
+        <div v-for="c in CAVEATS" :key="c.label" class="caveat-item">
+          <dt>{{ c.label }}</dt>
+          <dd>{{ c.text }}</dd>
+        </div>
+      </dl>
     </article>
   </section>
 </template>
@@ -663,7 +608,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
 .complement-sep { color: var(--text-3); margin: 0 4px; }
 .claim { color: var(--green-bright); }
 
-/* ── 数据源融合 progress list ─────────────────────────────────── */
+/* ── 四源数据清单 ─────────────────────────────────────────────── */
 .source-list {
   display: flex;
   flex-direction: column;
@@ -673,8 +618,11 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
 .source-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
+.source-item:last-child { padding-bottom: 0; border-bottom: none; }
 .source-head-row {
   display: flex;
   justify-content: space-between;
@@ -682,7 +630,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   gap: 10px;
 }
 .source-name {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text);
 }
 .source-status {
@@ -690,98 +638,51 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   font-size: 10px;
   letter-spacing: 0.4px;
   font-weight: 600;
+  color: var(--green-bright);
 }
-.source-status.st-ok { color: var(--green-bright); }
-.source-status.st-wip { color: var(--amber-bright); }
-.source-bar {
-  height: 6px;
-  background: var(--bg-2);
-  border-radius: 3px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.source-fill {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  transition: width var(--dur-slow) var(--ease-out);
-}
-.source-fill.fill-ok { background: linear-gradient(90deg, var(--green-deep), var(--green-bright)); }
-.source-fill.fill-wip { background: linear-gradient(90deg, var(--amber), var(--amber-bright)); }
-.source-note {
-  font-family: var(--font-mono);
-  font-size: 10px;
+.source-detail {
+  font-size: 11px;
   color: var(--text-3);
-  letter-spacing: 0.2px;
 }
-
-/* ── 鲁棒性透明披露 ───────────────────────────────────────────── */
-.robust-card {
-  margin-bottom: 20px;
-}
-.robust-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.robust-item {
-  padding: 14px;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--border-strong);
-  border-radius: var(--r-md);
-}
-.robust-item.tone-green { border-left-color: var(--green); }
-.robust-item.tone-amber { border-left-color: var(--amber); }
-.robust-item.tone-risk { border-left-color: var(--red); }
-.robust-item.tone-blue { border-left-color: var(--blue); }
-.robust-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-3);
-  letter-spacing: 0.4px;
-  margin-bottom: 8px;
-}
-.robust-value {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.05;
-  margin-bottom: 8px;
-  letter-spacing: -0.4px;
-}
-.tone-green .robust-value { color: var(--green-bright); }
-.tone-amber .robust-value { color: var(--amber-bright); }
-.tone-risk .robust-value { color: var(--red-bright); }
-.tone-blue .robust-value { color: var(--blue-bright); }
-.robust-desc {
+.source-refining {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   color: var(--text-2);
-  line-height: 1.5;
+  margin-top: 2px;
+}
+.refining-tag {
+  font-size: 10px;
+  color: var(--amber-bright);
+  border: 1px solid rgba(230, 182, 85, 0.35);
+  border-radius: var(--r-sm);
+  padding: 0 5px;
+  flex-shrink: 0;
 }
 
-.robust-footer {
-  padding: 12px 14px;
-  background: rgba(230, 182, 85, 0.06);
-  border: 1px solid rgba(230, 182, 85, 0.22);
-  border-radius: var(--r-md);
-  font-size: 12px;
+/* ── 快速入口 / 口径与边界 ─────────────────────────────────────── */
+.quick-card { margin-bottom: 20px; }
+.caveat-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 24px;
+}
+.caveat-item {
+  padding-left: 12px;
+  border-left: 2px solid var(--border-strong);
+}
+.caveat-item dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: var(--green-bright);
+  margin-bottom: 4px;
+}
+.caveat-item dd {
+  font-size: 11.5px;
   color: var(--text-2);
   line-height: 1.65;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.robust-footer b { color: var(--amber-bright); font-weight: 600; }
-.dot-amber {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--amber);
-  margin-top: 6px;
-  flex-shrink: 0;
 }
 
 /* ── Quick Access ─────────────────────────────────────────────── */
@@ -865,16 +766,15 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
 /* ── 响应式 ──────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .robust-grid { grid-template-columns: repeat(2, 1fr); }
   .quick-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 880px) {
   .dual-grid { grid-template-columns: 1fr; }
+  .caveat-list { grid-template-columns: 1fr; }
   .quick-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) {
   .kpi-grid { grid-template-columns: 1fr; }
-  .robust-grid { grid-template-columns: 1fr; }
   .quick-grid { grid-template-columns: 1fr; }
 }
 </style>
