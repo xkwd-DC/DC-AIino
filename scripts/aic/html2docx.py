@@ -82,8 +82,22 @@ class TreeParser(HTMLParser):
     def handle_data(self, data):
         if self.skip:
             return
-        if data.strip():
-            self.stack[-1].text += data
+        if not data.strip():
+            return
+        node = self.stack[-1]
+        # `Node.text` 只代表「本元素的第一个子元素之前的那段文字」，而 inline_runs()
+        # 先输出 node.text、再按顺序输出 children。所以**元素之后**出现的文字不能
+        # 再并回 node.text —— 否则会被搬到段首（实测症状：`<li><b>甲</b>：乙；</li>`
+        # 渲染成「：乙； 甲」）。这类尾随文字改用文本子节点，位置天然正确。
+        if node.children:
+            if node.children[-1].tag == "#text":
+                node.children[-1].text += data
+            else:
+                tail = Node("#text")
+                tail.text = data
+                node.children.append(tail)
+            return
+        node.text += data
 
 
 def esc(text: str) -> str:
