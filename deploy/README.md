@@ -7,6 +7,8 @@
 > 不要当成"系统已上线"。要跑系统、要录演示视频、要给评委看，一律走本节。
 
 ```powershell
+# 双击桌面快捷方式「DC 粮食风险系统」也行（见下）
+
 # 后台启动（默认 http://127.0.0.1:8000）
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1
 
@@ -21,6 +23,18 @@ powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Port 8081
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Status
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop
 ```
+
+### 桌面快捷方式
+
+桌面上有一个 `DC 粮食风险系统.lnk`，双击 = 后台起服务 + 用默认浏览器打开站点；
+如果服务已经在跑，它只负责开浏览器，不会重复起进程。启动器是 `deploy/start_site.cmd`，
+窗口会停在 `pause`（关掉这个窗口**不会**停止服务，方便看报错）。
+
+图标 `deploy/assets/dc-app.ico`（绿底「粮」，对齐站点品牌标）由
+`python scripts/make_app_icon.py` 生成，改配色/字形后重跑即可，另出 `dc-app-preview.png` 预览图。
+
+> 快捷方式本身**不在仓库里**（它是本机状态）。换机器或丢了就重建：
+> 目标 `deploy\start_site.cmd`，起始位置仓库根目录，图标 `deploy\assets\dc-app.ico`。
 
 脚本行为：
 

@@ -26,6 +26,9 @@
   powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop
       查看状态 / 停止
 
+  powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Open
+      启动后顺便用默认浏览器打开（桌面快捷方式走的这条）
+
 .NOTES
   - 前端与 API 同源（axios baseURL '/api'），所以必须由本服务一起提供，不能单独开 vite dev 才能用真数据。
   - 生产部署（GCP + nginx + TLS）见 deploy/README.md；本脚本只管本地。
@@ -35,6 +38,7 @@ param(
     [int]$Port = 8000,
     [switch]$Lan,
     [switch]$Foreground,
+    [switch]$Open,
     [switch]$Status,
     [switch]$Stop,
     [switch]$SkipBuild,
@@ -62,6 +66,12 @@ $ProbeHost = '127.0.0.1'
 function Write-Step([string]$Message) { Write-Host "==> $Message" -ForegroundColor Cyan }
 function Write-Ok([string]$Message) { Write-Host "    $Message" -ForegroundColor Green }
 function Write-Warn2([string]$Message) { Write-Host "    $Message" -ForegroundColor Yellow }
+
+function Open-Site {
+    # 用默认浏览器打开本机地址（桌面快捷方式走的就是这条）
+    try { Start-Process "http://${ProbeHost}:$Port" | Out-Null; Write-Ok "已用默认浏览器打开 http://${ProbeHost}:$Port" }
+    catch { Write-Warn2 "打不开浏览器，手动访问 http://${ProbeHost}:$Port" }
+}
 
 function Get-ServerPid {
     if (-not (Test-Path -LiteralPath $PidFile)) { return $null }
@@ -154,18 +164,23 @@ if (-not (Test-Path -LiteralPath $Py)) {
 }
 Write-Ok "Python  : $Py"
 
-# 端口占用检查（属于本脚本记录的实例则视为重复启动）
+# 端口占用检查。注意判据：pidfile 里记的是启动器进程（waitress-serve.exe），
+# 而真正持有监听套接字的是它的子进程，两者 PID 必然不同 —— 所以只能看
+# "记录下来的进程是否还活着"，不能拿 PID 跟 socket owner 比。
 $occupied = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($occupied) {
     $owner = ($occupied | Select-Object -First 1).OwningProcess
     $known = Get-ServerPid
-    if ($known -eq $owner) {
+    $knownAlive = if ($known) { [bool](Get-Process -Id $known -ErrorAction SilentlyContinue) } else { $false }
+    if ($knownAlive) {
         Write-Warn2 "端口 $Port 已在跑本脚本的实例（PID $owner）"
         Write-Host "    访问 http://${ProbeHost}:$Port ；重启用 -Stop 再启动。"
+        if ($Open) { Open-Site }
         exit 0
     }
     Write-Host "[FATAL] 端口 $Port 被 PID $owner 占用（不是本脚本启动的实例）" -ForegroundColor Red
-    Write-Host "        换个端口： -Port 8081 ；或先释放该端口。"
+    Write-Host "        若是上次实例的残留：先 -Stop（会按端口兜底清掉），或 taskkill /PID $owner /T /F"
+    Write-Host "        否则换个端口： -Port 8081"
     exit 1
 }
 
@@ -277,6 +292,7 @@ if (-not (Test-Path -LiteralPath $NullIn)) {
     try { New-Item -ItemType File -Path $NullIn -ErrorAction Stop | Out-Null }
     catch { $NullIn = 'NUL' }   # 兜底：NUL 设备永远可读且不会被锁
 }
+$launchedAt = Get-Date
 # 三个标准流全部改到文件/NUL：否则子进程会继承父 shell 的管道句柄，
 # 调用方（CI、脚本、agent）会一直等管道 EOF 而挂着不返回。
 $proc = Start-Process -FilePath $exe -ArgumentList $argList -WorkingDirectory $Backend `
@@ -292,6 +308,20 @@ Write-Step "探活（最多 $HealthTimeoutSec 秒）"
 if (-not (Test-Health $HealthTimeoutSec)) {
     Write-Host '[FATAL] 服务未起来，看错误日志：' -ForegroundColor Red
     if (Test-Path -LiteralPath $ErrLog) { Get-Content -LiteralPath $ErrLog -Tail 25 | ForEach-Object { "    $_" } }
+    exit 1
+}
+
+# 探活成功不等于"我们刚起的进程接管了端口"——如果端口上本来就有一个实例，
+# 健康检查是被它答的，而新进程可能已经因端口冲突死掉，看日志还全是正常。
+# 用一个不变式兜住：正在监听该端口的进程，启动时间必须不早于本次启动。
+$listener = (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess
+$listenerStart = if ($listener) { (Get-Process -Id $listener -ErrorAction SilentlyContinue).StartTime } else { $null }
+if ($listenerStart -and $listenerStart -lt $launchedAt.AddSeconds(-2)) {
+    Write-Host "[FATAL] 端口 $Port 是被更早的实例（PID $listener，启动于 $($listenerStart.ToString('HH:mm:ss'))）提供的，" -ForegroundColor Red
+    Write-Host "        本次启动的进程没接管端口。先 -Stop 掉旧实例再启动（或换 -Port）。" -ForegroundColor Red
+    if (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue) {
+        & taskkill.exe /PID $proc.Id /T /F 2>&1 | Out-Null   # 只清自己刚起的那个，别碰旧实例
+    }
     exit 1
 }
 Write-Ok '/api/health OK'
@@ -318,3 +348,5 @@ if ($Lan) {
 Write-Host ''
 Write-Host '    M00 系统总览 / M01 省级风险地图 / M07 县级风险地图（1,199 县）'
 Write-Host "    停止： powershell -File deploy\serve_local.ps1 -Stop"
+
+if ($Open) { Open-Site }

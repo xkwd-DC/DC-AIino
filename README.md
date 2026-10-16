@@ -72,6 +72,7 @@ NDVI ablation:11→10 维 R² 损失仅 +0.003(NDVI 边际贡献 ≈ 0%)。所�
 **当前方式：本地部署（Windows 单端口）。**
 
 ```powershell
+# 或者直接双击桌面快捷方式「DC 粮食风险系统」
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1          # 后台起，http://127.0.0.1:8000
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Lan     # 局域网可访问
 powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop    # 停止
