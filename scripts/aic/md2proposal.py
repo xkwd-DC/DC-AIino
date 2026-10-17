@@ -170,7 +170,7 @@ def build(title: str, body_md: str, kicker: str, subtitle: str,
   <div class="meta">
 {meta_html}
   </div>
-  <div class="foot">本材料已按大赛要求匿名化处理：不含参赛团队所在学校名称、标识与指导教师信息。</div>
+  <div class="foot">本材料已按大赛要求完成匿名化处理，不含任何单位与个人身份信息。</div>
 </div>
 
 {sections}

@@ -105,8 +105,9 @@ def esc(text: str) -> str:
 
 
 class DocBuilder:
-    def __init__(self, base_dir: Path) -> None:
+    def __init__(self, base_dir: Path, title: str = "") -> None:
         self.base = base_dir
+        self.title = title
         self.parts: list[str] = []
         self.media: dict[str, bytes] = {}
         self.rels: list[str] = []
@@ -488,7 +489,7 @@ class DocBuilder:
             '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
             'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '
             'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
-            "<dc:title>禾衡·农业智能体决策服务平台</dc:title><dc:creator></dc:creator>"
+            f"<dc:title>{esc(self.title)}</dc:title><dc:creator></dc:creator>"
             "<cp:lastModifiedBy></cp:lastModifiedBy>"
             "</cp:coreProperties>"
         )
@@ -548,7 +549,8 @@ def convert(src_html: Path, out_docx: Path) -> int:
     parser = TreeParser()
     parser.feed(src_html.read_text(encoding="utf-8"))
     body = parser.root.find_all("body")[0]
-    builder = DocBuilder(src_html.parent)
+    title_node = next(iter(body.find_all("h1")), None)
+    builder = DocBuilder(src_html.parent, title_node.plain().strip() if title_node else "")
     builder.walk(body)
     builder.save(out_docx)
     return len(builder.parts), len(builder.media)
