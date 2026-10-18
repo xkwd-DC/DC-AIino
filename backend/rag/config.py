@@ -18,7 +18,11 @@ DOCS_PAPERS_DIR = DOCS_DIR / "papers"
 
 # 支持的文件类型（.md / .txt / .pdf）
 FILE_TYPES = (".md", ".txt", ".pdf")
-CHROMA_DB_DIR = _BACKEND_DIR / "chroma_db"
+# ChromaDB 持久化目录：默认 backend/chroma_db，可用环境变量 DC_CHROMA_DIR 覆盖。
+# 为什么要这个开关：ChromaDB 的 Rust 层在**非 ASCII 路径**下加载 HNSW 索引会失败
+# （实测报 "Error loading hnsw index"；同一份数据换到纯 ASCII 路径立刻正常）。
+# 便携包一旦被放进中文目录，启动器就把向量库同步到 ASCII 临时目录，再用这个变量指过来。
+CHROMA_DB_DIR = Path(os.getenv("DC_CHROMA_DIR") or (_BACKEND_DIR / "chroma_db"))
 
 # ─── 分块参数 ────────────────────────────────────────────────────────────
 CHUNK_SIZE = 800       # 每块最大字符数

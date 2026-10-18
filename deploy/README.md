@@ -54,6 +54,34 @@ powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop
 
 ---
 
+## 0.5 便携包（拷到别的电脑，免安装）
+
+上面那套依赖本机 `backend\.venv`，换台机器起不来（venv 靠 `pyvenv.cfg` 的 `home` 指回本机解释器）。
+要"一个文件夹拷到现场，双击就用"，用打包脚本：
+
+```powershell
+# 完整包 + 打完自动探活
+powershell -ExecutionPolicy Bypass -File deploy\make_portable.ps1 -Force -Verify
+
+# 依赖没变时重打（跳过 5 GB 拷贝，1 分钟出包）
+powershell -ExecutionPolicy Bypass -File deploy\make_portable.ps1 -Force -ReuseRuntime -Verify
+```
+
+产物默认落在 `D:\DC\portable\DC-GrainRisk-System\`（5.46 GB）：自带绿色 Python 3.12、
+后端、已构建前端、数据库、模型、向量索引。目标机器双击 `start_dc.cmd` 即用 ——
+不装 Python / Node、不用联网。
+
+**目录名必须是纯 ASCII**：ChromaDB 的 Rust 层在非 ASCII 路径下加载不了 HNSW 索引
+（报 `Error loading hnsw index`，M06 知识助手失效）。启动器对非 ASCII 路径有
+"向量库同步到 %TEMP%" 的兜底（靠 `DC_CHROMA_DIR`，见 `backend/rag/config.py`），但别赌现场。
+
+两个前置建议：打包前先 `serve_local.ps1 -Stop`（别拷正在使用的活库）；
+`docs\` 必须整份带上（watcher 会比对 `file_hashes.json`，少一个文件就删对应切片）。
+
+校验向量库是否完好：`runtime\python.exe deploy\check_chroma.py <chroma_db 路径>`。
+
+---
+
 ## 1. 计划中的公网部署（GCP，未执行）
 
 > 本目录承载 v0.1 上线 GCP `e2-medium asia-east1` 的所有部署资产。

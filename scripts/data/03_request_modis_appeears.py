@@ -52,7 +52,7 @@ def _load_env(env_path: Path) -> dict[str, str]:
     if not env_path.exists():
         raise SystemExit(f"找不到 {env_path}——先把 NASA 凭证写进 .env")
     pairs: dict[str, str] = {}
-    for line in env_path.read_text().splitlines():
+    for line in env_path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -147,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         logging.error("找不到 ROI 文件 %s——先跑 _build_china_roi.py", args.roi)
         return 1
 
-    roi_fc = json.loads(args.roi.read_text())
+    roi_fc = json.loads(args.roi.read_text(encoding="utf-8"))
     roi_feature = roi_fc["features"][0]
     years = parse_years(args.year, args.years)
     logging.info("目标年份：%s", years)
