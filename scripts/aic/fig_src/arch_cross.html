@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>系统整体架构图</title>
+<style>
+  :root { --ink:#1F3864; --line:#B7C6DE; --fill:#E8EEF8; --fill2:#F6F8FC; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; width:1560px; padding:28px 34px 22px;
+    background:#fff; color:#111;
+    font-family:"Microsoft YaHei","微软雅黑",sans-serif;
+  }
+  h1 { font-size:30px; text-align:center; margin:0 0 6px; color:var(--ink); letter-spacing:1px; }
+  .sub { text-align:center; font-size:15px; color:#5A6B85; margin-bottom:20px; }
+  .band { border:1.6px dashed var(--line); border-radius:12px; padding:12px 16px 14px 132px; position:relative; background:#fff; }
+  .band + .band { margin-top:26px; }
+  .band::before { content:""; position:absolute; left:-1px; top:50%; transform:translateY(-50%);
+    width:0; height:0; border:0; }
+  .tag { position:absolute; left:10px; top:50%; transform:translateY(-50%);
+    width:104px; height:74px; border-radius:10px; background:var(--ink); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:19px; letter-spacing:2px; }
+  .row { display:flex; gap:14px; }
+  .row.grid7 .box { flex:1 1 0; }
+  .box { background:var(--fill); border:1.4px solid #9FB4D6; border-radius:9px; padding:10px 10px; text-align:center; }
+  .box b { display:block; font-size:16px; color:var(--ink); font-weight:700; margin-bottom:4px; }
+  .box span { display:block; font-size:12.5px; color:#3C4A60; line-height:1.5; }
+  .box.plain b { margin-bottom:0; }
+  .flow { margin-top:26px; border:1.6px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--fill2); }
+  .flow .step { display:flex; align-items:center; gap:10px; }
+  .flow .chip { flex:1 1 0; background:#fff; border:1.3px solid #9FB4D6; border-radius:8px; padding:9px 6px;
+    text-align:center; font-size:13px; color:#26364E; }
+  .flow .chip b { display:block; font-size:14px; color:var(--ink); }
+  .arrow { color:var(--ink); font-size:20px; font-weight:700; }
+  .out { margin-top:26px; display:flex; align-items:center; gap:14px; }
+  .out .label { font-size:14px; color:var(--ink); font-weight:700; white-space:nowrap; }
+  .out .value { flex:1 1 0; border:1.4px solid #9FB4D6; border-radius:9px; background:#DCE6F5;
+    padding:10px 14px; font-size:14px; color:#1F3864; }
+  .stack { margin-top:22px; border:1.4px solid var(--line); border-radius:9px; padding:9px 14px;
+    font-size:13.5px; color:#3C4A60; text-align:center; background:#FBFCFE; }
+  .stack b { color:var(--ink); }
+  .vsep { position:relative; }
+  .vsep .arrow-down { text-align:center; color:var(--ink); font-size:20px; line-height:1; margin:6px 0 -6px; }
+</style>
+</head>
+<body>
+<h1>粮食生产气候风险归因决策系统 · 整体架构</h1>
+<div class="sub">"数据层 — 算法层 — 应用层"三层架构：把四模态异构资料对齐为省级面板，用原理不同的三类模型做互补归因与校核，再交付为可交互的决策支持界面</div>
+
+<div class="band">
+  <div class="tag">应用层</div>
+  <div class="row grid7">
+    <div class="box"><b>M00 系统总览</b><span>指标总览 · 模型卡入口</span></div>
+    <div class="box"><b>M01 风险地图</b><span>31 省 × 13 年 风险等级</span></div>
+    <div class="box"><b>M02 归因看板</b><span>全局重要性 · 单省分解</span></div>
+    <div class="box"><b>M03 情景模拟</b><span>灌溉 / 化肥 / 降水 反事实推演</span></div>
+    <div class="box"><b>M04 韧性路径</b><span>白箱规则 · 三阶段对策</span></div>
+    <div class="box"><b>M05 推演监控</b><span>推理链路 · 过程留痕</span></div>
+    <div class="box"><b>M06 知识助手</b><span>方法论文档检索问答</span></div>
+  </div>
+</div>
+
+<div class="vsep"><div class="arrow-down">▲　REST API（JSON）：推理结果与归因结果</div></div>
+
+<div class="band">
+  <div class="tag">算法层</div>
+  <div class="row">
+    <div class="box"><b>XGBoost-SHAP</b><span>横截面边际贡献<br>非线性与交互效应</span></div>
+    <div class="box"><b>LSTM 基线</b><span>时序拟合参照<br>剥离结构调整差异</span></div>
+    <div class="box"><b>Attention-LSTM</b><span>特征级门控权重<br>独立于 SHAP 的第二视角</span></div>
+    <div class="box"><b>多协议校核</b><span>随机 8:2 · 留一年 · 留一省<br>消融实验 · 混合效应方差分解</span></div>
+  </div>
+</div>
+
+<div class="vsep"><div class="arrow-down">▲　特征矩阵（403 样本 × 11 维入模特征）</div></div>
+
+<div class="band">
+  <div class="tag">数据层</div>
+  <div class="row">
+    <div class="box"><b>农业统计</b><span>粮食单产 · 灌溉率<br>化肥投入 · 机械化率</span></div>
+    <div class="box"><b>气象观测</b><span>平均气温 · 降水 · 日照<br>SPEI 干旱指数</span></div>
+    <div class="box"><b>卫星遥感</b><span>MODIS NDVI 与地表温度<br>按耕地像元加权聚合</span></div>
+    <div class="box"><b>致灾与空间</b><span>旱灾 / 水灾受灾面积<br>省域行政边界矢量</span></div>
+  </div>
+</div>
+
+<div class="flow">
+  <div class="step">
+    <div class="chip"><b>数据清洗</b>缺失值线性插值</div>
+    <div class="arrow">&gt;</div>
+    <div class="chip"><b>时空对齐</b>省份 × 年度口径</div>
+    <div class="arrow">&gt;</div>
+    <div class="chip"><b>耕地加权</b>栅格按耕地像元聚合</div>
+    <div class="arrow">&gt;</div>
+    <div class="chip"><b>标准化</b>全列 Z-score</div>
+    <div class="arrow">&gt;</div>
+    <div class="chip"><b>四模态融合</b>口径台账逐字段留痕</div>
+  </div>
+</div>
+
+<div class="out">
+  <div class="label">产出面板</div>
+  <div class="value">31 省 × 13 年（2011—2023）= 403 条样本 × 27 字段，其中 11 维入模特征 + 1 维目标（粮食单产 kg/ha），无缺失</div>
+</div>
+
+<div class="stack"><b>技术栈：</b>Python　|　XGBoost　|　SHAP　|　TensorFlow-CPU / Keras　|　Flask + gunicorn　|　Vue 3 + ECharts　|　BGE-M3 混合检索（可选知识助手）</div>
+</body>
+</html>
