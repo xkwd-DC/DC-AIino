@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import * as echarts from 'echarts'
 import { PROVINCES_PROFILE } from '@/data/recommendation'
 import { useProvinceStore } from '@/stores/useProvinceStore'
 import { getCSSVar } from '@/data/mockProvinces'
 import { postPredictDebounced, type PredictData } from '@/api/predict'
+import {
+  fetchGrowthCounties,
+  postGrowthSimulate,
+  type GrowthCountiesData,
+  type GrowthCounty,
+  type GrowthResult,
+} from '@/api/growth'
 // a11y: ECharts 动画绕过 CSS prefers-reduced-motion
 import { motionDuration } from '@/data/a11y'
 
@@ -318,6 +325,204 @@ function resetToBaseline() {
   params.value = { ...baseline.value }
 }
 
+// ── M03 玉米长势页签 ─────────────────────────────────────────────────────
+type GrowthSliderKey = 'd_temp' | 'd_prec_pct' | 'd_heat_days' | 'irrigation'
+
+interface GrowthSliderDef {
+  key: GrowthSliderKey
+  label: string
+  icon: string
+  iconCls: 'green' | 'red' | 'amber' | 'purple'
+  unit: string
+  min: number
+  max: number
+  step: number
+  hint: string
+}
+
+const GROWTH_SLIDERS: GrowthSliderDef[] = [
+  { key: 'd_temp', label: '温度增量', icon: '温', iconCls: 'red', unit: '°C', min: -2, max: 4, step: 0.1, hint: '升温抬高蒸散；热害日单独设定' },
+  { key: 'd_prec_pct', label: '降水变化', icon: '雨', iconCls: 'purple', unit: '%', min: -40, max: 40, step: 1, hint: '生长季降水相对变化' },
+  { key: 'd_heat_days', label: '高温日增量', icon: '热', iconCls: 'amber', unit: '天', min: 0, max: 30, step: 1, hint: '≥35°C 日数增加' },
+  { key: 'irrigation', label: '灌溉保证率', icon: '灌', iconCls: 'green', unit: '%', min: 0, max: 100, step: 1, hint: '省级共享值，可手动覆盖' },
+]
+
+const activeTab = ref<'risk' | 'maize'>('risk')
+const maizeRows = ref<GrowthCounty[]>([])
+const maizeMeta = ref<GrowthCountiesData['meta'] | null>(null)
+const maizeCode = ref<number | null>(null)
+const maizeLoading = ref(false)
+const maizeSimLoading = ref(false)
+const maizeError = ref('')
+const maizeResult = ref<GrowthResult | null>(null)
+const maizeParams = ref<Record<GrowthSliderKey, number>>({
+  d_temp: 0,
+  d_prec_pct: 0,
+  d_heat_days: 0,
+  irrigation: 60,
+})
+
+const maizeCounty = computed(
+  () => maizeRows.value.find((r) => r.code === maizeCode.value) ?? null,
+)
+
+const maizeByProvince = computed(() => {
+  const groups = new Map<string, GrowthCounty[]>()
+  for (const row of maizeRows.value) {
+    if (!groups.has(row.province)) groups.set(row.province, [])
+    groups.get(row.province)!.push(row)
+  }
+  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh-CN'))
+})
+
+const factorRows = computed(() => {
+  const r = maizeResult.value
+  if (!r) return []
+  return [
+    {
+      key: 'gdd',
+      label: '积温满足度',
+      value: r.scenario.f_gdd,
+      hint: `需求 ${r.county.req_gdd} ℃·d（本数据集 4–9 月口径，不作文献绝对值比较）`,
+    },
+    {
+      key: 'water',
+      label: '水分满足度',
+      value: r.scenario.f_water,
+      hint: `作物需水 ${r.scenario.etc.toFixed(0)} mm，供给由有效降水与灌溉合成`,
+    },
+    {
+      key: 'heat',
+      label: '热害系数',
+      value: r.scenario.f_heat,
+      hint: `全季 ≥35℃ 日数按 1/4 折算到抽雄吐丝期`,
+    },
+  ]
+})
+
+async function loadMaize() {
+  if (maizeRows.value.length || maizeLoading.value) return
+  maizeLoading.value = true
+  maizeError.value = ''
+  try {
+    const data = await fetchGrowthCounties()
+    if (!data || !Array.isArray(data.rows)) {
+      throw new Error('玉米长势接口未就绪（后端可能仍是旧进程），请重启本地服务后刷新')
+    }
+    maizeRows.value = data.rows
+    maizeMeta.value = data.meta
+    const preferred = data.rows.find((r) => r.code === 411623) ?? data.rows[0]
+    if (preferred) {
+      maizeCode.value = preferred.code
+      maizeParams.value = {
+        d_temp: 0,
+        d_prec_pct: 0,
+        d_heat_days: 0,
+        irrigation: Math.round(preferred.irr * 100),
+      }
+    }
+  } catch (err) {
+    maizeError.value = err instanceof Error ? err.message : '玉米长势基线加载失败'
+  } finally {
+    maizeLoading.value = false
+  }
+}
+
+let maizeSeq = 0
+
+async function runMaizeSim() {
+  const code = maizeCode.value
+  if (!code) return
+  const seq = ++maizeSeq
+  maizeSimLoading.value = true
+  try {
+    const result = await postGrowthSimulate({
+      county_code: code,
+      d_temp: maizeParams.value.d_temp,
+      d_prec_pct: maizeParams.value.d_prec_pct,
+      d_heat_days: maizeParams.value.d_heat_days,
+      irrigation: maizeParams.value.irrigation / 100,
+    })
+    if (seq === maizeSeq) {
+      maizeResult.value = result
+      maizeError.value = ''
+    }
+  } catch (err) {
+    if (seq === maizeSeq) {
+      maizeError.value = err instanceof Error ? err.message : '情景计算失败'
+    }
+  } finally {
+    if (seq === maizeSeq) maizeSimLoading.value = false
+  }
+}
+
+const debouncedMaizeSim = debounce(runMaizeSim, 150)
+
+watch(
+  [maizeCode, maizeParams],
+  () => {
+    debouncedMaizeSim()
+  },
+  { deep: true, flush: 'post' },
+)
+
+// 切县时回到该县基线，避免把上一个县的灌溉率带过去。
+watch(maizeCode, (code) => {
+  const row = maizeRows.value.find((r) => r.code === code)
+  if (!row) return
+  maizeParams.value = {
+    d_temp: 0,
+    d_prec_pct: 0,
+    d_heat_days: 0,
+    irrigation: Math.round(row.irr * 100),
+  }
+  maizeResult.value = null
+})
+
+watch(activeTab, async (tab) => {
+  if (tab === 'maize') {
+    loadMaize()
+    return
+  }
+  // v-show 隐藏期间 ECharts 容器尺寸会变成 0，切回来必须 resize + 重绘。
+  await nextTick()
+  gaugeBase?.resize()
+  gaugeSim?.resize()
+  contribChart?.resize()
+  rerender()
+})
+
+function resetMaize() {
+  const row = maizeCounty.value
+  maizeParams.value = {
+    d_temp: 0,
+    d_prec_pct: 0,
+    d_heat_days: 0,
+    irrigation: row ? Math.round(row.irr * 100) : 60,
+  }
+}
+
+function pctOfGrowth(val: number, def: GrowthSliderDef): number {
+  return ((val - def.min) / (def.max - def.min)) * 100
+}
+
+function growthBaselineValue(def: GrowthSliderDef): number {
+  if (def.key === 'irrigation') return (maizeCounty.value?.irr ?? 0.6) * 100
+  return 0
+}
+
+function fmtGrowth(val: number, def: GrowthSliderDef): string {
+  if (def.key === 'd_temp') return `${val > 0 ? '+' : ''}${val.toFixed(1)}`
+  if (def.key === 'irrigation') return val.toFixed(0)
+  return `${val > 0 ? '+' : ''}${val.toFixed(0)}`
+}
+
+function factorClass(val: number): string {
+  if (val >= 0.9) return 'good'
+  if (val >= 0.75) return 'warn'
+  return 'bad'
+}
+
 onMounted(() => {
   if (gaugeBaseEl.value) gaugeBase = echarts.init(gaugeBaseEl.value, undefined, { renderer: 'canvas' })
   if (gaugeSimEl.value) gaugeSim = echarts.init(gaugeSimEl.value, undefined, { renderer: 'canvas' })
@@ -345,12 +550,34 @@ onBeforeUnmount(() => {
       <div class="eyebrow">M03 · COUNTERFACTUAL SCENARIO SIMULATION</div>
       <h2>参数情景模拟</h2>
       <p class="lead">
-        调节灌溉率、洪涝占比、日照、气温、SPEI 等关键干预参数,
-        实时查看风险变化与基线对比,辅助政策与投入方案设计。
+        「风险情景」调节灌溉率、洪涝占比、日照、气温、SPEI,查看风险变化;
+        「玉米长势」按区域推演温度、降水、热害与灌溉对玉米相对长势的影响。
       </p>
+      <div class="tabs" role="tablist" aria-label="M03 情景模拟视图">
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'risk' }"
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'risk'"
+          @click="activeTab = 'risk'"
+        >
+          风险情景
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'maize' }"
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'maize'"
+          @click="activeTab = 'maize'"
+        >
+          玉米长势
+        </button>
+      </div>
     </header>
 
-    <div class="grid">
+    <div v-show="activeTab === 'risk'" class="grid">
       <!-- 左：省份 + sliders -->
       <aside class="left-col" aria-label="情景参数控制区">
         <div class="card">
@@ -535,6 +762,198 @@ onBeforeUnmount(() => {
             aria-label="各干预参数对风险的边际贡献条形图:正值(赭石色)推高风险,负值(绿色)降低风险,按绝对值由大到小排序"
             tabindex="0"
           ></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 玉米长势：与风险情景并列的第二个页签 -->
+    <div v-if="activeTab === 'maize'" class="grid">
+      <aside class="left-col" aria-label="玉米长势参数控制区">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-M1</div>
+              <h3 id="maize-county-heading">选择玉米主产县</h3>
+            </div>
+            <button
+              class="reset-btn"
+              type="button"
+              aria-label="将玉米长势情景参数重置回该县基线"
+              @click="resetMaize"
+            >↺ 重置基线</button>
+          </div>
+          <label class="sr-only" for="maize-county-select">玉米主产县选择器</label>
+          <select
+            id="maize-county-select"
+            v-model.number="maizeCode"
+            class="province-select"
+            :disabled="maizeLoading"
+            aria-labelledby="maize-county-heading"
+          >
+            <option v-if="maizeLoading" :value="null">加载中…</option>
+            <optgroup v-for="group in maizeByProvince" :key="group[0]" :label="group[0]">
+              <option v-for="row in group[1]" :key="row.code" :value="row.code">
+                {{ row.name }} · {{ row.city }}
+              </option>
+            </optgroup>
+          </select>
+          <div v-if="maizeCounty" class="baseline-info">
+            <span>{{ maizeCounty.zone === 'NE' ? '东北春玉米' : maizeCounty.zone === 'HHH' ? '黄淮海夏玉米' : '西南春玉米' }}</span>
+            <span class="dot" aria-hidden="true">·</span>
+            <span>GDD {{ maizeCounty.gdd.toFixed(0) }}</span>
+            <span class="dot" aria-hidden="true">·</span>
+            <span>降水 {{ maizeCounty.ppt.toFixed(0) }} mm</span>
+          </div>
+          <p v-if="maizeError" class="maize-error" role="alert">{{ maizeError }}</p>
+        </div>
+
+        <div class="card sliders-card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-M2</div>
+              <h3 id="maize-controls-heading">作物情景参数</h3>
+            </div>
+          </div>
+          <div class="sliders" role="group" aria-labelledby="maize-controls-heading">
+            <div v-for="def in GROWTH_SLIDERS" :key="def.key" class="slider-card">
+              <div class="slider-head">
+                <span class="slider-name">
+                  <span class="icon" :class="def.iconCls" aria-hidden="true">{{ def.icon }}</span>
+                  {{ def.label }}
+                  <span class="key" aria-hidden="true">{{ def.key.toUpperCase() }}</span>
+                </span>
+                <span class="slider-value">
+                  {{ fmtGrowth(maizeParams[def.key], def) }}<span class="unit">{{ def.unit }}</span>
+                </span>
+              </div>
+              <div class="slider-track-wrap">
+                <div class="slider-track" aria-hidden="true">
+                  <div class="slider-baseline" :style="{ left: pctOfGrowth(growthBaselineValue(def), def) + '%' }"></div>
+                  <div class="slider-fill" :style="{ width: pctOfGrowth(maizeParams[def.key], def) + '%' }"></div>
+                  <div class="slider-thumb" :style="{ left: pctOfGrowth(maizeParams[def.key], def) + '%' }"></div>
+                </div>
+                <input
+                  v-model.number="maizeParams[def.key]"
+                  type="range"
+                  class="native-range"
+                  :min="def.min"
+                  :max="def.max"
+                  :step="def.step"
+                  :aria-label="`${def.label},最小值 ${def.min}${def.unit},最大值 ${def.max}${def.unit},${def.hint}`"
+                  :aria-valuemin="def.min"
+                  :aria-valuemax="def.max"
+                  :aria-valuenow="maizeParams[def.key]"
+                  :aria-valuetext="`${fmtGrowth(maizeParams[def.key], def)}${def.unit}`"
+                />
+              </div>
+              <div class="slider-scale">
+                <span>{{ def.min }}</span>
+                <span class="hint">{{ def.hint }}</span>
+                <span>{{ def.max }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="right-col" aria-label="玉米长势结果区">
+        <div v-if="maizeResult" class="card maize-result-card" aria-live="polite">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-M3</div>
+              <h3>相对长势指数 · {{ maizeResult.county.name }}</h3>
+            </div>
+            <div class="sim-head-right">
+              <span v-if="maizeSimLoading" class="backend-tag loading" role="status" aria-label="正在计算">
+                <span class="backend-spinner" aria-hidden="true"></span>
+              </span>
+              <span
+                class="sim-tag"
+                :class="maizeResult.delta_pct >= 0 ? 'better' : 'worse'"
+              >{{ maizeResult.delta_pct >= 0 ? '+' : '' }}{{ maizeResult.delta_pct.toFixed(1) }}%</span>
+            </div>
+          </div>
+          <div class="gsi-wrap">
+            <div class="gsi-value" :class="{ down: maizeResult.delta_pct < 0 }">
+              {{ maizeResult.gsi.toFixed(1) }}
+            </div>
+            <div class="gsi-scale">
+              <span>常年 = 100</span>
+              <span>主产区第 {{ maizeResult.percentile }} 分位</span>
+            </div>
+          </div>
+          <p class="gsi-note">{{ maizeResult.interpretation }}</p>
+          <p class="gsi-meta">
+            {{ maizeResult.metric_note }}
+            <span v-if="maizeMeta" class="dot" aria-hidden="true">·</span>
+            <span v-if="maizeMeta">{{ maizeMeta.county_count }} 县 · {{ maizeMeta.years[0] }}–{{ maizeMeta.years[1] }}</span>
+          </p>
+        </div>
+        <div v-else class="card maize-empty" role="status">
+          {{ maizeLoading ? '正在加载玉米主产县…' : '选择县后显示长势结果' }}
+        </div>
+
+        <div v-if="maizeResult" class="card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-M4</div>
+              <h3>限制因子分解</h3>
+            </div>
+            <span class="factor-chip">主限制：{{ maizeResult.limiting_label }}</span>
+          </div>
+          <div class="factor-list">
+            <div v-for="f in factorRows" :key="f.key" class="factor-row">
+              <div class="factor-head">
+                <span>{{ f.label }}</span>
+                <span class="factor-val">{{ (f.value * 100).toFixed(0) }}%</span>
+              </div>
+              <div class="factor-track">
+                <div
+                  class="factor-fill"
+                  :class="factorClass(f.value)"
+                  :style="{ width: Math.max(4, f.value * 100) + '%' }"
+                ></div>
+              </div>
+              <p class="factor-hint">{{ f.hint }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="maizeResult" class="card">
+          <div class="card-head">
+            <div>
+              <div class="num">M03-M5</div>
+              <h3>基线 → 情景</h3>
+            </div>
+            <span class="factor-chip">{{ maizeResult.county.zone_name }} · 播期 {{ maizeResult.county.sowing }}</span>
+          </div>
+          <table class="cmp-table">
+            <thead>
+              <tr><th scope="col">指标</th><th scope="col">常年</th><th scope="col">情景</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>≥10℃ 积温</td>
+                <td>{{ maizeResult.baseline.gdd.toFixed(0) }}</td>
+                <td>{{ maizeResult.scenario.gdd.toFixed(0) }}</td>
+              </tr>
+              <tr>
+                <td>生长季降水</td>
+                <td>{{ maizeResult.baseline.ppt.toFixed(0) }} mm</td>
+                <td>{{ maizeResult.scenario.ppt.toFixed(0) }} mm</td>
+              </tr>
+              <tr>
+                <td>作物需水 ETc</td>
+                <td>{{ maizeResult.baseline.etc.toFixed(0) }} mm</td>
+                <td>{{ maizeResult.scenario.etc.toFixed(0) }} mm</td>
+              </tr>
+              <tr>
+                <td>≥35℃ 高温日</td>
+                <td>{{ maizeResult.baseline.heat_days.toFixed(0) }}</td>
+                <td>{{ maizeResult.scenario.heat_days.toFixed(0) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -806,5 +1225,162 @@ onBeforeUnmount(() => {
 .contrib-legend .swatch.up { background: var(--risk-4); }
 .contrib-legend .swatch.dn { background: var(--green); }
 .contrib-canvas { flex: 1; min-height: 220px; }
+
+/* ============ M03 页签 ============ */
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 3px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.tab-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  background: var(--green-deep);
+  color: var(--bg);
+  font-weight: 600;
+}
+.tab-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* ============ 玉米长势 ============ */
+.maize-result-card { border-left: 4px solid var(--green); }
+.gsi-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 4px 12px;
+}
+.gsi-value {
+  font-family: var(--font-mono);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 0.95;
+  color: var(--green-bright);
+  letter-spacing: -2px;
+}
+.gsi-value.down { color: var(--risk-4); }
+.gsi-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+.gsi-note {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+  padding: 12px 4px 0;
+  border-top: 1px solid var(--border);
+}
+.gsi-meta {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+.gsi-meta .dot { margin: 0 6px; color: var(--border-strong); }
+
+.factor-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+.factor-list { display: flex; flex-direction: column; gap: 14px; }
+.factor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.factor-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-2);
+}
+.factor-track {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.factor-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 180ms ease;
+}
+.factor-fill.good { background: linear-gradient(90deg, var(--green-deep), var(--green-bright)); }
+.factor-fill.warn { background: linear-gradient(90deg, #8a6a2d, var(--amber)); }
+.factor-fill.bad { background: linear-gradient(90deg, #7a3f2a, var(--risk-4)); }
+.factor-hint {
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cmp-table th,
+.cmp-table td {
+  padding: 8px 6px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-table th:first-child,
+.cmp-table td:first-child { text-align: left; color: var(--text-2); }
+.cmp-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.cmp-table td {
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+.cmp-table tr:last-child td { border-bottom: 0; }
+
+.maize-empty {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.maize-error {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--risk-4);
+  line-height: 1.6;
+}
 
 </style>

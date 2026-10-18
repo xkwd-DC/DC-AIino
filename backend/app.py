@@ -77,6 +77,10 @@ app.register_blueprint(graph_bp)
 from api.county_api import county_bp
 app.register_blueprint(county_bp)
 
+# 玉米长势情景 — M03 新页签（maize_growth_baseline.json，由 scripts/data/v11_01 生成）
+from api.growth_api import growth_bp
+app.register_blueprint(growth_bp)
+
 # RAG 文件监控 — 自动增量索引 (Issue #44)
 # 启动时执行完整性检查 + 开启 watchdog 监听 docs/ 变更
 try:
@@ -207,6 +211,9 @@ if _FRONTEND_DIST.exists():
     @app.get("/<path:path>")
     @limiter.exempt
     def spa_assets(path: str):
+        # SPA catch-all 不能吞掉未知 API：否则 /api/xxx 会返回 index.html 200。
+        if path == "api" or path.startswith("api/"):
+            return envelope(error={"code": 404, "message": "endpoint not found"}, status=404)
         target = _FRONTEND_DIST / path
         if target.is_file():
             return send_from_directory(_FRONTEND_DIST, path)
