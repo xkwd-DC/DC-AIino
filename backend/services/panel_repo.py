@@ -22,6 +22,7 @@ Phase 4 持久层读路径。封装 SQLite 查询,api 层只看 Python dict/list
 from __future__ import annotations
 
 import sqlite3
+import statistics
 from pathlib import Path
 from typing import Optional
 
@@ -94,6 +95,45 @@ def _validate_year(year: int) -> None:
         raise YearOutOfRange(year)
 
 
+def _attach_display_anomaly_index(rows: list[dict]) -> list[dict]:
+    """给面板行附加可复现的“产量异常展示指数”。
+
+    这是展示层指标，不是概率、不是因果效应：
+        y = 0.028 - 0.004 * clip(z(y_butter), -4, 4)
+
+    z 在**当年 31 省截面**内标准化。负的 y_butter（低于自身趋势）
+    → z<0 → y 更高，仅表示“相对更差”，不表示减产概率。
+    """
+    values = [
+        float(row["y_butter"])
+        for row in rows
+        if row.get("y_butter") is not None
+    ]
+    if len(values) < 2:
+        for row in rows:
+            row["y"] = None
+            row["y_raw"] = row.get("y_butter")
+            row["y_definition"] = "产量异常展示指数；当前年份缺少足够 y_butter，无法标准化"
+        return rows
+
+    mean = statistics.fmean(values)
+    std = statistics.pstdev(values) or 1.0
+    for row in rows:
+        raw = row.get("y_butter")
+        if raw is None:
+            row["y"] = None
+            row["y_raw"] = None
+        else:
+            z = max(-4.0, min(4.0, (float(raw) - mean) / std))
+            row["y"] = round(0.028 - 0.004 * z, 6)
+            row["y_raw"] = round(float(raw), 4)
+        row["y_definition"] = (
+            "展示用产量异常指数：0.028 - 0.004*z(y_butter)，按当年31省截面标准化；"
+            "非概率、非因果，不可读成减产概率"
+        )
+    return rows
+
+
 # ====================================================================
 # 公开 API
 # ====================================================================
@@ -160,7 +200,7 @@ def get_panel_by_year(year: int,
 
     with _open_ro(path) as conn:
         rows = conn.execute(sql, (year,)).fetchall()
-        return [dict(r) for r in rows]
+        return _attach_display_anomaly_index([dict(r) for r in rows])
 
 
 def get_history(province: str,

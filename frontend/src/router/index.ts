@@ -14,7 +14,7 @@ const router = createRouter({
       path: '/risk-map',
       name: 'risk-map',
       component: () => import('@/views/RiskMap.vue'),
-      meta: { title: '风险时空地图', code: 'M01' },
+      meta: { title: '产量异常时空画像', code: 'M01' },
     },
     {
       path: '/county-risk',
@@ -51,6 +51,18 @@ const router = createRouter({
       name: 'chat',
       component: () => import('@/views/ChatAssistant.vue'),
       meta: { title: '知识助手', code: 'M06' },
+    },
+    {
+      path: '/data-lab',
+      name: 'data-lab',
+      component: () => import('@/views/DataLab.vue'),
+      meta: { title: '数据整备', code: 'M08' },
+    },
+    {
+      path: '/research',
+      name: 'research',
+      component: () => import('@/views/ResearchWorkbench.vue'),
+      meta: { title: '科研工作台', code: 'M09' },
     },
   ],
 })

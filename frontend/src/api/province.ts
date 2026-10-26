@@ -22,6 +22,8 @@ export interface ProvinceRow {
   y_linear?: number
   // 通用风险/参数字段 — baseline json 与 grain.db 行都会带
   y?: number
+  y_raw?: number | null
+  y_definition?: string
   type?: string
   summary?: string
   irr?: number

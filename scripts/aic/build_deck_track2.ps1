@@ -5,6 +5,7 @@ param(
     [string]$DataJson = (Join-Path $PSScriptRoot "deck_data_track2.json")
 )
 $ErrorActionPreference = "Stop"
+Add-Type -AssemblyName System.Drawing
 
 function RGB([int]$r, [int]$g, [int]$b) { return [int]($r + $g * 256 + $b * 65536) }
 
@@ -133,10 +134,15 @@ foreach ($f in @($outPptx, $outPdf)) {
     }
 }
 
-$app = New-Object -ComObject KWPP.Application
+try {
+    $app = New-Object -ComObject KWPP.Application
+} catch {
+    Write-Output "WPS COM unavailable; falling back to Microsoft PowerPoint."
+    $app = New-Object -ComObject PowerPoint.Application
+}
 $count = 0
 try {
-    try { $app.Visible = 0 } catch { }
+    try { $app.Visible = -1 } catch { }
     try { $app.DisplayAlerts = 1 } catch { }
     $pres = $app.Presentations.Add()
     $pres.PageSetup.SlideWidth = 960
@@ -260,9 +266,18 @@ try {
             "image" {
                 Add-Title $slide $s.title
                 $pic = Join-Path $imgDir $s.image
-                $w = 555.0; $h = 372.0
+                $maxW = 555.0; $maxH = 372.0
+                $img = [System.Drawing.Image]::FromFile($pic)
+                try {
+                    $scale = [Math]::Min($maxW / $img.Width, $maxH / $img.Height)
+                    $w = $img.Width * $scale
+                    $h = $img.Height * $scale
+                } finally {
+                    $img.Dispose()
+                }
                 $x = (960 - $w) / 2
-                $slide.Shapes.AddPicture($pic, 0, -1, $x, 108, $w, $h) | Out-Null
+                $y = 108 + ($maxH - $h) / 2
+                $slide.Shapes.AddPicture($pic, 0, -1, $x, $y, $w, $h) | Out-Null
                 Add-Text $slide 54 490 852 24 $s.caption 11.5 $false $MUTED 2 | Out-Null
             }
             "cols4" {

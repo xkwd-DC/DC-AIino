@@ -18,13 +18,15 @@ onMounted(async () => {
 
 const tabs = [
   { code: 'M00', name: '系统总览', path: '/overview' },
-  { code: 'M01', name: '风险时空地图', path: '/risk-map' },
-  { code: 'M02', name: 'SHAP 归因看板', path: '/shap' },
-  { code: 'M03', name: '参数情景模拟', path: '/scenario' },
-  { code: 'M04', name: '韧性路径推荐', path: '/pathway' },
+  { code: 'M01', name: '异常画像', path: '/risk-map' },
+  { code: 'M02', name: '归因看板', path: '/shap' },
+  { code: 'M03', name: '情景模拟', path: '/scenario' },
+  { code: 'M04', name: '韧性路径', path: '/pathway' },
   { code: 'M05', name: '推演监控', path: '/monitor' },
   { code: 'M06', name: '知识助手', path: '/chat' },
-  { code: 'M07', name: '县级风险地图', path: '/county-risk' },
+  { code: 'M07', name: '县级地图', path: '/county-risk' },
+  { code: 'M08', name: '数据整备', path: '/data-lab' },
+  { code: 'M09', name: '科研工作台', path: '/research' },
 ]
 
 // a11y(WCAG SC 1.4.1 Use of Color):健康状态不能只靠颜色。
@@ -88,6 +90,11 @@ const healthLabel = computed(() => {
     </div>
   </header>
 
+  <div class="research-boundary" role="note">
+    <span class="dot" aria-hidden="true"></span>
+    输出为统计关联与模型内情景，不构成因果结论、政策效果或产量预报；需结合农学机理、田间试验与专家研判。
+  </div>
+
   <main id="app-main" class="app-main" role="main" tabindex="-1">
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -138,12 +145,12 @@ const healthLabel = computed(() => {
   margin-top: 2px;
 }
 
-.tabs { display: flex; gap: 4px; flex: 1; }
+.tabs { display: flex; gap: 2px; flex: 1; }
 .tab {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-radius: var(--r-md);
   font-size: 12px;
   color: var(--text-2);
@@ -207,6 +214,27 @@ const healthLabel = computed(() => {
 .health.loading .dot { background: var(--amber); }
 
 .app-main { flex: 1; min-width: 0; }
+
+.research-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: rgba(230, 182, 85, 0.07);
+  border-bottom: 1px solid rgba(230, 182, 85, 0.18);
+  color: var(--text-2);
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+.research-boundary .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+}
 
 .fade-enter-active, .fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

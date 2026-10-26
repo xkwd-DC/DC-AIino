@@ -121,7 +121,7 @@ const RULES: Rule[] = [
     },
     mid: {
       title: '推进高标准农田灌溉升级',
-      desc: '将灌溉率由 <span class="num">当前水平</span> 提升至 <span class="num">75%</span> 以上，优先采用 <span class="hl">滴灌、喷灌</span> 等节水形式，亩均节水 <span class="num">30-40%</span>，模型预测可降低单产风险约 <span class="num">15%</span>。',
+      desc: '将灌溉率由 <span class="num">当前水平</span> 提升至 <span class="num">75%</span> 以上，优先采用 <span class="hl">滴灌、喷灌</span> 等节水形式。对单产风险的作用需在本地试验中验证，不能把规则权重当成干预效果。',
       tags: ['基建', '节水 / 财政', '⚡ 优先'],
     },
     long: {
@@ -141,7 +141,7 @@ const RULES: Rule[] = [
     },
     mid: {
       title: '引入耐旱品种与节水栽培技术',
-      desc: '在干旱压力区试点 <span class="hl">耐旱小麦、耐旱玉米</span> 品种，配套地膜覆盖、垄沟集雨等节水栽培技术，试验区单产稳定性提升约 <span class="num">12%</span>。',
+      desc: '在干旱压力区试点 <span class="hl">耐旱小麦、耐旱玉米</span> 品种，配套地膜覆盖、垄沟集雨等节水栽培技术。稳产效果需结合本地品种、土壤与田间试验验证。',
       tags: ['品种 / 技术推广'],
     },
     long: {

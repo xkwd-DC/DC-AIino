@@ -49,7 +49,6 @@ export interface PredictData {
   model: string
   baseline: number
   delta: number
-  confidence: number
   risk_score: number
   // ensemble only
   xgboost_risk?: number

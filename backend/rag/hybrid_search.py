@@ -83,7 +83,9 @@ def _bm25_search(
     store = _BM25_STORES.get(collection_name)
 
     if store is None:
-        return []
+        if not load_bm25_index(collection_name=collection_name):
+            return []
+        store = _BM25_STORES[collection_name]
 
     tokenized_query = _tokenize(query)
     scores = store["index"].get_scores(tokenized_query)
@@ -160,7 +162,20 @@ def hybrid_retrieve(
     if not question.strip():
         return []
 
-    query_vec = embed_query(question)
+    bm25_results = _bm25_search(question, top_k=top_k * 2, collection_name=collection_name)
+    try:
+        query_vec = embed_query(question)
+    except (MemoryError, RuntimeError, OSError, ImportError) as exc:
+        if not bm25_results:
+            raise
+        logger.warning("向量嵌入不可用，使用 BM25 关键词检索: %s", exc)
+        fallback = [
+            {"id": doc_id, "text": text, "metadata": {}, "similarity": 0,
+             "bm25_score": score, "retrieval_mode": "bm25"}
+            for doc_id, score, text in bm25_results
+        ]
+        return _restore_metadata(fallback, collection_name)[:top_k]
+
     vector_results = vs_query(
         query_vec,
         top_k=top_k * 2,
@@ -168,10 +183,11 @@ def hybrid_retrieve(
         collection_name=collection_name,
     )
 
-    bm25_results = _bm25_search(question, top_k=top_k * 2, collection_name=collection_name)
-
     if bm25_results:
         fused = _rrf_fusion(vector_results, bm25_results, k=config.RRF_K)
+        fused = _restore_metadata(fused, collection_name)
+        for hit in fused:
+            hit["retrieval_mode"] = "hybrid"
         logger.info(
             "混合检索: vec=%d + bm25=%d → fused=%d",
             len(vector_results), len(bm25_results), len(fused),
@@ -179,7 +195,28 @@ def hybrid_retrieve(
         return fused[:top_k]
 
     logger.info("混合检索: BM25 未就绪，回退向量 (vec=%d)", len(vector_results))
+    for hit in vector_results:
+        hit["retrieval_mode"] = "vector"
     return vector_results[:top_k]
+
+
+def _restore_metadata(results: list[dict], collection_name: str | None) -> list[dict]:
+    """从当前向量集合补齐关键词命中的来源，并剔除旧 BM25 中已删除的块。"""
+    from .vector_store import _get_collection
+
+    missing = [r["id"] for r in results if not r.get("metadata")]
+    if not missing:
+        return results
+    rows = _get_collection(collection_name).get(ids=missing, include=["metadatas"])
+    metadata = dict(zip(rows["ids"], rows["metadatas"]))
+    restored = []
+    for hit in results:
+        if not hit.get("metadata"):
+            if hit["id"] not in metadata:
+                continue
+            hit["metadata"] = metadata[hit["id"]]
+        restored.append(hit)
+    return restored
 
 
 def save_bm25_index(filepath: Path | None = None, collection_name: str | None = None) -> None:

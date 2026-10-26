@@ -72,7 +72,7 @@ def retrieve(
         return []
 
     # 2. 重排序
-    if use_rerank and config.RERANKER_ENABLED:
+    if use_rerank and config.RERANKER_ENABLED and results[0].get("retrieval_mode") != "bm25":
         try:
             results = rerank_results(question, results, top_k=min(top_k * 2, len(results)))
         except Exception as exc:

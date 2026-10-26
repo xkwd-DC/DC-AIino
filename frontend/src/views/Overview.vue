@@ -3,7 +3,7 @@
  * M00 · 系统总览(Overview) — 国家级评审 landing page
  *
  * v6 叙事基线(参见 docs/AGENT_BRIEFING.md §4 与 docs/_craic/04_申报书_v6_rewrite_draft.md):
- *   - 三模型互补归因架构(XGB-SHAP + 基线 LSTM + Attention-LSTM)
+ *   - 三模型分工 + 双视角归因(XGB-SHAP / 基线 LSTM / Attention-LSTM)
  *   - 三协议鲁棒性透明披露(random 8:2 / leave-year / leave-province-out)
  *   - Spearman 秩相关 -0.055 体现方法论独立性,互补而非一致
  *   - 决策支持系统是核心交付,模型作为引擎不依赖空间外推
@@ -64,7 +64,7 @@ const KPIS: ReadonlyArray<KpiCard> = [
   },
 ]
 
-// ── 三模型互补 chip 数据 ─────────────────────────────────────────────────
+// ── 双视角归因 chip 数据 ─────────────────────────────────────────────────
 interface FactorChip {
   readonly code: string
   readonly label: string
@@ -96,14 +96,14 @@ const DATA_SOURCES: ReadonlyArray<DataSource> = [
   { name: '省级统计数据', detail: '统计年鉴 + 公报 · 31 省 × 13 年' },
   {
     name: 'MODIS 卫星遥感',
-    detail: 'NDVI / LST 月度合成 · 4,836 省月',
-    refining: '耕地像元加权 v4 · 60%',
+    detail: 'NDVI / LST 月度合成 · 4,836 省月（全省域均值）',
+    refining: '耕地像元加权未完成 · v4 仅新增 cropland_ratio',
   },
   { name: '气象与干旱指数', detail: 'CMDC 站点观测 + SPEI-3 · 省级年度聚合' },
   {
-    name: 'GIS 空间矢量',
-    detail: 'CLCD 耕地掩膜 + 行政区划边界',
-    refining: '多年 CLCD 序列 v4 · 75%',
+    name: 'GIS 空间基础数据',
+    detail: '行政区划矢量 · 省 / 市 / 县边界',
+    refining: 'CLCD 耕地掩膜未归档 · 多年序列仅完成占比统计',
   },
 ]
 
@@ -142,8 +142,8 @@ interface QuickEntry {
 const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   {
     code: 'M01',
-    title: '查看风险地图',
-    desc: '31 省风险等级时空分布',
+    title: '查看异常画像',
+    desc: '31 省产量异常时空分布',
     to: '/risk-map',
     icon: '◉',
     accent: false,
@@ -159,7 +159,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   {
     code: 'M03',
     title: '参数情景模拟',
-    desc: '反事实预测推理 < 2s',
+    desc: '模型内情景推演 < 2s',
     to: '/scenario',
     icon: '⚙',
     accent: false,
@@ -196,6 +196,22 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
     icon: '▦',
     accent: false,
   },
+  {
+    code: 'M08',
+    title: '数据整备',
+    desc: '上传 → 对齐 → 质检 → 导出',
+    to: '/data-lab',
+    icon: '⌁',
+    accent: false,
+  },
+  {
+    code: 'M09',
+    title: '科研工作台',
+    desc: '模型体检 · 敏感性 · 复现包',
+    to: '/research',
+    icon: '◎',
+    accent: true,
+  },
 ]
 </script>
 
@@ -205,7 +221,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
       <div class="eyebrow">M00 · SYSTEM OVERVIEW</div>
       <h2>核心云图 · 系统总览</h2>
       <p class="lead">
-        基于<b>三模型互补归因架构</b>(XGBoost-SHAP + 基线 LSTM + Attention-LSTM),
+        基于<b>三模型分工 + 双视角归因</b>(XGBoost-SHAP / 基线 LSTM / Attention-LSTM),
         覆盖 2011 – 2023 全国 31 省多模态数据;省级统计 × 卫星遥感 × 气象逐日观测 × GIS 矢量四源融合。
       </p>
     </header>
@@ -227,18 +243,21 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
       </article>
     </div>
 
-    <!-- ── 双列 grid · 01 三模型互补 + 02 数据源融合 ──────────────── -->
+    <!-- ── 双列 grid · 01 三模型分工 + 02 数据源融合 ──────────────── -->
     <div class="dual-grid">
-      <!-- 左列:01 · MODEL COMPLEMENTARITY -->
+      <!-- 左列:01 · MODEL ROLES -->
       <article
         class="card section-card"
         role="region"
         aria-labelledby="section-complementarity"
       >
         <div class="section-head">
-          <div class="num">01 · MODEL COMPLEMENTARITY · 三模型互补</div>
-          <h3 id="section-complementarity">三模型互补归因架构</h3>
-          <div class="section-sub">方法论独立 + 互补归因 · 三种原理回答不同科学问题</div>
+          <div class="num">01 · MODEL ROLES · 三模型分工</div>
+          <h3 id="section-complementarity">三模型分工 + 双视角归因</h3>
+          <div class="section-sub">
+            XGB-SHAP / LSTM / Attention-LSTM 各司其职；只有 XGB-SHAP 与
+            Attention-LSTM 提供可对照的特征排序，LSTM 只作时序基线。
+          </div>
         </div>
 
         <div class="complement-row">
@@ -258,6 +277,17 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
                 <span class="chip-label">{{ c.label }}</span>
               </span>
             </div>
+          </div>
+
+          <div class="model-block model-block-baseline">
+            <div class="model-head">
+              <span class="model-name">LSTM 基线</span>
+              <span class="model-tag">时序对照 · 参与 consensus</span>
+            </div>
+            <p class="baseline-note">
+              R² 0.886，作为时序基线参与 XGB + LSTM 共识；
+              <b>不提供特征级归因</b>，因此不进入下面的 Top-3 对照。
+            </p>
           </div>
 
           <div class="model-block">
@@ -281,10 +311,11 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
           <div class="complement-footer">
             <span class="complement-icon" aria-hidden="true">⇌</span>
             <div class="complement-text">
-              两套排名 Spearman <span class="mono">ρ = −0.055</span>(p=0.873),
+              归因对照只用 XGB-SHAP 与 Attention-LSTM 两套排名；
+              Spearman <span class="mono">ρ = −0.055</span>(p=0.873),
               Top-3 仅 <b>Temp</b> 一项重合
               <span class="complement-sep">→</span>
-              <b class="claim">互补视角,不作一致性验证</b>
+              <b class="claim">并列呈现,不作一致性验证</b>
             </div>
           </div>
         </div>
@@ -306,11 +337,13 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
           <li v-for="s in DATA_SOURCES" :key="s.name" class="source-item">
             <div class="source-head-row">
               <span class="source-name">{{ s.name }}</span>
-              <span class="source-status st-ok">已就绪</span>
+              <span class="source-status st-ok">
+                {{ s.refining ? '基础层已接入' : '已就绪' }}
+              </span>
             </div>
             <div class="source-detail">{{ s.detail }}</div>
             <div v-if="s.refining" class="source-refining">
-              <span class="refining-tag">细化中</span>{{ s.refining }}
+              <span class="refining-tag">待补</span>{{ s.refining }}
             </div>
           </li>
         </ul>
@@ -325,7 +358,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
     >
       <div class="section-head">
         <div class="num">03 · QUICK ACCESS · 快速入口</div>
-        <h3 id="section-quick">七大业务模块 · 一键直达</h3>
+        <h3 id="section-quick">九大业务模块 · 一键直达</h3>
         <div class="section-sub">省级归因 → 县级归因 → 情景推演 → 知识问答,完整业务闭环</div>
       </div>
 
@@ -516,7 +549,7 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   line-height: 1.5;
 }
 
-/* ── 三模型互补 block ─────────────────────────────────────────── */
+/* ── 三模型分工 block ─────────────────────────────────────────── */
 .complement-row {
   display: flex;
   flex-direction: column;
@@ -527,6 +560,18 @@ const QUICK_ENTRIES: ReadonlyArray<QuickEntry> = [
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
+}
+.model-block-baseline {
+  background: rgba(107, 168, 181, 0.06);
+  border-color: rgba(107, 168, 181, 0.28);
+}
+.baseline-note {
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.baseline-note b {
+  color: var(--blue-bright);
 }
 .model-head {
   display: flex;

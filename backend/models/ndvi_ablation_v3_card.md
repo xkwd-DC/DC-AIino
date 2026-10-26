@@ -22,4 +22,4 @@
 ## Honest claim for paper §7.2
 
 > Removing NDVI from the 11-feature set drops random-8:2 R^2 from 0.907 to 0.904,
-> a 0% relative drop. The 10-dim variant differs from the paper baseline 0.629, indicating that either (a) the v3 panel diverges from the paper data beyond just adding NDVI, or (b) the random-8:2 sampling has captured a stronger province signal than the paper protocol. Either way, NDVI alone explains the bulk of the 11-dim improvement.
+> a 0% relative drop. The 10-dim variant differs from the paper baseline 0.629, indicating that either (a) the v3 panel diverges from the paper data beyond just adding NDVI, or (b) the random-8:2 sampling has captured a stronger province signal than the paper protocol. In this panel, NDVI's marginal contribution is approximately zero; the 11-vs-10 difference must not be attributed to NDVI.

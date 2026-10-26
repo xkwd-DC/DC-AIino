@@ -617,14 +617,14 @@ onBeforeUnmount(() => {
 <template>
   <section class="page">
     <header class="page-head">
-      <div class="eyebrow">M02 · SHAP ATTRIBUTION DASHBOARD</div>
-      <h2>SHAP 归因看板</h2>
+      <div class="eyebrow">M02 · XGB ATTRIBUTION DASHBOARD</div>
+      <h2>XGB 归因看板（扰动贡献）</h2>
       <p class="lead">
         对当前选定省份
         <b v-if="selectedProvince?.name">{{ selectedProvince.name }}</b>
         <b v-else>—</b>
-        解析 XGBoost-SHAP 省内风险因子相对重要性,
-        从全局重要性、单样本预测分解到蜂群分布三个视角呈现互补归因视角。
+        用单变量扰动估计各因子对模型输出的边际影响。该数值不是 TreeSHAP，
+        也不具备可加性；模型卡中的 SHAP 为离线 TreeSHAP 结果，两者不可直接对比。
         <span
           v-if="storeLoading || isLoadingShap"
           class="shap-status loading"
@@ -639,6 +639,11 @@ onBeforeUnmount(() => {
         <span class="prov-meta">{{ selectedProvince.type }} · y={{ selectedProvince.y.toFixed(4) }}</span>
       </p>
     </header>
+
+    <p class="method-note" role="note">
+      <b>方法说明</b> 当前在线结果 = 单变量扰动贡献（Perturbation）；离线模型卡 = TreeSHAP。
+      页面保留此区分，避免把近似归因写成 SHAP。
+    </p>
 
     <!-- M02-0 · 目标省份切换器(与 M03/M04 共享 Pinia store) -->
     <div class="target-bar card">
@@ -784,6 +789,17 @@ onBeforeUnmount(() => {
 .eyebrow { font-family: var(--font-mono); font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
 .page-head h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 600; margin-bottom: 6px; }
 .lead { font-size: 13px; color: var(--text-2); max-width: 920px; line-height: 1.7; }
+.method-note {
+  margin: -6px 0 16px;
+  padding: 9px 12px;
+  border: 1px dashed rgba(230, 182, 85, 0.35);
+  border-radius: var(--r-md);
+  background: rgba(230, 182, 85, 0.06);
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.method-note b { color: var(--amber-bright); margin-right: 6px; }
 .shap-status {
   font-family: var(--font-mono);
   font-size: 11px;

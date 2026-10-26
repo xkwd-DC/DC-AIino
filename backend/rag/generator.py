@@ -53,7 +53,10 @@ _SYSTEM_PROMPT = """你是"稷韧云图"知识助手，专精于极端气候下�
 2. 如果上下文不足以回答问题，诚实说明"当前知识库中未找到相关信息"。
 3. 回答用中文，学术风格但易于理解。
 4. 引用来源时标注【来源 N】。
-5. 回答控制在 500 字以内，重点突出。"""
+5. 回答控制在 500 字以内，重点突出。
+6. 本系统输出属于统计关联与模型内情景，不得表述为因果结论、政策效果
+   或产量预报。遇到“导致 / 证明 / 必然 / 能增产多少”这类问题，必须
+   明确说明证据边界，并建议结合农学机理、田间试验和专家研判。"""
 
 
 def generate(
@@ -82,10 +85,10 @@ def generate(
         f"## 参考信息\n{context}\n\n"
         f"## 用户问题\n{question}"
     )
-    messages.append({"role": "user", "content": user_message})
-
     if history:
         messages.extend(history[-12:])  # 最多 6 轮对话
+
+    messages.append({"role": "user", "content": user_message})
 
     logger.info(
         "调用 DeepSeek API: model=%s question='%s'",
@@ -131,9 +134,9 @@ def generate_stream(
         f"## 参考信息\n{context}\n\n"
         f"## 用户问题\n{question}"
     )
-    messages.append({"role": "user", "content": user_message})
     if history:
         messages.extend(history[-12:])
+    messages.append({"role": "user", "content": user_message})
 
     try:
         stream = client.chat.completions.create(

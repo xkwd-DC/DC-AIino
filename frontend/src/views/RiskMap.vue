@@ -85,6 +85,14 @@ const top10 = computed(() => {
   return [...currentData.value].sort((a, b) => b.y - a.y).slice(0, 10)
 })
 
+const legendRange = computed<[number, number]>(() => {
+  const values = currentData.value
+    .map((d) => d.y)
+    .filter((v) => Number.isFinite(v))
+  if (values.length === 0) return [0.011, 0.043]
+  return [Math.min(...values), Math.max(...values)]
+})
+
 const detail = computed<ProvinceSnapshot | null>(() => {
   if (!hoveredProvince.value) return null
   return currentData.value.find((d) => d.name === hoveredProvince.value) ?? null
@@ -399,9 +407,10 @@ void riskColorResolved
   <section class="page">
     <header class="page-head">
       <div class="eyebrow">M01 · SPATIO-TEMPORAL RISK MAP</div>
-      <h2>风险时空地图</h2>
+      <h2>产量异常时空画像</h2>
       <p class="lead">
-        31 省 2011–2023 年粮食生产风险时空分布,直观呈现高风险省份与年际演化。
+        31 省 2011–2023 年产量异常的时空分布。着色使用当年 31 省截面标准化的
+        展示指数（0.028 − 0.004×z(y_butter)），不是减产概率，也不是因果风险。
       </p>
     </header>
 
@@ -424,7 +433,7 @@ void riskColorResolved
       <section class="map-panel">
         <div class="map-toolbar">
           <span class="num">M01-A</span>
-          <h3>中国粮食生产风险分布</h3>
+          <h3>省级产量异常分布（展示指数）</h3>
           <span v-if="yearLoading" class="map-status loading" aria-hidden="true">
             <span class="map-spinner"></span>
           </span>
@@ -443,7 +452,7 @@ void riskColorResolved
             ref="mapEl"
             class="map-canvas"
             role="img"
-            aria-label="中国 31 省粮食生产风险分布地图,使用颜色深浅表示风险高低,赭石色越深风险越高"
+            aria-label="中国 31 省产量异常展示指数地图,使用颜色深浅表示相对异常高低,赭石色越深表示相对更差"
             aria-describedby="map-top10-desc"
             tabindex="0"
           ></div>
@@ -520,15 +529,15 @@ void riskColorResolved
       <aside class="side-panel">
         <div class="card">
           <div class="card-head">
-            <h3>风险图例</h3>
-            <span class="meta">Y · DETRENDED VOLATILITY</span>
+            <h3>异常图例</h3>
+            <span class="meta">Y · DISPLAY ANOMALY INDEX</span>
           </div>
           <div class="legend-body">
             <!-- a11y SC 1.1.1:图例色阶加 role/aria-label -->
             <div
               class="legend-bar"
               role="img"
-              aria-label="风险色阶,从浅到深表示风险由低到高,共 5 级"
+              aria-label="产量异常展示指数色阶,从浅到深表示相对异常由低到高,共 5 级"
             >
               <div :style="{ background: 'var(--risk-1)' }" aria-hidden="true"></div>
               <div :style="{ background: 'var(--risk-2)' }" aria-hidden="true"></div>
@@ -537,8 +546,8 @@ void riskColorResolved
               <div :style="{ background: 'var(--risk-5)' }" aria-hidden="true"></div>
             </div>
             <div class="legend-labels">
-              <span>低 0.011</span>
-              <span>0.043 高</span>
+              <span>低 {{ legendRange[0].toFixed(3) }}</span>
+              <span>{{ legendRange[1].toFixed(3) }} 高</span>
             </div>
             <div class="legend-meta">
               <span>当前年份全国均值</span>
@@ -560,12 +569,12 @@ void riskColorResolved
 
         <div class="card">
           <div class="card-head">
-            <h3 id="top10-heading">Top 10 高风险省份</h3>
+            <h3 id="top10-heading">Top 10 高异常省份</h3>
             <span class="meta">YEAR {{ currentYear }}</span>
           </div>
           <!-- a11y(SC 1.3.1):列表语义化 + 供地图 aria-describedby 引用 -->
           <p id="map-top10-desc" class="sr-only">
-            该地图配有右侧 Top 10 高风险省份列表,可使用 Tab 键聚焦各省并查看明细
+             该地图配有右侧 Top 10 高异常省份列表,可使用 Tab 键聚焦各省并查看明细
           </p>
           <ul
             class="top10-body"
@@ -580,7 +589,7 @@ void riskColorResolved
               :class="{ active: d.name === hoveredProvince }"
               role="button"
               tabindex="0"
-              :aria-label="`第 ${i + 1} 名 ${d.name},风险值 ${d.y.toFixed(4)},点击查看明细`"
+              :aria-label="`第 ${i + 1} 名 ${d.name},异常展示指数 ${d.y.toFixed(4)},点击查看明细`"
               :aria-pressed="d.name === hoveredProvince"
               @click="onRowClick(d.name)"
               @keydown="onRowKey($event, d.name)"
@@ -621,7 +630,7 @@ void riskColorResolved
 
               <div class="detail-stats">
                 <div class="stat-row">
-                  <span class="stat-label">风险指数 Y</span>
+                  <span class="stat-label">异常展示指数 Y</span>
                   <div class="stat-progress">
                     <div class="stat-progress-fill" :style="{ width: percentile(detail.y, RANGES.y) + '%', background: 'var(--green)' }"></div>
                   </div>
@@ -659,7 +668,7 @@ void riskColorResolved
 
               <div class="detail-trend">
                 <div class="trend-label">
-                  <span>13 年风险趋势</span>
+                  <span>13 年产量异常趋势</span>
                   <span v-if="detailHistoryLoading" class="trend-status" aria-hidden="true">
                     <span class="trend-spinner"></span>
                   </span>
@@ -674,7 +683,7 @@ void riskColorResolved
                   ref="miniEl"
                   class="mini-chart"
                   role="img"
-                  :aria-label="`${detail?.name ?? ''} 省 ${YEAR_MIN} 至 ${YEAR_MAX} 年风险趋势小图`"
+                  :aria-label="`${detail?.name ?? ''} 省 ${YEAR_MIN} 至 ${YEAR_MAX} 年产量异常趋势小图`"
                 ></div>
                 <div v-if="detailHistoryError" class="mini-fallback">
                   趋势数据加载中

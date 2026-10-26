@@ -496,7 +496,9 @@ def predict():
         return envelope(error={"code": 400, "message": "all params must be numeric"}, status=400)
 
     risk_payload, contribs = _predict_real(params, model, province)
-    baseline = _PROVINCES[province]["y"]
+    # 与 _yield_to_risk 的定义保持一致：baseline yield 对应 _BASELINE_RISK。
+    # 不再读取 provinces_baseline.json 的静态 y（那是前端展示指数，不是模型基线）。
+    baseline = _BASELINE_RISK
 
     data = {
         "province": province,
@@ -504,7 +506,8 @@ def predict():
         "model": model,
         "baseline": baseline,
         "delta": round(risk_payload["risk_score"] - baseline, 6),
-        "confidence": 0.78,  # 当前固定值;后续可用 MC dropout / 预测区间替换
+        # 不返回没有统计定义的“置信度”。模型间分歧见 divergence /
+        # 各单模型 risk 字段；需要区间时由研究接口单独计算。
         "shap_top": _shap_top(contribs),
         "shap_normalized": _shap_normalized(contribs),
         "recommendations": _recommendations(contribs),

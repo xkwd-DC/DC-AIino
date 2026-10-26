@@ -18,6 +18,8 @@ python-dotenv~=1.0.1
 # numpy 暂封顶 2.1：SHAP 0.46 与 xgboost 2.1 在 numpy 2.x 上偶发兼容问题
 numpy>=1.26,<2.1
 pandas~=2.2.2
+# M08 数据整备：读用户上传的 .xlsx
+openpyxl>=3.1,<4
 
 # --- 机器学习 ---
 scikit-learn~=1.5.1

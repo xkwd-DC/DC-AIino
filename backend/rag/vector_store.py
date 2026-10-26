@@ -40,8 +40,6 @@ def _get_collection(collection_name: str | None = None) -> "chromadb.Collection"
     collection_name = collection_name or config.COLLECTION_NAME
     if collection_name not in _COLLECTIONS:
         client = _get_client()
-        from .embedder import embed_dim  # noqa: import-not-at-top
-        dim = embed_dim()
         _COLLECTIONS[collection_name] = client.get_or_create_collection(
             name=collection_name,
             metadata={

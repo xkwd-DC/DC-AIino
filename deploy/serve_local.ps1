@@ -63,6 +63,13 @@ $Py = Join-Path $Backend '.venv\Scripts\python.exe'
 $BindHost = if ($Lan) { '0.0.0.0' } else { '127.0.0.1' }
 $ProbeHost = '127.0.0.1'
 
+# SQLite/模型库会写临时文件；跟随项目盘，避免 C 盘满或沙箱临时目录不可写。
+$RuntimeTemp = Join-Path $RunDir 'tmp'
+New-Item -ItemType Directory -Force -Path $RuntimeTemp | Out-Null
+$env:TEMP = $RuntimeTemp
+$env:TMP = $RuntimeTemp
+$env:SQLITE_TMPDIR = $RuntimeTemp
+
 function Write-Step([string]$Message) { Write-Host "==> $Message" -ForegroundColor Cyan }
 function Write-Ok([string]$Message) { Write-Host "    $Message" -ForegroundColor Green }
 function Write-Warn2([string]$Message) { Write-Host "    $Message" -ForegroundColor Yellow }

@@ -5,13 +5,14 @@
     - GPU 推理比 CPU 快 10-50x
     - 自动检测 CUDA/MPS，可用时默认 GPU；否则回退 CPU
 
-Lazy load: 首次调用时下载/加载模型 (~2.2GB)，进程内缓存。
+Lazy load: 首次调用时加载本地缓存模型 (~2.2GB)，进程内缓存。
 """
 
 from __future__ import annotations
 
 import logging
 import os
+import threading
 from typing import TYPE_CHECKING
 
 from . import config
@@ -27,6 +28,28 @@ if TYPE_CHECKING:
 
 _MODEL: "SentenceTransformer | None" = None  # type: ignore[name-defined]
 _MODEL_DEVICE: str = ""
+_MODEL_LOCK = threading.Lock()
+
+
+def _available_memory_mb() -> int | None:
+    """Windows 同时检查物理内存和提交额度，防止 native 分配失败退出进程。"""
+    if os.name != "nt":
+        return None
+    import ctypes
+
+    class MemoryStatus(ctypes.Structure):
+        _fields_ = [("length", ctypes.c_ulong), ("load", ctypes.c_ulong)] + [
+            (name, ctypes.c_ulonglong) for name in (
+                "total_phys", "avail_phys", "total_page", "avail_page",
+                "total_virtual", "avail_virtual", "avail_extended",
+            )
+        ]
+
+    status = MemoryStatus()
+    status.length = ctypes.sizeof(status)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+        return None
+    return min(status.avail_phys, status.avail_page) // (1024 * 1024)
 
 
 def _detect_device() -> str:
@@ -53,19 +76,46 @@ def _detect_device() -> str:
 def _get_model() -> "SentenceTransformer":  # type: ignore[name-defined]
     """Lazy load BGE-M3 嵌入模型（~2.2GB）。"""
     global _MODEL, _MODEL_DEVICE
-    if _MODEL is None:
-        from sentence_transformers import SentenceTransformer
+    with _MODEL_LOCK:
+        if _MODEL is not None:
+            return _MODEL
 
-        _MODEL_DEVICE = _detect_device()
+        available_mb = _available_memory_mb()
+        if available_mb is not None and available_mb < config.EMBEDDING_MIN_FREE_MB:
+            raise MemoryError(f"BGE-M3 加载内存不足：可用 {available_mb} MB")
+
+        from sentence_transformers import SentenceTransformer
+        import torch
+
+        device = _detect_device()
         logger.info(
-            "加载 %s (device=%s)...", config.EMBEDDING_MODEL_NAME, _MODEL_DEVICE,
+            "加载 %s (device=%s)...", config.EMBEDDING_MODEL_NAME, device,
         )
-        _MODEL = SentenceTransformer(
-            config.EMBEDDING_MODEL_NAME,
-            device=_MODEL_DEVICE,
-        )
-        if hasattr(_MODEL, "max_seq_length"):
-            _MODEL.max_seq_length = 1024
+        model = None
+        try:
+            model = SentenceTransformer(
+                config.EMBEDDING_MODEL_NAME,
+                device=device,
+                local_files_only=config.EMBEDDING_LOCAL_ONLY,
+            )
+        except torch.cuda.OutOfMemoryError:
+            if not device.startswith("cuda"):
+                raise
+            logger.warning("BGE-M3 CUDA 内存分配失败，改用 CPU")
+            device = "cpu"
+
+        # 离开 except 后再加载，释放异常 traceback 持有的部分 GPU 模型。
+        if model is None:
+            torch.cuda.empty_cache()
+            model = SentenceTransformer(
+                config.EMBEDDING_MODEL_NAME,
+                device="cpu",
+                local_files_only=config.EMBEDDING_LOCAL_ONLY,
+            )
+        if hasattr(model, "max_seq_length"):
+            model.max_seq_length = 1024
+        _MODEL_DEVICE = device
+        _MODEL = model
         logger.info(
             "嵌入模型就绪: %d-dim, device=%s",
             _MODEL.get_sentence_embedding_dimension(), _MODEL_DEVICE,
@@ -84,12 +134,9 @@ def get_device() -> str:
 def embed_documents(texts: list[str], batch_size: int = 64) -> "list[list[float]]":
     """批量嵌入文档文本为 Dense 向量 (1024-dim)。
 
-    GPU 模式自动调大 batch_size。
+    保留调用方指定的 batch_size，避免小显存机器上强制扩批。
     """
     model = _get_model()
-
-    if _MODEL_DEVICE == "cuda":
-        batch_size = max(batch_size, 128)
 
     embeddings: "np.ndarray" = model.encode(  # type: ignore[assignment]
         texts,

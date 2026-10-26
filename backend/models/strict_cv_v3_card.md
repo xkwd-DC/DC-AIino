@@ -33,11 +33,13 @@ The Random-8:2 score 0.91 = Province memorization + time signal + climate residu
 - **Removing year → R^2 stays ~0.89:** year/trend is NOT a meaningful driver of the score.
 - **5-fold (mixed) → R^2 = 0.91:** same as random, confirming individual rows are not the issue.
 
-→ **Essentially 100% of the headline 0.91 is attributable to learning
-province-level baselines (Fert/Mech/Irr signatures that identify "this is
-Henan" → "Henan averages X kg/ha"). There is no transferable climate ->
-yield model.** This is consistent with N=403 and 31 distinct
-cross-sectional units.
+→ **The headline 0.91 is consistent with learning province-level
+baselines (Fert/Mech/Irr signatures that identify "this is Henan" →
+"Henan averages X kg/ha"). With the current 11 features and sample, no
+transferable climate → yield mapping was observed across provinces.**
+This is consistent with N=403 and 31 distinct cross-sectional units; the
+diagnosis cannot by itself rule out model-specification or feature-choice
+effects.
 
 ## Honest claim for paper §7.1
 

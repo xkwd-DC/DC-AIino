@@ -44,6 +44,8 @@ with (DATA_DIR / "provinces_baseline.json").open(encoding="utf-8") as f:
 
 app = Flask(__name__)
 app.json.ensure_ascii = False  # 直接输出中文，便于 curl 调试；浏览器/前端两种都能解析
+# M08 上传上限 10 MB。其余接口都是小 JSON，不受影响。
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 # SECURITY: CORS 默认收窄到 dev localhost 端口，**不再** allow all origins。
 # 生产部署必须显式设 CORS_ORIGINS=https://yourdomain.com,...
@@ -81,19 +83,23 @@ app.register_blueprint(county_bp)
 from api.growth_api import growth_bp
 app.register_blueprint(growth_bp)
 
+# M08 数据整备 — 上传 / 映射 / 质检 / 导出（只读沙盒，不写主库、不调模型）
+from api.ingest_api import ingest_bp
+app.register_blueprint(ingest_bp)
+
+# M09 科研工作台 — 模型体检 / 敏感性 / 模型卡 / 复现包
+from api.research_api import research_bp
+app.register_blueprint(research_bp)
+
 # RAG 文件监控 — 自动增量索引 (Issue #44)
-# 启动时执行完整性检查 + 开启 watchdog 监听 docs/ 变更
+# 默认关闭；显式设 RAG_AUTO_INDEX_ENABLED=true 才执行重扫并开启 watchdog。
 try:
-    from rag.watcher import reindex_modified, start_watcher
+    from rag.watcher import start_autosync
     import threading
 
     def _rag_startup():
-        """后台线程：先做完整性检查，再开启文件监控。"""
-        try:
-            reindex_modified()
-        except Exception:
-            pass
-        start_watcher()
+        """后台线程：仅在配置允许时重扫文档并开启文件监控。"""
+        start_autosync()
 
     _watcher_thread = threading.Thread(target=_rag_startup, daemon=True)
     _watcher_thread.start()
@@ -230,6 +236,12 @@ def not_found(_):
         from flask import send_from_directory
         return send_from_directory(_FRONTEND_DIST, "index.html")
     return envelope(error={"code": 404, "message": "endpoint not found"}, status=404)
+
+
+@app.errorhandler(413)
+def payload_too_large(_):
+    # M08 上传超过 MAX_CONTENT_LENGTH 时给出可读错误，而不是 HTML 错误页
+    return envelope(error={"code": 413, "message": "文件超过 10 MB 上限"}, status=413)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,107 @@
+这份问卷约 3 分钟，匿名，不收集姓名、学校、院系和导师信息。目的是了解你在做气候—产量分析时的实际流程，以及一个演示系统是否能帮上忙。没有标准答案，请按真实感受作答。 / This survey takes about 3 minutes and is anonymous. We do not collect your name, university, department, or advisor information. The purpose is to understand your actual workflow when analyzing climate–yield relationships, and whether a demonstration system can help. There are no right or wrong answers; please respond based on your actual experience.[段落说明]
+第一部分 基本信息 / Part 1: Background[段落说明]
+1、你现在的身份是？ / What is your current role?
+A.本科生 / Undergraduate student
+B.硕士研究生 / Master's student
+C.博士研究生 / Doctoral student
+D.教师 / Faculty member
+E.科研助理 / Research assistant
+F.其他 / Other
+
+2、你的专业或研究方向最接近？ / Which field is closest to your major or research area?
+A.作物学 / 农学 / Crop science / Agronomy
+B.农业气象 / Agricultural meteorology
+C.农业资源与环境 / Agricultural resources and environment
+D.农业经济管理 / Agricultural economics and management
+E.计算机 / 数据科学 / Computer science / Data science
+F.其他 / Other
+
+3、你是否独立或参与做过“气候、极端天气与作物产量、粮食风险”相关的分析？ / Have you independently conducted, or participated in, analysis related to climate, extreme weather, crop yield, or grain risk?
+A.做过完整一次及以上 / Yes, at least one complete project
+B.参与过部分环节 / Participated in some steps
+C.只读过相关文献 / Only read related literature
+D.没做过 / No
+
+4、最近一次这类任务，从拿到数据到做出可解释结果，大约用了多久？ / How long did your most recent such task take, from obtaining the data to producing an interpretable result?
+A.1 天以内 / Less than 1 day
+B.1–3 天 / 1–3 days
+C.4–7 天 / 4–7 days
+D.1–2 周 / 1–2 weeks
+E.2 周以上 / More than 2 weeks
+F.没做过 / Have not done this
+
+第二部分 现在的分析流程 / Part 2: Current Workflow[段落说明]
+5、数据清洗和对齐（气象、遥感、统计年鉴等）占了我大部分时间。 / Data cleaning and alignment (meteorological, remote sensing, statistical yearbooks, etc.) take up most of my time.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+6、换一个省或换一段时间做验证时，模型结果不稳定，我很难解释。 / When I validate the model in a different province or time period, the results are unstable and difficult to explain.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+第三部分 试用任务 / Part 3: Trial Tasks[段落说明]
+7、你是否完成了“找出某省某年主要风险因子”这个任务？ / Did you complete the task “identify the main risk factors for a province in a given year”?
+A.完成 / Completed
+B.部分完成 / Partially completed
+C.没完成 / Not completed
+D.没试用 / Did not try
+
+8、你是否完成了“判断某县相对上一年的变化”这个任务？ / Did you complete the task “determine whether a county improved or worsened relative to the previous year”?
+A.完成 / Completed
+B.部分完成 / Partially completed
+C.没完成 / Not completed
+D.没试用 / Did not try
+
+9、关于“风险等级”和“产量”的关系，你的理解是？ / What is your understanding of the relationship between “risk level” and “yield”?
+A.风险等级高，产量一定低 / High risk level means yield must be low
+B.风险等级是气候条件的综合，不等于产量 / Risk level is a composite of climate conditions and is not equivalent to yield
+C.风险等级和产量是同一个指标 / Risk level and yield are the same indicator
+D.不确定 / Not sure
+
+第四部分 使用感受 / Part 4: User Experience[段落说明]
+10、这个系统容易上手。 / This system is easy to get started with.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+11、系统给出的结果我看得懂。 / I can understand the results shown by the system.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+12、我相信系统展示的结果。 / I trust the results shown by the system.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+13、下次课程作业或科研，我愿意再用这个系统。 / I would be willing to use this system again for coursework or research.
+A.1 非常不同意 / 1 Strongly disagree
+B.2 不同意 / 2 Disagree
+C.3 一般 / 3 Neutral
+D.4 同意 / 4 Agree
+E.5 非常同意 / 5 Strongly agree
+
+第五部分 开放题与后续 / Part 5: Open Question and Follow-up[段落说明]
+14、如果只能改一处，你先改哪里？为什么？ / If you could change only one thing, what would you change first, and why?
+
+15、是否愿意再花 10 分钟做一次带任务的深度试用？ / Would you be willing to spend another 10 minutes on a task-based trial?
+A.愿意 / Yes
+B.不愿意 / No
+C.看时间 / Depends on my schedule
+
+第六部分 匿名授权 / Part 6: Anonymous Use Consent[段落说明]
+16、我同意将我的匿名回答和原话用于比赛材料与产品改进；不同意也不影响任何事。 / I agree that my anonymous responses and quotations may be used in competition submission materials and for product improvement. Your decision will not affect anything else.
+A.同意 / Agree
+B.不同意 / Disagree

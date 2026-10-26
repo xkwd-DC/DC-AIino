@@ -192,11 +192,11 @@ async function retryInit() {
   <section class="page">
     <header class="page-head">
       <div class="eyebrow">M04 · RESILIENCE PATHWAY ENGINE</div>
-      <h2>韧性路径推荐</h2>
+      <h2>措施假设对照</h2>
       <p class="lead">
         基于省份风险指纹(灌溉、洪涝、SPEI、温度、日照、省域类型)匹配规则库,
-        自动生成短期、中期、长期三阶段行动路径,
-        可服务于农业农村厅政策决策、农险机构产品定价、农科院课题立项、储备局空间布局等场景。
+        生成短期、中期、长期三阶段候选措施假设。它是白箱规则线索，
+        不是政策建议、保险定价依据或干预效果估计；每条措施都需本地条件与田间试验验证。
       </p>
     </header>
 
@@ -318,7 +318,7 @@ async function retryInit() {
               </ul>
             </div>
             <div v-if="modelRecs.length > 0" class="model-recs">
-              <div class="model-sub">模型动态推荐</div>
+              <div class="model-sub">规则线索（非推荐）</div>
               <ul class="rec-list">
                 <li
                   v-for="(r, i) in modelRecs"
@@ -331,7 +331,7 @@ async function retryInit() {
                     <div class="rec-action">{{ r.action }}</div>
                     <div class="rec-meta">
                       因子 <span class="v">{{ r.factor }}</span>
-                      · 预期 ∆ <span class="v">{{ r.expected_delta.toFixed(4) }}</span>
+                      · 规则权重 <span class="v">{{ r.expected_delta.toFixed(4) }}</span>
                     </div>
                   </div>
                 </li>

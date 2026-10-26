@@ -5,7 +5,7 @@ import * as echarts from 'echarts'
 import { PROVINCES_PROFILE } from '@/data/recommendation'
 import { useProvinceStore } from '@/stores/useProvinceStore'
 import { getCSSVar } from '@/data/mockProvinces'
-import { postPredictDebounced, type PredictData } from '@/api/predict'
+import { postPredict, postPredictDebounced, type PredictData } from '@/api/predict'
 import {
   fetchGrowthCounties,
   postGrowthSimulate,
@@ -48,7 +48,6 @@ const SLIDERS: SliderDef[] = [
 
 // 与 backend/api/predict.py `_CENTERS` / `_COEFS` 对齐的 5 维瞬时反馈公式。
 // 用前端公式 + 真后端 POST /api/predict 两条路径：前端实时（200ms 瞬时反馈，无网络延迟），真模型（XGBoost/LSTM/Attention-LSTM ensemble）异步覆盖（#45 已接通）。
-const FORMULA_BASE = 0.0235
 const MEANS: Record<SliderDef['key'], number> = { irr: 56.7, flood: 2.97, sun: 2086, temp: 14.0, spei: -0.08 }
 const WEIGHTS: Record<SliderDef['key'], number> = {
   irr: -0.000115,
@@ -60,14 +59,6 @@ const WEIGHTS: Record<SliderDef['key'], number> = {
 
 function calcEffect(key: SliderDef['key'], val: number): number {
   return (val - MEANS[key]) * WEIGHTS[key]
-}
-
-function calcSimRisk(params: Record<SliderDef['key'], number>): number {
-  let r = FORMULA_BASE
-  for (const k of Object.keys(WEIGHTS) as Array<SliderDef['key']>) {
-    r += calcEffect(k, params[k])
-  }
-  return Math.max(0.005, Math.min(0.055, r))
 }
 
 // HIGH#8: 改用 Pinia store 共享省份选择 — ResiliencePath.vue 同步切换。
@@ -84,22 +75,22 @@ const baseline = computed(() => ({
 
 const params = ref<Record<SliderDef['key'], number>>({ ...baseline.value })
 
-// ── 前端公式：实时（拖滑块立即响应，无网络延迟）──────────────────────────
-const frontendRisk = computed(() => calcSimRisk(params.value))
-
 // ── 后端真值状态 ─────────────────────────────────────────────────────────
 const backendRisk = ref<number | null>(null)   // null = 尚未拿到 / 后端不可用
 const isLoadingBackend = ref(false)
 const backendUnavailable = ref(false)           // 超时 / 网络错误后 fallback
+const baselineModelRisk = ref<number | null>(null)
 
-/** 展示用风险值：有后端返回用真值，否则用前端公式（标注 estimate）*/
-const simRisk = computed(() =>
-  backendRisk.value !== null ? backendRisk.value : frontendRisk.value,
+/** 展示用风险值：只用后端模型；请求未返回时停在同一模型基线上。 */
+const simRisk = computed(() => backendRisk.value ?? displayBaselineRisk.value)
+
+/** 基线必须与模拟走同一后端模型；历史 static y 只作为接口未就绪时的兜底展示。 */
+const displayBaselineRisk = computed(() => baselineModelRisk.value ?? selected.value.y)
+const delta = computed(() => simRisk.value - displayBaselineRisk.value)
+const deltaPct = computed(() =>
+  displayBaselineRisk.value ? (delta.value / displayBaselineRisk.value) * 100 : 0,
 )
-const isEstimate = computed(() => backendRisk.value === null)
-
-const delta = computed(() => simRisk.value - selected.value.y)
-const deltaPct = computed(() => (delta.value / selected.value.y) * 100)
+const isFlat = computed(() => Math.abs(delta.value) < 1e-6)
 const isWorse = computed(() => delta.value > 0)
 
 // ── 调用后端（200ms 防抖，来自 api/predict.ts）───────────────────────────
@@ -128,11 +119,33 @@ function fetchBackendRisk() {
   )
 }
 
+function fetchBaselineRisk() {
+  postPredict(
+    selected.value.name,
+    {
+      irr: baseline.value.irr,
+      flood: baseline.value.flood,
+      sun: baseline.value.sun,
+      temp: baseline.value.temp,
+      spei: baseline.value.spei,
+    },
+    'ensemble',
+  )
+    .then((data: PredictData) => {
+      baselineModelRisk.value = data.risk_score
+    })
+    .catch(() => {
+      baselineModelRisk.value = null
+    })
+}
+
 // 省份切换时重置后端结果
 watch(selected, () => {
   params.value = { ...baseline.value }
   backendRisk.value = null
+  baselineModelRisk.value = null
   backendUnavailable.value = false
+  fetchBaselineRisk()
 })
 
 const gaugeBaseEl = ref<HTMLDivElement | null>(null)
@@ -211,10 +224,18 @@ function gaugeOption(value: number, label: string, pointerColor: string) {
 
 function renderGauges() {
   if (!gaugeBase || !gaugeSim) return
-  gaugeBase.setOption(gaugeOption(selected.value.y, '基线 BASE', getCSSVar('--amber')))
-  const simColor = isWorse.value ? getCSSVar('--risk-4') : getCSSVar('--green-bright')
+  gaugeBase.setOption(gaugeOption(displayBaselineRisk.value, '基线 BASE', getCSSVar('--amber')))
+  const simColor = isFlat.value
+    ? getCSSVar('--amber')
+    : isWorse.value
+      ? getCSSVar('--risk-4')
+      : getCSSVar('--green-bright')
   gaugeSim.setOption(
-    gaugeOption(simRisk.value, isWorse.value ? '模拟 ↑ WORSE' : '模拟 ↓ BETTER', simColor),
+    gaugeOption(
+      simRisk.value,
+      isFlat.value ? '模拟 = BASE' : isWorse.value ? '模拟 ↑ WORSE' : '模拟 ↓ BETTER',
+      simColor,
+    ),
   )
 }
 
@@ -527,6 +548,8 @@ onMounted(() => {
   if (gaugeBaseEl.value) gaugeBase = echarts.init(gaugeBaseEl.value, undefined, { renderer: 'canvas' })
   if (gaugeSimEl.value) gaugeSim = echarts.init(gaugeSimEl.value, undefined, { renderer: 'canvas' })
   if (contribEl.value) contribChart = echarts.init(contribEl.value, undefined, { renderer: 'canvas' })
+  fetchBaselineRisk()
+  fetchBackendRisk()
   rerender()
   resizeHandler = () => {
     gaugeBase?.resize()
@@ -547,7 +570,7 @@ onBeforeUnmount(() => {
 <template>
   <section class="page">
     <header class="page-head">
-      <div class="eyebrow">M03 · COUNTERFACTUAL SCENARIO SIMULATION</div>
+      <div class="eyebrow">M03 · MODEL-INTERNAL SCENARIO SIMULATION</div>
       <h2>参数情景模拟</h2>
       <p class="lead">
         「风险情景」调节灌溉率、洪涝占比、日照、气温、SPEI,查看风险变化;
@@ -607,7 +630,7 @@ onBeforeUnmount(() => {
           </select>
           <div class="baseline-info">
             <span>基线 Y</span>
-            <span class="v">{{ selected.y.toFixed(4) }}</span>
+            <span class="v">{{ displayBaselineRisk.toFixed(4) }}</span>
             <span class="dot" aria-hidden="true">·</span>
             <span>{{ selected.type }}</span>
           </div>
@@ -678,7 +701,7 @@ onBeforeUnmount(() => {
               ref="gaugeBaseEl"
               class="gauge-canvas"
               role="img"
-              :aria-label="`基线风险 Y 仪表盘,当前值 ${selected.y.toFixed(4)}`"
+              :aria-label="`基线风险 Y 仪表盘,当前值 ${displayBaselineRisk.toFixed(4)}`"
               tabindex="0"
             ></div>
           </div>
@@ -702,9 +725,11 @@ onBeforeUnmount(() => {
                 <span
                   class="sim-tag"
                   :class="{ worse: isWorse, better: !isWorse }"
-                  :aria-label="isWorse ? '风险上升' : '风险下降'"
+                  :aria-label="isFlat ? '与基线无变化' : isWorse ? '风险上升' : '风险下降'"
                 >
-                  <span aria-hidden="true">{{ isWorse ? '▲ ' : '▼ ' }}</span>{{ isWorse ? '风险上升' : '风险下降' }}
+                  <span aria-hidden="true">{{ isFlat ? '• ' : isWorse ? '▲ ' : '▼ ' }}</span>{{
+                    isFlat ? '无变化' : isWorse ? '风险上升' : '风险下降'
+                  }}
                 </span>
               </div>
             </div>
@@ -712,7 +737,7 @@ onBeforeUnmount(() => {
               ref="gaugeSimEl"
               class="gauge-canvas"
               role="img"
-              :aria-label="`模拟风险 Y 仪表盘,当前值 ${simRisk.toFixed(4)},较基线${isWorse ? '上升' : '下降'} ${Math.abs(deltaPct).toFixed(1)}%`"
+              :aria-label="`模拟风险 Y 仪表盘,当前值 ${simRisk.toFixed(4)},较基线${isFlat ? '无变化' : isWorse ? '上升' : '下降'} ${Math.abs(deltaPct).toFixed(1)}%`"
               tabindex="0"
             ></div>
           </div>
@@ -732,13 +757,13 @@ onBeforeUnmount(() => {
           </div>
           <div class="delta-body">
             <div class="delta-main">
-              <span class="arrow" aria-hidden="true">{{ isWorse ? '▲' : '▼' }}</span>
+              <span class="arrow" aria-hidden="true">{{ isFlat ? '•' : isWorse ? '▲' : '▼' }}</span>
               <span class="abs">{{ Math.abs(delta).toFixed(4) }}</span>
             </div>
             <div class="delta-sub">
               较基线 <span class="pct">{{ isWorse ? '+' : '−' }}{{ Math.abs(deltaPct).toFixed(1) }}%</span>
               <span class="dot" aria-hidden="true">·</span>
-              {{ isWorse ? '风险上升,建议复核干预方向' : '风险下降,韧性提升' }}
+              {{ isFlat ? '基线参数：模型内情景无变化' : isWorse ? '模型内情景：风险指数上升' : '模型内情景：风险指数下降' }}
             </div>
           </div>
         </div>
@@ -747,7 +772,7 @@ onBeforeUnmount(() => {
           <div class="card-head">
             <div>
               <div class="num">M03-F</div>
-              <h3>各参数对风险的边际贡献</h3>
+              <h3>各参数近似边际贡献（线性演示）</h3>
             </div>
             <div class="contrib-legend">
               <span><span class="swatch up" aria-hidden="true"></span>推升风险</span>

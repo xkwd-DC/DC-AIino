@@ -385,11 +385,34 @@ def is_running() -> bool:
     return _running
 
 
+def start_autosync() -> dict:
+    """按配置执行启动期重扫并开启监控。
+
+    自动索引属于非关键能力，默认关闭，避免嵌入模型加载失败时连带终止
+    Flask/Waitress 主进程。
+    """
+    if not config.AUTO_INDEX_ENABLED:
+        logger.info("RAG 自动索引已关闭（RAG_AUTO_INDEX_ENABLED=false）")
+        return {
+            "enabled": False,
+            "reindexed": None,
+            "watcher_started": False,
+        }
+
+    reindex_result = reindex_modified()
+    return {
+        "enabled": True,
+        "reindexed": reindex_result,
+        "watcher_started": start_watcher(),
+    }
+
+
 def get_watcher_status() -> dict:
     """返回监控状态摘要。"""
     hashes = _load_hashes()
     return {
         "running": _running,
+        "auto_index_enabled": config.AUTO_INDEX_ENABLED,
         "watched_dir": str(config.DOCS_DIR),
         "debounce_interval_s": _debounce_interval,
         "hashes_file": str(_HASHES_FILE),

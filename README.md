@@ -1,7 +1,7 @@
 # 极端气候下粮食生产风险核心因子识别与韧性提升可视化决策系统
 
 > **国家级大学生创新创业训练计划项目**(2026.06 – 2027.05)
-> 多模态融合 · 三模型互补归因 · 三协议鲁棒性披露 · 决策支持系统作为核心交付
+> 多模态融合 · 三模型分工 + 双视角归因 · 三协议鲁棒性披露 · 决策支持系统作为核心交付
 
 ---
 
@@ -26,7 +26,7 @@
 
 **多模态融合数据集**:31 省 × 13 年(2011–2023)= 403 样本,11 维特征(气象 / 致灾 / 遥感 NDVI&LST / 统计 / GIS),目标 `yield_kg_per_ha`。详见 `docs/11_数据集说明_v1.md`。
 
-**三模型互补归因**:XGBoost-SHAP(横截面非线性边际贡献)+ 基线 LSTM(时序对照)+ Attention-LSTM(softmax gating 内部偏好)。**核心创新不是追求三模型一致,而是诚实呈现归因分歧本身作为科学产出**——实测 XGB-SHAP 与 Attention-LSTM 在 11 维上的 Spearman ρ = **-0.055**(p=0.873),双视角互补而非一致性验证。
+**三模型分工 + 双视角归因**:XGBoost-SHAP(横截面非线性边际贡献)+ 基线 LSTM(时序对照,参与 XGB+LSTM consensus,不提供特征排序)+ Attention-LSTM(softmax gating 内部偏好)。**归因对照只用 XGB-SHAP 与 Attention-LSTM 两套可解释输出**——实测两者在 11 维上的 Spearman ρ = **-0.055**(p=0.873),并列呈现,不作一致性验证。
 
 **三协议鲁棒性披露**(`backend/models/strict_cv_v3_card.md`):
 
@@ -118,7 +118,7 @@ powershell -ExecutionPolicy Bypass -File deploy\serve_local.ps1 -Stop    # 停�
 |---|---|---|
 | `AGENT_BRIEFING.md` | Agent 必读 | 所有 subagent 起手必读,§4 是叙事生死线 |
 | `STATUS.md` | 实时大盘 | 项目级 single-source-of-truth,每次进展更新 |
-| `00` | 项目执行计划 v2 | 4 人队 + 1 万经费 + 三模型互补 + GCP/SQLite |
+| `00` | 项目执行计划 v2 | 4 人队 + 1 万经费 + 三模型分工 + GCP/SQLite |
 | `11` | 数据集说明 v1 | paper_panel_v3 字段口径 |
 | `12` | 系统开发执行计划 | Phase 0-5 系统建设节奏 |
 | `13` | **国家级升级执行规划** | 三主线 + 12 月时间表 + 本周事 + 风险缓解 |

@@ -33,6 +33,18 @@ CHUNK_OVERLAP = 100    # 块间重叠字符数
 # "auto" 自动检测 cuda > mps > cpu
 EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
 EMBEDDING_DEVICE = os.getenv("RAG_EMBEDDING_DEVICE", "auto")
+# Windows 冷加载前的物理/提交内存下限；不足时由混合检索回退到 BM25。
+EMBEDDING_MIN_FREE_MB = int(os.getenv("RAG_EMBEDDING_MIN_FREE_MB", "3072"))
+# 本项目默认使用本地/已有 HF 缓存，避免离线演示时每次冷启动都联网探测
+# BAAI/bge-m3，导致请求在超时重试中长时间挂起。
+EMBEDDING_LOCAL_ONLY = (
+    os.getenv("RAG_EMBEDDING_LOCAL_ONLY", "true").lower() == "true"
+)
+
+# 启动时自动重扫 docs/ 并开启 watchdog。默认关闭：BGE-M3 在 8 GB 显存机器上
+# 与 TensorFlow 模型同时加载会触发 CUDA OOM，而非关键的自动索引不应拖垮
+# 整个 API 服务。需要时显式设 RAG_AUTO_INDEX_ENABLED=true 或手工重建索引。
+AUTO_INDEX_ENABLED = os.getenv("RAG_AUTO_INDEX_ENABLED", "false").lower() == "true"
 
 # ─── 检索参数 ────────────────────────────────────────────────────────────
 TOP_K = int(os.getenv("RAG_TOP_K", "5"))

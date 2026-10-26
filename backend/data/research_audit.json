@@ -1,0 +1,144 @@
+{
+  "generated_at": "2026-10-20",
+  "version": "v3-province",
+  "headline": "随机划分高分不等于跨省可迁移；双视角排序不一致不等于其中一个是错的；总产口径的高 R² 可能主要来自规模。",
+  "data": {
+    "panel": "paper_panel_v3",
+    "rows": 403,
+    "provinces": 31,
+    "years": "2011-2023",
+    "target": "yield_kg_per_ha",
+    "features": 11,
+    "feature_order_source": "backend/data/feature_columns.json",
+    "note": "省级 N=403；县级 CLIMG 为另一套独立口径，数字不可与省级 0.907 相加或直接比较。"
+  },
+  "protocols": [
+    {
+      "id": "random_8_2",
+      "label": "随机 8:2",
+      "r2": 0.9072,
+      "sd": 0.0383,
+      "folds": 10,
+      "reads": "同一批省份同时出现在训练/测试，主要测省内识别与省份基线",
+      "source": "backend/models/strict_cv_v3_card.md"
+    },
+    {
+      "id": "leave_year_out",
+      "label": "留一年",
+      "r2": 0.8943,
+      "sd": 0.1038,
+      "folds": 13,
+      "reads": "时间外推尚可，但不回答跨省迁移",
+      "source": "backend/models/strict_cv_v3_card.md"
+    },
+    {
+      "id": "leave_province_out",
+      "label": "留一省",
+      "r2": -16.835,
+      "mean": -176.9,
+      "positive_folds": 1,
+      "folds": 31,
+      "reads": "31 省仅 1 省 R²>0；当前 11 维特征不足以支持跨省气候→产量迁移",
+      "source": "backend/models/strict_cv_v3_card.md"
+    },
+    {
+      "id": "stratified_5fold",
+      "label": "分层 5 折",
+      "r2": 0.9091,
+      "sd": 0.0268,
+      "folds": 5,
+      "reads": "混合未见省/年行，仍接近随机划分，说明省份身份信号很强",
+      "source": "backend/models/strict_cv_v3_card.md"
+    }
+  ],
+  "variance": {
+    "model": "MixedLM: y ~ X11 + (1|province)",
+    "icc": 0.9710,
+    "icc_ci": [0.9496, 0.9805],
+    "sigma_alpha_sq": 1699394.68,
+    "sigma_eps_sq": 50683.51,
+    "lrt": 741.59,
+    "p_value_chibar": 1.35e-163,
+    "reads": "约 97% 方差与省份基线一致；ICC 与 XGB R² 是概念对应，不是严格分解",
+    "source": "backend/models/mixed_effects_v1_card.md"
+  },
+  "attribution": {
+    "xgb_top3": ["NDVI", "Prec", "Temp"],
+    "att_top3": ["Drou_A", "SPEI", "Temp"],
+    "spearman": -0.0545,
+    "p_value": 0.873,
+    "top3_overlap": "1/3",
+    "top5_overlap": "3/5",
+    "reads": "两套排序几乎不相关；这是解释分歧线索，不是一致性验证",
+    "source": "backend/models/rank_corr_v3_card.md"
+  },
+  "ablations": [
+    {
+      "id": "ndvi",
+      "label": "NDVI 消融",
+      "with_feature": 0.9072,
+      "without_feature": 0.9038,
+      "delta": -0.0034,
+      "reads": "去掉 NDVI 后 R² 仅降 0.0034，NDVI 边际贡献≈0；不能称核心驱动",
+      "source": "backend/models/ndvi_ablation_v3_card.md"
+    },
+    {
+      "id": "y_butter",
+      "label": "y_butter 目标",
+      "r2": -0.1015,
+      "sd": 0.2763,
+      "reads": "去趋势残差近似不可学；保留为方法学负结果，不作主报告目标",
+      "source": "backend/models/xgb_y_butter_ablation_card.md"
+    }
+  ],
+  "scale": {
+    "log_total_variance_explained_by_area": 0.92,
+    "climg_lco_r2": 0.4489,
+    "climg_lco_sd": 0.0065,
+    "climg_time_r2": 0.3644,
+    "climg_time_sd": 0.0044,
+    "single_yield_lco_r2": 0.5208,
+    "single_yield_lco_sd": 0.0065,
+    "single_yield_time_r2": 0.4474,
+    "reads": "总产口径的方差约 92% 由播种面积解释；气候归因应优先看单产口径，并明确总产/单产不可混用",
+    "source": "backend/models/county_climg_card.md; docs/25_县级站点层_M07_2026-10-15.md"
+  },
+  "flags": [
+    {
+      "level": "high",
+      "title": "评估虚高",
+      "evidence": "random 8:2 R²=0.9072；leave-province-out 中位 -16.835",
+      "meaning": "高分主要与省份基线一致，不能当跨省预测能力",
+      "next": "论文与界面并列披露两套协议；不主张跨省高精度"
+    },
+    {
+      "level": "high",
+      "title": "解释分歧",
+      "evidence": "SHAP 与 Attention 的 Spearman ρ=-0.0545，Top-3 仅 1/3 重合",
+      "meaning": "两套归因排序接近正交；不能写成一致性验证",
+      "next": "把分歧作为诊断线索，补方向稳定性与样本外复核"
+    },
+    {
+      "level": "high",
+      "title": "尺度混淆",
+      "evidence": "log(总产) 方差约 92% 由播种面积解释；CLIMG 总产 LCO 0.4489，单产 LCO 0.5208",
+      "meaning": "总产高 R² 不能直接解释为气候效应",
+      "next": "主口径改单产；总产只用于规模/暴露，不混算"
+    },
+    {
+      "level": "medium",
+      "title": "小样本",
+      "evidence": "省级 N=403，31 个截面单位",
+      "meaning": "深度模型收益有限，复杂模型更容易记忆省份",
+      "next": "轻量模型 + 混合效应 + 县级层交叉验证"
+    },
+    {
+      "level": "medium",
+      "title": "外推年份",
+      "evidence": "2023 年县域统计产量真值未齐",
+      "meaning": "2023 年结果是模型外推，不是已核实风险",
+      "next": "界面标外推；论文不把 2023 写成已验证"
+    }
+  ],
+  "boundary": "所有输出属于统计关联与模型内情景，不构成因果结论、政策效果或产量预报；需结合农学机理、田间试验与专家研判。"
+}

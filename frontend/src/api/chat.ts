@@ -18,6 +18,7 @@ export interface RAGQueryResponse {
   sources: ChatSource[]
   tokens_used: number
   results_count: number
+  retrieval_mode?: 'hybrid' | 'vector' | 'bm25' | 'none'
 }
 
 export interface GraphQueryResponse {
@@ -40,7 +41,7 @@ export function queryRAG(
   history?: Array<{ role: string; content: string }>,
   collection: string = 'dc_knowledge',
 ): Promise<RAGQueryResponse> {
-  return http.post('/rag/query', { question, history, collection })
+  return http.post('/rag/query', { question, history, collection }, { timeout: 120000 })
 }
 
 /** GraphRAG 图谱问答（global / local / basic 自动路由）。 */
@@ -48,7 +49,7 @@ export function queryGraph(
   question: string,
   topK?: number,
 ): Promise<GraphQueryResponse> {
-  return http.post('/graph/query', { question, top_k: topK })
+  return http.post('/graph/query', { question, top_k: topK }, { timeout: 120000 })
 }
 
 /** RAG 向量库状态。 */

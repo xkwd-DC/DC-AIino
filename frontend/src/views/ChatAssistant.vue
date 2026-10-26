@@ -58,6 +58,9 @@ const MODE_LABELS: Record<string, string> = {
   local: '图谱遍历',
   basic: '基础检索',
   rag: '混合检索',
+  hybrid: '混合检索',
+  vector: '语义检索',
+  bm25: '关键词检索',
   none: '未就绪',
 }
 
@@ -141,6 +144,7 @@ async function queryByMode(text: string): Promise<{
   }
 
   const history = messages.value
+    .slice(0, -1)
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .slice(-8)
     .map((m) => ({ role: m.role, content: m.content }))
@@ -149,7 +153,7 @@ async function queryByMode(text: string): Promise<{
   return {
     answer: res.answer,
     sources: res.sources,
-    searchMode: 'rag',
+    searchMode: res.retrieval_mode || 'rag',
     tokensUsed: res.tokens_used,
   }
 }
@@ -582,7 +586,8 @@ onBeforeUnmount(() => { /* noop */ })
 .badge--global { background: rgba(100, 180, 255, 0.15); color: #64b4ff; }
 .badge--local  { background: rgba(160, 220, 120, 0.15); color: #a0dc78; }
 .badge--basic  { background: rgba(180, 180, 180, 0.15); color: var(--text-3); }
-.badge--rag    { background: rgba(100, 220, 180, 0.15); color: var(--green-bright); }
+.badge--rag, .badge--hybrid, .badge--vector { background: rgba(100, 220, 180, 0.15); color: var(--green-bright); }
+.badge--bm25   { background: var(--bg-elev); color: var(--text-2); }
 .badge--none   { background: rgba(255, 160, 80, 0.15); color: var(--amber); }
 
 .message-text {

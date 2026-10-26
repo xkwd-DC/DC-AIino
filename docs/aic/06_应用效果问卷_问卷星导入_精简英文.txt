@@ -1,0 +1,107 @@
+This survey takes about 3 minutes and is anonymous. We do not collect your name, university, department, or advisor information. The purpose is to understand your actual workflow when analyzing climate–yield relationships, and whether a demonstration system can help. There are no right or wrong answers; please respond based on your actual experience.[段落说明]
+Part 1: Background[段落说明]
+1、What is your current role?
+A.Undergraduate student
+B.Master's student
+C.Doctoral student
+D.Faculty member
+E.Research assistant
+F.Other
+
+2、Which field is closest to your major or research area?
+A.Crop science / Agronomy
+B.Agricultural meteorology
+C.Agricultural resources and environment
+D.Agricultural economics and management
+E.Computer science / Data science
+F.Other
+
+3、Have you independently conducted, or participated in, analysis related to climate, extreme weather, crop yield, or grain risk?
+A.Yes, at least one complete project
+B.Participated in some steps
+C.Only read related literature
+D.No
+
+4、How long did your most recent such task take, from obtaining the data to producing an interpretable result?
+A.Less than 1 day
+B.1–3 days
+C.4–7 days
+D.1–2 weeks
+E.More than 2 weeks
+F.Have not done this
+
+Part 2: Current Workflow[段落说明]
+5、Data cleaning and alignment (meteorological, remote sensing, statistical yearbooks, etc.) take up most of my time.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+6、When I validate the model in a different province or time period, the results are unstable and difficult to explain.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+Part 3: Trial Tasks[段落说明]
+7、Did you complete the task “identify the main risk factors for a province in a given year”?
+A.Completed
+B.Partially completed
+C.Not completed
+D.Did not try
+
+8、Did you complete the task “determine whether a county improved or worsened relative to the previous year”?
+A.Completed
+B.Partially completed
+C.Not completed
+D.Did not try
+
+9、What is your understanding of the relationship between “risk level” and “yield”?
+A.High risk level means yield must be low
+B.Risk level is a composite of climate conditions and is not equivalent to yield
+C.Risk level and yield are the same indicator
+D.Not sure
+
+Part 4: User Experience[段落说明]
+10、This system is easy to get started with.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+11、I can understand the results shown by the system.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+12、I trust the results shown by the system.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+13、I would be willing to use this system again for coursework or research.
+A.1 Strongly disagree
+B.2 Disagree
+C.3 Neutral
+D.4 Agree
+E.5 Strongly agree
+
+Part 5: Open Question and Follow-up[段落说明]
+14、If you could change only one thing, what would you change first, and why?
+
+15、Would you be willing to spend another 10 minutes on a task-based trial?
+A.Yes
+B.No
+C.Depends on my schedule
+
+Part 6: Anonymous Use Consent[段落说明]
+16、I agree that my anonymous responses and quotations may be used in competition submission materials and for product improvement. Your decision will not affect anything else.
+A.Agree
+B.Disagree

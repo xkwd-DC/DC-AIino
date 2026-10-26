@@ -137,6 +137,7 @@ def query(
         "sources": sources,
         "tokens_used": tokens,
         "results_count": len(results),
+        "retrieval_mode": results[0].get("retrieval_mode", "vector") if results else "none",
     }
 
 
